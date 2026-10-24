@@ -28,6 +28,7 @@ at_plugin(Saturator CODE Satr)
 at_plugin(Waterfall CODE Wtfl)
 at_plugin(GreenRooskie CODE Grsk)
 at_plugin(Shifty CODE Shft)
+at_plugin(SkyChorus CODE Skyc)
 
 if(AT_BUILD_TOOLS)
     add_subdirectory(tools/WaterfallPreview)
