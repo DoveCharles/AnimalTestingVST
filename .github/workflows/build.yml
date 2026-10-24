@@ -1,0 +1,118 @@
+name: Build
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    env:
+      CMAKE_OSX_ARCHITECTURES: ${{ matrix.osx_archs }}   # read by CMake on first configure; ignored on Windows
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS
+            os: macos-latest
+            cache: ccache
+            osx_archs: arm64;x86_64   # universal binary
+          - name: Windows
+            os: windows-latest
+            cache: sccache
+            osx_archs: ""
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      # Puts MSVC on PATH so the Ninja generator can find cl.exe.
+      - name: Set up MSVC
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      # Compiler cache stored in GitHub's cache: JUCE alone is most of the compile time.
+      - name: Set up compiler cache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ matrix.name }}
+          variant: ${{ matrix.cache }}
+          max-size: 1G
+
+      - name: Install Ninja
+        uses: seanmiddleditch/gha-setup-ninja@v6
+
+      - name: Configure
+        shell: bash
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DAT_COPY_PLUGIN_AFTER_BUILD=OFF
+          -DCMAKE_C_COMPILER_LAUNCHER=${{ matrix.cache }}
+          -DCMAKE_CXX_COMPILER_LAUNCHER=${{ matrix.cache }}
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      # ------------------------------------------------------------------------
+      # TODO (macOS signing/notarization): needs an Apple Developer account.
+      # 1. Add repo secrets: MACOS_CERTIFICATE_P12 (base64 "Developer ID Application" cert),
+      #    MACOS_CERTIFICATE_PASSWORD, APPLE_ID, APPLE_TEAM_ID, APPLE_APP_PASSWORD.
+      # 2. Import the cert into a temporary keychain, then for each bundle in dist/:
+      #      codesign --force --options runtime --timestamp --sign "Developer ID Application: <Name> (<TEAMID>)" <bundle>
+      # 3. Zip, then: xcrun notarytool submit <zip> --apple-id ... --team-id ... --password ... --wait
+      # 4. xcrun stapler staple <bundle> for each bundle and re-zip.
+      # Until then, macOS users must right-click > Open (or clear quarantine) to load unsigned builds.
+      # ------------------------------------------------------------------------
+      - name: Sign and notarize (TODO)
+        if: false && runner.os == 'macOS'
+        run: echo "See TODO above"
+
+      - name: Package
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME//\//-}"
+          cmake --install build --prefix dist --component plugins
+          zip_name="AnimalTesting-${version}-${{ matrix.name }}.zip"
+          (cd dist && cmake -E tar cf "../${zip_name}" --format=zip .)
+          echo "ZIP_NAME=${zip_name}" >> "$GITHUB_ENV"
+
+      # Uploaded as-is (no double zip); the artifact is named after the file.
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ env.ZIP_NAME }}
+          archive: false
+          if-no-files-found: error
+
+  release:
+    name: GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          pattern: AnimalTesting-*
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          files: artifacts/*.zip
+          fail_on_unmatched_files: true
+          generate_release_notes: true
