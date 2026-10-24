@@ -49,7 +49,7 @@ private:
         if (alpha <= 0.0f || notes.isEmpty())
             return;
 
-        const auto font = WaterfallLookAndFeel::thinFont (26.0f);
+        const auto font = WaterfallLookAndFeel::thinFont (24.0f);
         const auto dot = juce::String (juce::CharPointer_UTF8 ("\xc2\xb7"));
         const auto gap = juce::GlyphArrangement::getStringWidth (font, "  " + dot + "  ");
 
@@ -65,17 +65,15 @@ private:
         {
             const auto w = juce::GlyphArrangement::getStringWidth (font, text) + 2.0f;
             const juce::Rectangle<float> r (left, midY - 16.0f + dy, w, 32.0f);
-            g.setColour (WaterfallLookAndFeel::shadow.withAlpha (0.45f * a));
-            g.drawText (text, r.translated (0.0f, 1.0f), juce::Justification::centredLeft, false);
-            g.setColour (juce::Colours::white.withAlpha (a));
-            g.drawText (text, r, juce::Justification::centredLeft, false);
+            WaterfallLookAndFeel::drawHaloText (g, text, r, juce::Justification::centredLeft,
+                                                juce::Colours::white.withAlpha (a));
         };
 
         for (int i = 0; i < notes.size(); ++i)
         {
             const auto phase = (float) i * 1.7f;
             const auto dy = 2.5f * std::sin (time * 0.5f + phase);
-            const auto a = alpha * (0.8f + 0.2f * std::sin (time * 0.33f + phase * 1.3f));
+            const auto a = alpha * (0.85f + 0.15f * std::sin (time * 0.33f + phase * 1.3f));
             drawAt (notes[i], x, dy, a);
             x += juce::GlyphArrangement::getStringWidth (font, notes[i]);
 
@@ -112,9 +110,9 @@ public:
             const auto centre = r.getCentre().translated (0.0f, 4.0f);
             const auto radius = r.getWidth() * 0.55f;
 
-            juce::ColourGradient pool (WaterfallLookAndFeel::shadow.withAlpha (0.32f), centre,
+            juce::ColourGradient pool (WaterfallLookAndFeel::shadow.withAlpha (0.45f), centre,
                                        WaterfallLookAndFeel::shadow.withAlpha (0.0f), centre.translated (radius, 0.0f), true);
-            pool.addColour (0.5, WaterfallLookAndFeel::shadow.withAlpha (0.16f));
+            pool.addColour (0.5, WaterfallLookAndFeel::shadow.withAlpha (0.24f));
             g.setGradientFill (pool);
             g.fillEllipse (juce::Rectangle<float> (radius * 2.0f, r.getHeight() * 1.05f).withCentre (centre));
         }

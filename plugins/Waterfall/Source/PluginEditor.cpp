@@ -38,8 +38,8 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     for (auto* knob : { &key, &chord, &brightness, &decay, &mix })
     {
         knob->getSlider().setColour (juce::Slider::rotarySliderFillColourId, knobColours[index++]);
-        knob->getLabel().setFont (WaterfallLookAndFeel::captionFont (10.5f));
-        knob->getLabel().setColour (juce::Label::textColourId, juce::Colours::white.withAlpha (0.85f));
+        knob->getLabel().setFont (WaterfallLookAndFeel::captionFont (11.0f));
+        knob->getLabel().setColour (juce::Label::textColourId, juce::Colours::white);
         addAndMakeVisible (*knob);
         knob->getSlider().sendLookAndFeelChange();   // re-create the value box with this look and feel
     }
@@ -96,8 +96,8 @@ void PluginEditor::resized()
     visual.setBounds (area);
     shadows.setBounds (area);
 
-    auto strip = area.reduced (22, 0).withSizeKeepingCentre (area.getWidth() - 44, 116).translated (0, 22);
-    chordReadout.setBounds (area.withTop (strip.getY() - 64).withHeight (48));
+    auto strip = area.reduced (22, 0).withSizeKeepingCentre (area.getWidth() - 44, 116);
+    chordReadout.setBounds (area.withTop (strip.getY() - 62).withHeight (48));
 
     std::vector<juce::Rectangle<int>> knobBounds;
     const auto knobWidth = strip.getWidth() / 5;
