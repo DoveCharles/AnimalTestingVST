@@ -158,14 +158,20 @@ void SpectrogramVisual::renderScene()
 
         for (int y = 0; y < h; ++y)
         {
-            const auto sky = mix (skyTop, skyBottom, (float) y / (float) h);
+            const auto ny = (float) y / (float) h;
+            const auto sky = mix (skyTop, skyBottom, ny);
             auto* row = reinterpret_cast<juce::PixelARGB*> (data.getLinePointer (y));
 
             for (int x = 0; x < w; ++x)
             {
-                // Sound shows as hazy white light; the curve keeps quiet partials barely visible.
+                // Each pitch has its own hue: red for lows up to violet for highs, drifting slightly
+                // along the trail. The curve keeps quiet partials barely visible; the loudest glow white.
                 const auto s = historyAt (x, y);
-                const auto c = mix (sky, haze, 0.85f * s * s * s);
+                const auto hue = 0.8f * (1.0f - ny) + 0.06f * (float) x / (float) w;
+                const auto rainbow = juce::Colour::fromHSV (hue, 0.6f, 1.0f, 1.0f);
+                auto c = mix (sky, { (float) rainbow.getRed(), (float) rainbow.getGreen(), (float) rainbow.getBlue() },
+                              juce::jmin (1.0f, 1.1f * s * s));
+                c = mix (c, haze, 0.5f * s * s * s * s);
                 row[x].setARGB (0xff, (juce::uint8) c.r, (juce::uint8) c.g, (juce::uint8) c.b);
             }
         }
