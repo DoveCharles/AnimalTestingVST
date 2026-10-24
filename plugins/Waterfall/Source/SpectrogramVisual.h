@@ -4,8 +4,8 @@
 
 class PluginProcessor;
 
-/** Scrolling spectrogram of the plugin's output on a soft sky-blue field: sound shows as hazy
-    white light, with faint coloured blurs drifting through. Newest audio enters on the left and
+/** Scrolling spectrogram of the plugin's output on a soft sky-blue field: sound shows as smooth
+    rainbow trails coloured by pitch, with faint coloured blurs drifting through. Newest audio enters on the left and
     flows right. Rendered small and scaled up smoothly so everything stays soft. */
 class SpectrogramVisual final : public juce::Component
 {
