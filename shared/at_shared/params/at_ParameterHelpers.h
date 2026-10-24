@@ -45,6 +45,21 @@ namespace at::params
         return makeFloat (paramId, name, range, defaultHz, "Hz", 0);
     }
 
+    /** Time in seconds with a skewed range, so short values get more knob travel. */
+    inline auto makeSeconds (const char* paramId, const juce::String& name,
+                             float minSeconds, float maxSeconds, float defaultSeconds)
+    {
+        juce::NormalisableRange<float> range { minSeconds, maxSeconds, 0.001f };
+        range.setSkewForCentre (std::sqrt (minSeconds * maxSeconds));
+        return makeFloat (paramId, name, range, defaultSeconds, "s", 2);
+    }
+
+    inline auto makeChoice (const char* paramId, const juce::String& name,
+                            const juce::StringArray& choices, int defaultIndex = 0)
+    {
+        return std::make_unique<juce::AudioParameterChoice> (id (paramId), name, choices, defaultIndex);
+    }
+
     /** Typed, non-owning handle to an APVTS raw parameter value; read it on the audio thread. */
     inline std::atomic<float>& raw (juce::AudioProcessorValueTreeState& state, const char* paramId)
     {

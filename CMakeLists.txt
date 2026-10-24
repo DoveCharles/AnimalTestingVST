@@ -24,3 +24,4 @@ juce_add_module(shared/at_shared ALIAS_NAMESPACE at)
 # Codes need exactly one upper-case letter (AU rule); duplicates fail at configure time.
 # ------------------------------------------------------------------------------
 at_plugin(Saturator CODE Satr)
+at_plugin(Waterfall CODE Wtfl)

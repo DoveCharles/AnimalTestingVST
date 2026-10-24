@@ -5,6 +5,7 @@ A monorepo of audio plugins by **Animal Testing**. Each plugin builds as VST3 (W
 | Plugin | Code | Version | Description |
 |---|---|---|---|
 | [AT Saturator](plugins/Saturator) | `Satr` | 1.0.0 | tanh saturator with Drive, Tone (low-pass) and Mix |
+| [AT Waterfall](plugins/Waterfall) | `Wtfl` | 1.0.0 | SP-404-style chord resonator: Key, Chord, Brightness, Decay, Mix, with a glitchy spectrogram |
 
 ## Layout
 
@@ -15,7 +16,7 @@ shared/at_shared/         JUCE module shared by all plugins
   processor/              at::ProcessorBase: APVTS, state save/load, bus layouts
   params/                 parameter factory helpers and at::PresetManager
   gui/                    at::LookAndFeel (the house style), at::Knob, at::PresetBar
-  dsp/                    reusable DSP (waveshapers, ...)
+  dsp/                    reusable DSP (waveshapers, tuned comb resonator, ...)
 plugins/<Name>/           one folder per plugin, self-contained
 templates/PluginTemplate/ starting point for new plugins (a simple gain plugin)
 scripts/NewPlugin.cmake   copies the template and registers the new plugin
@@ -84,7 +85,7 @@ To do it by hand instead, copy the template folder, replace `PluginTemplate` wit
 
 ### Parameters
 
-Every parameter goes through `AudioProcessorValueTreeState` (created in `at::ProcessorBase`), so it's automatable in Ableton and saved with the Live set. Use the factories in `at::params` (`makeDecibels`, `makePercent`, `makeFrequency`, `makeFloat`). When you add a parameter to an already released plugin, give it a higher version hint, e.g. `at::params::id ("newParam", 2)`.
+Every parameter goes through `AudioProcessorValueTreeState` (created in `at::ProcessorBase`), so it's automatable in Ableton and saved with the Live set. Use the factories in `at::params` (`makeDecibels`, `makePercent`, `makeFrequency`, `makeSeconds`, `makeChoice`, `makeFloat`). When you add a parameter to an already released plugin, give it a higher version hint, e.g. `at::params::id ("newParam", 2)`.
 
 ### Presets
 

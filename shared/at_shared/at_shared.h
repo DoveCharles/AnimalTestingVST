@@ -20,6 +20,7 @@
 #include <juce_dsp/juce_dsp.h>
 
 #include "dsp/at_Waveshapers.h"
+#include "dsp/at_CombResonator.h"
 #include "params/at_ParameterHelpers.h"
 #include "params/at_PresetManager.h"
 #include "processor/at_ProcessorBase.h"
