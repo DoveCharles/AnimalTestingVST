@@ -2,7 +2,7 @@
 
 namespace
 {
-    const juce::Colour accent { 0xff6fe3ff };   // icy cyan instead of the house orange, to sit on the blue visual
+    const juce::Colour accent { 0xffffffff };   // white instead of the house orange, to sit on the sky-blue visual
 }
 
 PluginEditor::PluginEditor (PluginProcessor& p)
@@ -23,8 +23,10 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     {
         auto& s = knob->getSlider();
         s.setColour (juce::Slider::rotarySliderFillColourId, accent);
-        s.setColour (juce::Slider::rotarySliderOutlineColourId, juce::Colour (0xff1a2e5c));
+        s.setColour (juce::Slider::rotarySliderOutlineColourId, juce::Colours::white.withAlpha (0.3f));
         s.setColour (juce::Slider::textBoxHighlightColourId, accent.withAlpha (0.4f));
+        s.setColour (juce::Slider::textBoxOutlineColourId, juce::Colours::white.withAlpha (0.25f));
+        knob->getLabel().setColour (juce::Label::textColourId, juce::Colours::white.withAlpha (0.9f));
         addAndMakeVisible (*knob);
     }
 
@@ -38,12 +40,11 @@ PluginEditor::~PluginEditor()
 
 void PluginEditor::resized()
 {
-    // No header or preset bar: the spectrogram is the whole window, with the controls floating on it.
+    // No header or preset bar: the spectrogram is the whole window, with the controls floating across the middle.
     auto area = getLocalBounds();
     visual.setBounds (area);
 
-    area.reduce (14, 14);
-    auto strip = area.removeFromBottom (128);
+    auto strip = area.reduced (14, 0).withSizeKeepingCentre (area.getWidth() - 28, 128);
     controlsPanel.setBounds (strip);
 
     strip.reduce (8, 8);
