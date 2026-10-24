@@ -1,0 +1,9 @@
+# Bump this per release of this plugin; it is independent of the other plugins.
+project(Shifty VERSION 1.0.0)
+
+at_add_plugin(${PROJECT_NAME}
+    PRODUCT_NAME "AT Shifty"
+    SOURCES
+        Source/PluginProcessor.cpp
+        Source/PluginEditor.cpp
+        Source/PedalLookAndFeel.cpp)
