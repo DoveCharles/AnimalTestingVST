@@ -4,10 +4,9 @@
 
 class PluginProcessor;
 
-/** Scrolling spectrogram of the plugin's output, styled like a datamoshed VHS frame: wide
-    pixels, posterized teal / periwinkle / navy with magenta streaks on the hottest partials,
-    row bands that tear sideways, and scanlines. Newest audio enters on the left and flows right.
-    When it's quiet a faint drifting noise field keeps the picture alive. */
+/** Scrolling spectrogram of the plugin's output on a soft sky-blue field: sound shows as hazy
+    white light, with faint coloured blurs drifting through. Newest audio enters on the left and
+    flows right. Rendered small and scaled up smoothly so everything stays soft. */
 class SpectrogramVisual final : public juce::Component
 {
 public:
@@ -17,18 +16,10 @@ public:
     void resized() override;
 
 private:
-    struct Glitch
-    {
-        int y = 0, height = 1, shift = 0, framesLeft = 0;
-        bool rgbSplit = false;
-    };
-
     void tick (double timestampSec);
     void readAudio();
     void pushColumn();
     void renderScene();
-    void spawnGlitches();
-    void applyGlitches();
 
     float historyAt (int column, int row) const noexcept;
 
@@ -52,30 +43,26 @@ private:
     double columnsEmitted = 0.0;
 
     juce::Image frame;
-    juce::Random random { 0x404 };
-    std::vector<Glitch> glitches;
-    std::vector<juce::PixelARGB> rowScratch;
 
     double startTime = -1.0;
     float time = 0.0f;
     float lastAudioTime = 0.0f;
-    float level = 0.0f;
 
-    static constexpr int pixelWidth = 5, pixelHeight = 3;
+    static constexpr int pixelSize = 4;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SpectrogramVisual)
 };
 
-/** Translucent smoked-glass panel to sit controls on top of the visual. */
+/** Translucent frosted-glass panel to sit controls on top of the visual. */
 class GlassPanel final : public juce::Component
 {
 public:
     void paint (juce::Graphics& g) override
     {
         const auto r = getLocalBounds().toFloat().reduced (0.5f);
-        g.setColour (juce::Colour (0xff040a1c).withAlpha (0.62f));
+        g.setColour (juce::Colour (0xff0d3a63).withAlpha (0.28f));
         g.fillRoundedRectangle (r, 8.0f);
-        g.setColour (juce::Colour (0xff8fd8ff).withAlpha (0.25f));
+        g.setColour (juce::Colours::white.withAlpha (0.35f));
         g.drawRoundedRectangle (r, 8.0f, 1.0f);
     }
 };

@@ -29,6 +29,7 @@ namespace at
         }
 
         juce::Slider& getSlider() noexcept { return slider; }
+        juce::Label& getLabel() noexcept { return label; }
 
     private:
         juce::Slider slider;

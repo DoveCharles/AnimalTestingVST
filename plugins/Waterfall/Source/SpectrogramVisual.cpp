@@ -3,54 +3,25 @@
 
 namespace
 {
-    float hash (int x, int y)
-    {
-        auto h = (juce::uint32) x * 374761393u + (juce::uint32) y * 668265263u;
-        h = (h ^ (h >> 13)) * 1274126177u;
-        return (float) (h ^ (h >> 16)) * (1.0f / 4294967295.0f);
-    }
-
-    float valueNoise (float x, float y)
-    {
-        const auto xi = (int) std::floor (x), yi = (int) std::floor (y);
-        auto fx = x - (float) xi, fy = y - (float) yi;
-        fx = fx * fx * (3.0f - 2.0f * fx);
-        fy = fy * fy * (3.0f - 2.0f * fy);
-
-        const auto top    = juce::jmap (fx, hash (xi, yi),     hash (xi + 1, yi));
-        const auto bottom = juce::jmap (fx, hash (xi, yi + 1), hash (xi + 1, yi + 1));
-        return juce::jmap (fy, top, bottom);
-    }
-
-    float fbm (float x, float y)
-    {
-        return 0.55f * valueNoise (x, y)
-             + 0.30f * valueNoise (x * 2.03f + 17.0f, y * 2.03f)
-             + 0.15f * valueNoise (x * 4.11f, y * 4.11f + 31.0f);
-    }
-
     struct Rgb { float r, g, b; };
 
     Rgb mix (Rgb a, Rgb b, float t) { return { a.r + (b.r - a.r) * t, a.g + (b.g - a.g) * t, a.b + (b.b - a.b) * t }; }
 
-    // Blue normal-map-ish ramp from silence to loudest, plus a magenta accent.
-    constexpr Rgb ramp[] {
-        {  22.0f,  30.0f,  92.0f },   // navy
-        {  58.0f,  78.0f, 170.0f },   // deep blue
-        {  92.0f, 112.0f, 202.0f },   // periwinkle
-        {  82.0f, 196.0f, 186.0f },   // teal
-        { 196.0f, 242.0f, 236.0f },   // pale cyan
+    constexpr Rgb skyTop    {  92.0f, 176.0f, 242.0f };
+    constexpr Rgb skyBottom {  52.0f, 138.0f, 224.0f };
+    constexpr Rgb haze      { 250.0f, 252.0f, 255.0f };
+
+    /** Large, very faint colour blurs drifting left to right. */
+    struct Blur { float y, radius, speed, phase, alpha; juce::uint32 colour; };
+
+    constexpr Blur blurs[] {
+        { 0.30f, 0.45f, 0.012f, 0.00f, 0.24f, 0xffd9b8ff },   // lavender
+        { 0.70f, 0.55f, 0.008f, 0.40f, 0.20f, 0xffffc9d6 },   // blush
+        { 0.50f, 0.40f, 0.015f, 0.75f, 0.18f, 0xffbff5dc },   // mint
+        { 0.20f, 0.35f, 0.010f, 0.55f, 0.16f, 0xfffff1c2 },   // pale gold
+        { 0.85f, 0.50f, 0.006f, 0.20f, 0.14f, 0xffc4e4ff },   // ice
     };
-    constexpr Rgb magenta { 214.0f, 68.0f, 142.0f };
 
-    Rgb rampColour (float t)
-    {
-        const auto scaled = juce::jlimit (0.0f, 0.9999f, t) * (float) (std::size (ramp) - 1);
-        const auto i = (size_t) scaled;
-        return mix (ramp[i], ramp[i + 1], scaled - (float) i);
-    }
-
-    constexpr int posterizeLevels = 9;
     constexpr float minHz = 30.0f, maxHz = 16000.0f;
     constexpr float floorDb = -78.0f;
 }
@@ -65,13 +36,11 @@ SpectrogramVisual::SpectrogramVisual (PluginProcessor& p)
 
 void SpectrogramVisual::resized()
 {
-    const auto w = juce::jmax (1, getWidth()  / pixelWidth);
-    const auto h = juce::jmax (1, getHeight() / pixelHeight);
+    const auto w = juce::jmax (1, getWidth()  / pixelSize);
+    const auto h = juce::jmax (1, getHeight() / pixelSize);
     frame = juce::Image (juce::Image::ARGB, w, h, true);
-    rowScratch.resize ((size_t) w);
     history.assign ((size_t) (w * h), 0.0f);
     head = 0;
-    glitches.clear();
 }
 
 float SpectrogramVisual::historyAt (int column, int row) const noexcept
@@ -106,7 +75,6 @@ void SpectrogramVisual::tick (double timestampSec)
 
 void SpectrogramVisual::readAudio()
 {
-    float sumSquares = 0.0f;
     int total = 0;
 
     for (;;)
@@ -119,24 +87,14 @@ void SpectrogramVisual::readAudio()
         {
             ring[(size_t) ringPos] = pullBuffer[(size_t) i];
             ringPos = (ringPos + 1) % fftSize;
-            sumSquares += pullBuffer[(size_t) i] * pullBuffer[(size_t) i];
         }
         total += n;
     }
 
     if (total > 0)
-    {
         lastAudioTime = time;
-    }
     else if (time - lastAudioTime > 0.25f)
-    {
-        // Host stopped calling us (transport stopped / bypassed): let the picture fall silent.
-        std::fill (ring.begin(), ring.end(), 0.0f);
-    }
-
-    // Fast attack, slow release, so the glitching swells with the sound.
-    const auto target = total > 0 ? juce::jlimit (0.0f, 1.0f, std::sqrt (sumSquares / (float) total) * 4.0f) : 0.0f;
-    level = target > level ? target : level * 0.95f + target * 0.05f;
+        std::fill (ring.begin(), ring.end(), 0.0f);   // host stopped calling us: let the picture fall silent
 }
 
 void SpectrogramVisual::pushColumn()
@@ -155,6 +113,7 @@ void SpectrogramVisual::pushColumn()
     const auto normalise = 2.0f / (float) fftSize * 2.0f;   // full-scale sine ≈ 0 dB (Hann loses half)
     const auto ratio = maxHz / minHz;
 
+    const auto* previous = history.data() + (size_t) (head * h);
     head = (head - 1 + w) % w;
     auto* column = history.data() + (size_t) (head * h);
 
@@ -171,7 +130,10 @@ void SpectrogramVisual::pushColumn()
             mag = juce::jmax (mag, fftData[(size_t) b]);
 
         const auto db = juce::Decibels::gainToDecibels (mag * normalise, floorDb);
-        column[y] = juce::jlimit (0.0f, 1.0f, (db - floorDb) / -floorDb);
+        const auto value = juce::jlimit (0.0f, 1.0f, (db - floorDb) / -floorDb);
+
+        // Blend with the previous column so the trail is soft rather than flickery.
+        column[y] = 0.55f * value + 0.45f * previous[y];
     }
 }
 
@@ -181,116 +143,46 @@ void SpectrogramVisual::paint (juce::Graphics& g)
         return;
 
     renderScene();
-    spawnGlitches();
-    applyGlitches();
 
-    g.setImageResamplingQuality (juce::Graphics::lowResamplingQuality);
+    g.setImageResamplingQuality (juce::Graphics::highResamplingQuality);
     g.drawImage (frame, getLocalBounds().toFloat());
-
-    // Scanlines, one per scaled-up pixel row.
-    g.setColour (juce::Colours::black.withAlpha (0.16f));
-    for (int y = 0; y < getHeight(); y += pixelHeight)
-        g.fillRect (0, y, getWidth(), 1);
 }
 
 void SpectrogramVisual::renderScene()
 {
     const auto w = frame.getWidth();
     const auto h = frame.getHeight();
-    const auto invW = 1.0f / (float) w;
-    const auto invH = 1.0f / (float) h;
 
-    // The ambient field drifts right at the same speed as the spectrogram scrolls.
-    const auto scroll = time * columnsPerSecond * invW * 1.6f;
-    const auto tearAmount = 3.0f + 18.0f * level;   // in columns
-    const auto pinkThreshold = 0.66f - 0.1f * level;
-    const auto frameSeed = (int) (time * 24.0f);    // film grain changes at 24 fps
-
-    juce::Image::BitmapData data (frame, juce::Image::BitmapData::writeOnly);
-
-    for (int y = 0; y < h; ++y)
     {
-        const auto ny = (float) y * invH;
+        juce::Image::BitmapData data (frame, juce::Image::BitmapData::writeOnly);
 
-        // Bands of rows slide sideways together: the stair-stepped datamosh edges.
-        const auto band = (float) (y / 3);
-        const auto tear = (int) std::round ((valueNoise (band * 0.45f, time * 0.5f) - 0.5f) * tearAmount
-                                            + (valueNoise (band * 0.08f + 9.0f, time * 0.15f) - 0.5f) * 8.0f);
-
-        auto* row = reinterpret_cast<juce::PixelARGB*> (data.getLinePointer (y));
-
-        for (int x = 0; x < w; ++x)
+        for (int y = 0; y < h; ++y)
         {
-            const auto spectrum = historyAt (juce::jmax (0, x + tear), y);
-
-            const auto nx = (float) (x + tear) * invW;
-            const auto u = nx * 1.6f - scroll + ny * 0.5f;
-            const auto v = ny * 4.0f;
-            const auto ambient = fbm (u, v + time * 0.04f);
-
-            // Idle, the field alone reaches periwinkle / teal; sound pushes it up to cyan.
-            const auto value = juce::jlimit (0.0f, 1.0f, (ambient - 0.2f) * 1.05f + spectrum * 0.8f);
-            const auto stepped = std::floor (value * posterizeLevels) / (float) (posterizeLevels - 1);
-            auto c = rampColour (stepped);
-
-            // Magenta streaks through the loud partials.
-            const auto pink = fbm (u * 2.2f + 40.0f, v * 2.5f);
-            if (pink > pinkThreshold + 0.08f * (1.0f - spectrum))
-                c = mix (c, magenta, juce::jlimit (0.0f, 0.85f, std::floor ((pink - pinkThreshold) * 20.0f) / 3.0f));
-
-            const auto grain = (hash (x + frameSeed * 131, y) - 0.5f) * 12.0f;
-
-            row[x].setARGB (0xff,
-                            (juce::uint8) juce::jlimit (0.0f, 255.0f, c.r + grain),
-                            (juce::uint8) juce::jlimit (0.0f, 255.0f, c.g + grain),
-                            (juce::uint8) juce::jlimit (0.0f, 255.0f, c.b + grain));
-        }
-    }
-}
-
-void SpectrogramVisual::spawnGlitches()
-{
-    const auto h = frame.getHeight();
-    const auto chance = 0.06f + 0.45f * level;
-
-    if (random.nextFloat() < chance && glitches.size() < 10)
-    {
-        Glitch gl;
-        gl.height = 1 + random.nextInt (juce::jmax (2, h / 6));
-        gl.y = random.nextInt (juce::jmax (1, h - gl.height));
-        gl.shift = (random.nextBool() ? 1 : -1) * (2 + random.nextInt (juce::jmax (3, (int) (frame.getWidth() * (0.05f + 0.25f * level)))));
-        gl.framesLeft = 2 + random.nextInt (12);
-        gl.rgbSplit = random.nextFloat() < 0.4f;
-        glitches.push_back (gl);
-    }
-}
-
-void SpectrogramVisual::applyGlitches()
-{
-    const auto w = frame.getWidth();
-    juce::Image::BitmapData data (frame, juce::Image::BitmapData::readWrite);
-
-    for (auto& gl : glitches)
-    {
-        const auto split = gl.rgbSplit ? 1 + std::abs (gl.shift) / 6 : 0;
-
-        for (int y = gl.y; y < juce::jmin (gl.y + gl.height, frame.getHeight()); ++y)
-        {
+            const auto sky = mix (skyTop, skyBottom, (float) y / (float) h);
             auto* row = reinterpret_cast<juce::PixelARGB*> (data.getLinePointer (y));
-            std::copy (row, row + w, rowScratch.begin());
-
-            auto at = [&] (int x) -> const juce::PixelARGB& { return rowScratch[(size_t) (((x % w) + w) % w)]; };
 
             for (int x = 0; x < w; ++x)
             {
-                const auto src = x - gl.shift;
-                row[x].setARGB (0xff, at (src + split).getRed(), at (src).getGreen(), at (src - split).getBlue());
+                // Sound shows as hazy white light; the curve keeps quiet partials barely visible.
+                const auto s = historyAt (x, y);
+                const auto c = mix (sky, haze, 0.85f * s * s * s);
+                row[x].setARGB (0xff, (juce::uint8) c.r, (juce::uint8) c.g, (juce::uint8) c.b);
             }
         }
-
-        --gl.framesLeft;
     }
 
-    glitches.erase (std::remove_if (glitches.begin(), glitches.end(), [] (const Glitch& gl) { return gl.framesLeft <= 0; }),
-                    glitches.end());
+    juce::Graphics g (frame);
+    const auto fw = (float) w, fh = (float) h;
+
+    for (const auto& b : blurs)
+    {
+        const auto t = b.phase + time * b.speed;
+        const auto cx = ((t - std::floor (t)) * 1.8f - 0.4f) * fw;
+        const auto cy = (b.y + 0.08f * std::sin (time * 0.11f + b.phase * 6.0f)) * fh;
+        const auto r  = b.radius * fw;
+        const auto colour = juce::Colour (b.colour);
+
+        g.setGradientFill ({ colour.withAlpha (b.alpha), cx, cy, colour.withAlpha (0.0f), cx + r, cy, true });
+        g.fillEllipse (cx - r, cy - r * 0.6f, r * 2.0f, r * 1.2f);
+    }
 }
