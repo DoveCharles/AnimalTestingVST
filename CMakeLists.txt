@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(AT_COPY_PLUGIN_AFTER_BUILD "Copy built plugins into the system plugin folders" ON)
+option(AT_BUILD_TOOLS "Build developer tools such as WaterfallPreview" OFF)
 
 add_subdirectory(libs/JUCE)
 
@@ -25,3 +26,7 @@ juce_add_module(shared/at_shared ALIAS_NAMESPACE at)
 # ------------------------------------------------------------------------------
 at_plugin(Saturator CODE Satr)
 at_plugin(Waterfall CODE Wtfl)
+
+if(AT_BUILD_TOOLS)
+    add_subdirectory(tools/WaterfallPreview)
+endif()

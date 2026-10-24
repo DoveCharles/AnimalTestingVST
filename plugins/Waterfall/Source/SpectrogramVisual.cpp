@@ -72,9 +72,8 @@ namespace
     }
 
     constexpr float flowCycle = 6.0f;      // seconds per flow-map cycle (two offset layers cross-fade)
-    constexpr float edgeStart = 0.76f;     // where trails start dissolving into pixels, as a fraction of width
 
-    constexpr float minHz = 30.0f, maxHz = 16000.0f;
+    constexpr float minHz = 40.0f, maxHz = 10000.0f;
     constexpr float floorDb = -78.0f;
 }
 
@@ -93,7 +92,7 @@ void SpectrogramVisual::resized()
     const auto h = juce::jmax (1, getHeight() / pixelSize);
     frame = juce::Image (juce::Image::ARGB, w, h, true);
     history.assign ((size_t) (w * h), 0.0f);
-    columnEnergy.assign ((size_t) w, 0.0f);
+    columnValues.assign ((size_t) h, 0.0f);
     head = 0;
 
     if (! grain.isValid())
@@ -117,19 +116,6 @@ float SpectrogramVisual::historyAt (int column, int row) const noexcept
     const auto w = frame.getWidth();
     const auto c = (((head + column) % w) + w) % w;
     return history[(size_t) (c * frame.getHeight() + row)];
-}
-
-float SpectrogramVisual::sampleHistory (float column, float row) const noexcept
-{
-    const auto w = frame.getWidth(), h = frame.getHeight();
-    column = juce::jlimit (0.0f, (float) (w - 1), column);
-    row    = juce::jlimit (0.0f, (float) (h - 1), row);
-    const auto c0 = (int) column, r0 = (int) row;
-    const auto c1 = juce::jmin (c0 + 1, w - 1), r1 = juce::jmin (r0 + 1, h - 1);
-    const auto fc = column - (float) c0, fr = row - (float) r0;
-    const auto top    = historyAt (c0, r0) + (historyAt (c1, r0) - historyAt (c0, r0)) * fc;
-    const auto bottom = historyAt (c0, r1) + (historyAt (c1, r1) - historyAt (c0, r1)) * fc;
-    return top + (bottom - top) * fr;
 }
 
 void SpectrogramVisual::tick (double timestampSec)
@@ -214,11 +200,23 @@ void SpectrogramVisual::pushColumn()
         for (int b = lo; b <= hi; ++b)
             mag = juce::jmax (mag, fftData[(size_t) b]);
 
-        const auto db = juce::Decibels::gainToDecibels (mag * normalise, floorDb);
-        const auto value = juce::jlimit (0.0f, 1.0f, (db - floorDb) / -floorDb);
+        // Tilt around 1 kHz, +3 dB per octave below and +9 dB per octave above: real sound falls off
+        // steeply with pitch, so without this the upper partials barely show.
+        const auto centreHz = minHz * std::pow (ratio, 0.5f * (t0 + t1));
+        const auto octaves = std::log2 (centreHz / 1000.0f);
+        const auto tilt = octaves * (octaves > 0.0f ? 9.0f : 3.0f);
+        const auto db = juce::jmax (floorDb, juce::Decibels::gainToDecibels (mag * normalise, -200.0f) + tilt);
+        columnValues[(size_t) y] = juce::jlimit (0.0f, 1.0f, (db - floorDb) / -floorDb);
+    }
 
-        // Blend with the previous column so the trail is soft rather than flickery.
-        column[y] = 0.55f * value + 0.45f * previous[y];
+    for (int y = 0; y < h; ++y)
+    {
+        // Soften across neighbouring frequencies, then blend with the previous column, so hits smear into
+        // the flow rather than showing as hard blocks.
+        const auto above = columnValues[(size_t) juce::jmax (0, y - 1)];
+        const auto below = columnValues[(size_t) juce::jmin (h - 1, y + 1)];
+        const auto value = 0.25f * above + 0.5f * columnValues[(size_t) y] + 0.25f * below;
+        column[y] = 0.4f * value + 0.6f * previous[y];
 
         // Loud partials shed glowing particles of their own colour into the current.
         const auto s = column[y];
@@ -268,7 +266,6 @@ void SpectrogramVisual::paint (juce::Graphics& g)
     g.setImageResamplingQuality (juce::Graphics::highResamplingQuality);
     g.drawImage (frame, getLocalBounds().toFloat());
 
-    drawDigitalEdge (g);
     drawParticles (g);
 
     // Fine film grain at full resolution, shifted every frame so it lives rather than sits.
@@ -280,14 +277,6 @@ void SpectrogramVisual::renderScene()
 {
     const auto w = frame.getWidth();
     const auto h = frame.getHeight();
-
-    for (int x = 0; x < w; ++x)
-    {
-        float loudest = 0.0f;
-        for (int y = 0; y < h; ++y)
-            loudest = juce::jmax (loudest, historyAt (x, y));
-        columnEnergy[(size_t) x] = loudest;
-    }
 
     // Flow map: two layers of noise slide with the current and cross-fade, so the streaks keep
     // flowing without the faster middle shearing them apart over time.
@@ -328,16 +317,14 @@ void SpectrogramVisual::renderScene()
                 const auto caustic = 0.5f * (std::pow (r1, 8.0f) + std::pow (r2, 8.0f));
                 c = mix (c, haze, 0.16f * caustic * (1.0f - 0.5f * ny));
 
-                // Ripple: trails wobble as if seen through moving water, more where the sound is louder.
-                const auto amp = 0.3f + 2.5f * columnEnergy[(size_t) x];
-                const auto sx = fx + 0.5f * amp * std::sin (fy * 0.3f + time * 2.7f);
-                const auto sy = fy + amp * std::sin (fx * 0.35f - time * 4.0f + fy * 0.05f);
-                const auto edgeFade = 1.0f - smoothstep (edgeStart, 1.0f, fx / (float) w);
-                const auto s = sampleHistory (sx, sy) * edgeFade;
+                const auto s = historyAt (x, y);
 
-                // The curve keeps quiet partials barely visible; the loudest glow white.
-                c = mix (c, toRgb (trailColour (ny, fx / (float) w)), juce::jmin (1.0f, 1.1f * s * s));
-                c = mix (c, haze, 0.5f * s * s * s * s);
+                // The curve keeps quiet partials barely visible; the loudest glow white. Higher trails use a
+                // gentler curve and extra light, since their cyan-to-violet hues would otherwise sink into the sky.
+                const auto up = 1.0f - ny;
+                const auto strength = std::pow (s, 2.0f - 0.7f * up);
+                c = mix (c, toRgb (trailColour (ny, fx / (float) w)), juce::jmin (1.0f, 1.1f * strength));
+                c = mix (c, haze, 0.5f * s * s * s * s + 0.45f * up * strength);
                 row[x].setARGB (0xff, (juce::uint8) c.r, (juce::uint8) c.g, (juce::uint8) c.b);
             }
         }
@@ -371,38 +358,5 @@ void SpectrogramVisual::drawParticles (juce::Graphics& g) const
         g.fillEllipse (p.x - r, p.y - r, r * 2.0f, r * 2.0f);
         g.setColour (juce::Colours::white.withAlpha (0.16f * alpha));
         g.fillEllipse (p.x - p.size * 0.5f, p.y - p.size * 0.5f, p.size, p.size);
-    }
-}
-
-void SpectrogramVisual::drawDigitalEdge (juce::Graphics& g) const
-{
-    // Near the right edge the trails dissolve into soft squares on a fixed grid. Each square breathes
-    // in and out slowly rather than flickering.
-    constexpr int block = 10;
-    const auto width = (float) getWidth(), height = (float) getHeight();
-    const auto w = frame.getWidth(), h = frame.getHeight();
-
-    for (auto bx = (int) (width * edgeStart) / block; bx * block < getWidth(); ++bx)
-    {
-        const auto cx = ((float) bx + 0.5f) * (float) block;
-        const auto u = juce::jlimit (0.0f, 1.0f, (cx / width - edgeStart) / (1.0f - edgeStart));
-
-        for (int by = 0; by * block < getHeight(); ++by)
-        {
-            const auto cy = ((float) by + 0.5f) * (float) block;
-            const auto s = sampleHistory (cx / width * (float) w, cy / height * (float) h);
-            const auto density = std::pow (s, 1.5f) * (1.0f - 0.7f * u);
-            const auto seed = hash (bx, by);
-
-            if (seed >= density)
-                continue;
-
-            const auto pulse = 0.5f + 0.5f * std::sin (time * 1.5f + seed * 40.0f);
-            const auto size = (float) block * (0.45f + 0.45f * (1.0f - u));
-            const auto colour = trailColour (cy / height, cx / width).interpolatedWith (juce::Colours::white, 0.25f);
-
-            g.setColour (colour.withAlpha (0.6f * density * pulse));
-            g.fillRect (juce::Rectangle<float> (size, size).withCentre ({ cx, cy }));
-        }
     }
 }
