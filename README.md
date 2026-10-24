@@ -6,6 +6,7 @@ A monorepo of audio plugins by **Animal Testing**. Each plugin builds as VST3 (W
 |---|---|---|---|
 | [AT Saturator](plugins/Saturator) | `Satr` | 1.0.0 | tanh saturator with Drive, Tone (low-pass) and Mix |
 | [AT Waterfall](plugins/Waterfall) | `Wtfl` | 1.0.0 | SP-404-style chord resonator: Key, Chord, Brightness, Decay, Mix, with a soft sky-blue spectrogram |
+| [AT Green Rooskie](plugins/GreenRooskie) | `Grsk` | 1.0.0 | Fuzz modelled on the 90s green Russian muff: Volume, Tone, Sustain and a footswitch, 4x oversampled |
 
 ## Layout
 
