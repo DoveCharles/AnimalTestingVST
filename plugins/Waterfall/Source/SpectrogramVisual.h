@@ -5,7 +5,8 @@
 class PluginProcessor;
 
 /** Scrolling spectrogram of the plugin's output on a soft sky-blue field: sound shows as smooth
-    rainbow trails coloured by pitch, with faint coloured blurs drifting through. Newest audio enters on the left and
+    rainbow trails coloured by pitch, with faint coloured blurs and slow cloudy noise drifting
+    through, under a fine film grain. Newest audio enters on the left and
     flows right. Rendered small and scaled up smoothly so everything stays soft. */
 class SpectrogramVisual final : public juce::Component
 {
@@ -43,6 +44,8 @@ private:
     double columnsEmitted = 0.0;
 
     juce::Image frame;
+    juce::Image grain;   // full-resolution tile, re-positioned every frame
+    juce::Random random;
 
     double startTime = -1.0;
     float time = 0.0f;
