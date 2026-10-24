@@ -20,6 +20,7 @@ shared/at_shared/         JUCE module shared by all plugins
 plugins/<Name>/           one folder per plugin, self-contained
 templates/PluginTemplate/ starting point for new plugins (a simple gain plugin)
 scripts/NewPlugin.cmake   copies the template and registers the new plugin
+tools/                    developer tools, built with -DAT_BUILD_TOOLS=ON
 libs/JUCE/                JUCE submodule (pinned to 9.0.4)
 ```
 
@@ -90,6 +91,18 @@ Every parameter goes through `AudioProcessorValueTreeState` (created in `at::Pro
 ### Presets
 
 `at::PresetBar` (Save / Init and a preset list) saves user presets as `.atpreset` XML in `~/Documents/Animal Testing/<Plugin>/Presets/`. Ableton's own device presets (`.adv`) work as usual too.
+
+## Previewing Waterfall offline
+
+`WaterfallPreview` plays an audio file through the Waterfall processor and saves PNG snapshots of the editor, so you can check the spectrogram with real audio without a DAW:
+
+```bash
+cmake -S . -B build -DAT_BUILD_TOOLS=ON
+cmake --build build --target WaterfallPreview
+build/tools/WaterfallPreview/WaterfallPreview_artefacts/Release/WaterfallPreview song.mp3 out --every=5 --chord=Add9 --decay=10
+```
+
+Parameters take the same text the knobs show (`--key=E`, `--brightness=86`, `--mix=100`).
 
 ## CI
 

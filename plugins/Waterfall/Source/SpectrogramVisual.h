@@ -5,10 +5,9 @@
 class PluginProcessor;
 
 /** Scrolling spectrogram of the plugin's output, styled as a digital river. Sound shows as smooth
-    rainbow trails coloured by pitch that ripple with loudness, carried left to right by a current of
-    streaky, colour-varied noise with faint caustics. Notes shed glowing particles into the current, and
-    the trails dissolve into soft pixel squares at the right edge. Faint coloured blurs and a fine film
-    grain sit over everything. Rendered small and scaled up smoothly so everything stays soft. */
+    rainbow trails coloured by pitch, carried left to right by a current of streaky, colour-varied noise
+    with faint caustics. Notes shed faint particles into the current. Faint coloured blurs and a fine
+    film grain sit over everything. Rendered small and scaled up smoothly so everything stays soft. */
 class SpectrogramVisual final : public juce::Component
 {
 public:
@@ -17,18 +16,19 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
 
-private:
+    /** Advances the visual to the given time. Called on every vblank, and by tools/WaterfallPreview
+        to render offline. */
     void tick (double timestampSec);
+
+private:
     void readAudio();
     void pushColumn();
     void renderScene();
     void updateParticles (float dt);
     void drawParticles (juce::Graphics&) const;
-    void drawDigitalEdge (juce::Graphics&) const;
     void spawnParticle (float x, float y, juce::Colour);
 
     float historyAt (int column, int row) const noexcept;
-    float sampleHistory (float column, float row) const noexcept;
 
     /** Light carried along by the current, in component pixels. */
     struct Particle { float x, y, vx, phase, size, age, life; juce::Colour colour; };
@@ -50,13 +50,13 @@ private:
     // Spectrogram history, column-major, values 0..1. Column `head` is the newest.
     std::vector<float> history;
     int head = 0;
+    std::vector<float> columnValues;   // the column being analysed, before smoothing
     double columnsEmitted = 0.0;
 
     juce::Image frame;
     juce::Image grain;   // full-resolution tile, re-positioned every frame
     juce::Random random;
     std::vector<Particle> particles;
-    std::vector<float> columnEnergy;   // loudest value per frame column, drives the ripples
 
     double startTime = -1.0;
     float time = 0.0f;
