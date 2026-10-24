@@ -1,0 +1,24 @@
+# Build output
+build/
+build-*/
+cmake-build-*/
+out/
+dist/
+*.zip
+
+# IDEs / editors
+.vs/
+.vscode/
+.idea/
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+*.user
+*.suo
+.cache/
+compile_commands.json
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
