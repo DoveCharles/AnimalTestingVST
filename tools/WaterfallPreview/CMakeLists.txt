@@ -8,7 +8,8 @@ target_sources(WaterfallPreview PRIVATE
     Main.cpp
     "${waterfall_source}/PluginProcessor.cpp"
     "${waterfall_source}/PluginEditor.cpp"
-    "${waterfall_source}/SpectrogramVisual.cpp")
+    "${waterfall_source}/SpectrogramVisual.cpp"
+    "${waterfall_source}/WaterfallLookAndFeel.cpp")
 
 target_include_directories(WaterfallPreview PRIVATE "${waterfall_source}")
 

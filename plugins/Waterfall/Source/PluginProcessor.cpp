@@ -103,6 +103,7 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
     auto* left  = buffer.getWritePointer (0);
     auto* right = numOut > 1 ? buffer.getWritePointer (1) : nullptr;
     const auto inputScale = 1.0f / (float) juce::jmax (1, numIn);
+    float inputSum = 0.0f, ringSum = 0.0f, highSum = 0.0f;
 
     for (int n = 0; n < numSamples; ++n)
     {
@@ -123,6 +124,12 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
         outL = std::tanh (outL * outputDrive);
         outR = std::tanh (outR * outputDrive);
 
+        const auto ring = 0.5f * (outL + outR);
+        inputSum += in * in;
+        ringSum  += ring * ring;
+        highSum  += (ring - lastRing) * (ring - lastRing);
+        lastRing = ring;
+
         if (right != nullptr)
         {
             left[n]  = outL;
@@ -135,6 +142,14 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
     }
 
     dryWet.mixWetSamples (block);
+
+    if (numSamples > 0)
+    {
+        const auto norm = 1.0f / (float) numSamples;
+        inputLevel = std::sqrt (inputSum * norm);
+        ringLevel  = std::sqrt (ringSum * norm);
+        highLevel  = std::sqrt (highSum * norm);
+    }
 
     // Feed the editor's spectrogram with the final mono output. Drops samples if the GUI isn't reading.
     const auto scope = scopeFifo.write (juce::jmin (numSamples, scopeFifo.getFreeSpace()));

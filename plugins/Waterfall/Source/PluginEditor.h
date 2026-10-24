@@ -2,6 +2,8 @@
 
 #include "PluginProcessor.h"
 #include "SpectrogramVisual.h"
+#include "WaterfallLookAndFeel.h"
+#include "Overlays.h"
 
 class PluginEditor final : public juce::AudioProcessorEditor
 {
@@ -12,11 +14,18 @@ public:
     void resized() override;
 
 private:
-    juce::SharedResourcePointer<at::LookAndFeel> sharedLookAndFeel;
+    /** Moves the chord read-out and lets each knob glow with its part of the sound. */
+    void animate (float time);
+
+    PluginProcessor& waterfall;
+    WaterfallLookAndFeel lookAndFeel;
 
     SpectrogramVisual visual;
-    GlassPanel controlsPanel;
+    KnobShadows shadows;
+    ChordReadout chordReadout;
     at::Knob key, chord, brightness, decay, mix;
+
+    std::array<float, 5> glow {};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };

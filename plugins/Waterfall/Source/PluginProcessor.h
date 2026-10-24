@@ -31,6 +31,11 @@ public:
         Call from the message thread only. Returns how many samples were copied. */
     int pullScopeSamples (float* dest, int maxSamples);
 
+    /** RMS levels of the last block, for the editor's knob glow: the input, the resonators' ring
+        (before the dry/wet mix), and the ring's high end. */
+    struct Levels { float input, ring, high; };
+    Levels getLevels() const noexcept { return { inputLevel.load(), ringLevel.load(), highLevel.load() }; }
+
 private:
     void updateTuning();
 
@@ -45,6 +50,9 @@ private:
     int currentKey = -1, currentChord = -1;
 
     juce::dsp::DryWetMixer<float> dryWet;
+
+    std::atomic<float> inputLevel { 0.0f }, ringLevel { 0.0f }, highLevel { 0.0f };
+    float lastRing = 0.0f;
 
     // Single-producer (audio) / single-consumer (GUI) FIFO feeding the spectrogram.
     static constexpr int scopeFifoSize = 1 << 15;

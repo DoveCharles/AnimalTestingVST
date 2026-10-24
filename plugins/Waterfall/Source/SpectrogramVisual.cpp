@@ -142,6 +142,9 @@ void SpectrogramVisual::tick (double timestampSec)
 
     updateParticles (dt);
     repaint();
+
+    if (onTick)
+        onTick (time);
 }
 
 void SpectrogramVisual::readAudio()
