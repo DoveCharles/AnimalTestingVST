@@ -4,10 +4,11 @@
 
 class PluginProcessor;
 
-/** Scrolling spectrogram of the plugin's output on a soft sky-blue field: sound shows as smooth
-    rainbow trails coloured by pitch, with faint coloured blurs and slow cloudy noise drifting
-    through, under a fine film grain. Newest audio enters on the left and
-    flows right. Rendered small and scaled up smoothly so everything stays soft. */
+/** Scrolling spectrogram of the plugin's output, styled as a digital river. Sound shows as smooth
+    rainbow trails coloured by pitch that ripple with loudness, carried left to right by a current of
+    streaky, colour-varied noise with faint caustics. Notes shed glowing particles into the current, and
+    the trails dissolve into soft pixel squares at the right edge. Faint coloured blurs and a fine film
+    grain sit over everything. Rendered small and scaled up smoothly so everything stays soft. */
 class SpectrogramVisual final : public juce::Component
 {
 public:
@@ -21,8 +22,16 @@ private:
     void readAudio();
     void pushColumn();
     void renderScene();
+    void updateParticles (float dt);
+    void drawParticles (juce::Graphics&) const;
+    void drawDigitalEdge (juce::Graphics&) const;
+    void spawnParticle (float x, float y, juce::Colour);
 
     float historyAt (int column, int row) const noexcept;
+    float sampleHistory (float column, float row) const noexcept;
+
+    /** Light carried along by the current, in component pixels. */
+    struct Particle { float x, y, vx, phase, size, age, life; juce::Colour colour; };
 
     PluginProcessor& processor;
     juce::VBlankAttachment vblank;
@@ -46,12 +55,16 @@ private:
     juce::Image frame;
     juce::Image grain;   // full-resolution tile, re-positioned every frame
     juce::Random random;
+    std::vector<Particle> particles;
+    std::vector<float> columnEnergy;   // loudest value per frame column, drives the ripples
 
     double startTime = -1.0;
     float time = 0.0f;
     float lastAudioTime = 0.0f;
+    float lastTickTime = 0.0f;
 
     static constexpr int pixelSize = 4;
+    static constexpr size_t maxParticles = 220;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SpectrogramVisual)
 };
