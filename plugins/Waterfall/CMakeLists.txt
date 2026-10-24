@@ -6,4 +6,5 @@ at_add_plugin(${PROJECT_NAME}
     SOURCES
         Source/PluginProcessor.cpp
         Source/PluginEditor.cpp
-        Source/SpectrogramVisual.cpp)
+        Source/SpectrogramVisual.cpp
+        Source/WaterfallLookAndFeel.cpp)

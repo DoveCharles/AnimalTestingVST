@@ -20,6 +20,10 @@ public:
         to render offline. */
     void tick (double timestampSec);
 
+    /** Called at the end of every tick with the visual's time in seconds, so the editor can animate
+        its controls in step with the visual (also when rendered offline). */
+    std::function<void (float)> onTick;
+
 private:
     void readAudio();
     void pushColumn();
@@ -67,18 +71,4 @@ private:
     static constexpr size_t maxParticles = 220;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SpectrogramVisual)
-};
-
-/** Translucent frosted-glass panel to sit controls on top of the visual. */
-class GlassPanel final : public juce::Component
-{
-public:
-    void paint (juce::Graphics& g) override
-    {
-        const auto r = getLocalBounds().toFloat().reduced (0.5f);
-        g.setColour (juce::Colour (0xff0d3a63).withAlpha (0.28f));
-        g.fillRoundedRectangle (r, 8.0f);
-        g.setColour (juce::Colours::white.withAlpha (0.35f));
-        g.drawRoundedRectangle (r, 8.0f, 1.0f);
-    }
 };
