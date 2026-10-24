@@ -22,6 +22,10 @@ public:
     static juce::Font valueFont (float height);
     static juce::Font thinFont (float height);
 
+    /** Draws white text with a soft dark halo, so it reads over the brightest parts of the visual. */
+    static void drawHaloText (juce::Graphics&, const juce::String&, juce::Rectangle<float>, juce::Justification,
+                              juce::Colour);
+
     static constexpr auto glowProperty = "glow";
     static inline const juce::Colour shadow { 0xff04182e };
 };
