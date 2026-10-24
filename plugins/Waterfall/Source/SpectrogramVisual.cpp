@@ -22,6 +22,35 @@ namespace
         { 0.85f, 0.50f, 0.006f, 0.20f, 0.14f, 0xffc4e4ff },   // ice
     };
 
+    constexpr Rgb cloudDark  { 34.0f, 92.0f, 196.0f };    // deeper indigo-blue patches
+    constexpr Rgb cloudLight { 120.0f, 206.0f, 238.0f };  // paler teal patches
+
+    float hash (int x, int y) noexcept
+    {
+        auto n = (juce::uint32) (x * 374761393 + y * 668265263);
+        n = (n ^ (n >> 13)) * 1274126177u;
+        return (float) ((n ^ (n >> 16)) & 0xffffu) / 65535.0f;
+    }
+
+    /** Smooth 2D value noise in 0..1. */
+    float valueNoise (float x, float y) noexcept
+    {
+        const auto ix = (int) std::floor (x), iy = (int) std::floor (y);
+        auto fx = x - (float) ix, fy = y - (float) iy;
+        fx = fx * fx * (3.0f - 2.0f * fx);
+        fy = fy * fy * (3.0f - 2.0f * fy);
+        const auto top    = hash (ix, iy)     + (hash (ix + 1, iy)     - hash (ix, iy))     * fx;
+        const auto bottom = hash (ix, iy + 1) + (hash (ix + 1, iy + 1) - hash (ix, iy + 1)) * fx;
+        return top + (bottom - top) * fy;
+    }
+
+    /** A few octaves of value noise for a cloudy, painterly texture, roughly 0..1. */
+    float clouds (float x, float y) noexcept
+    {
+        return 0.55f * valueNoise (x, y) + 0.3f * valueNoise (x * 2.1f + 5.2f, y * 2.1f + 1.3f)
+             + 0.15f * valueNoise (x * 4.3f + 9.7f, y * 4.3f + 3.1f);
+    }
+
     constexpr float minHz = 30.0f, maxHz = 16000.0f;
     constexpr float floorDb = -78.0f;
 }
@@ -39,6 +68,21 @@ void SpectrogramVisual::resized()
     const auto w = juce::jmax (1, getWidth()  / pixelSize);
     const auto h = juce::jmax (1, getHeight() / pixelSize);
     frame = juce::Image (juce::Image::ARGB, w, h, true);
+
+    if (! grain.isValid())
+    {
+        grain = juce::Image (juce::Image::ARGB, 256, 256, true);
+        juce::Image::BitmapData data (grain, juce::Image::BitmapData::writeOnly);
+        for (int y = 0; y < grain.getHeight(); ++y)
+            for (int x = 0; x < grain.getWidth(); ++x)
+            {
+                const auto v = random.nextFloat();
+                const auto light = v > 0.5f;
+                const auto a = (juce::uint8) (std::abs (v - 0.5f) * 2.0f * 255.0f);
+                const auto grey = (juce::uint8) (light ? 255 : 10);
+                data.setPixelColour (x, y, juce::Colour (grey, grey, grey, a));
+            }
+    }
     history.assign ((size_t) (w * h), 0.0f);
     head = 0;
 }
@@ -146,6 +190,10 @@ void SpectrogramVisual::paint (juce::Graphics& g)
 
     g.setImageResamplingQuality (juce::Graphics::highResamplingQuality);
     g.drawImage (frame, getLocalBounds().toFloat());
+
+    // Fine film grain at full resolution, shifted every frame so it lives rather than sits.
+    g.setTiledImageFill (grain, -random.nextInt (256), -random.nextInt (256), 0.07f);
+    g.fillAll();
 }
 
 void SpectrogramVisual::renderScene()
@@ -159,13 +207,18 @@ void SpectrogramVisual::renderScene()
         for (int y = 0; y < h; ++y)
         {
             const auto ny = (float) y / (float) h;
-            const auto sky = mix (skyTop, skyBottom, ny);
+            const auto skyBase = mix (skyTop, skyBottom, ny);
             auto* row = reinterpret_cast<juce::PixelARGB*> (data.getLinePointer (y));
 
             for (int x = 0; x < w; ++x)
             {
                 // Each pitch has its own hue: red for lows up to violet for highs, drifting slightly
                 // along the trail. The curve keeps quiet partials barely visible; the loudest glow white.
+                // Slow cloudy noise drifting left to right breaks the flat blue into soft patches.
+                const auto n = clouds ((float) x * 0.045f - time * 0.05f, (float) y * 0.06f + time * 0.012f);
+                const auto sky = n < 0.5f ? mix (skyBase, cloudDark,  juce::jmin (1.0f, (0.5f - n) * 1.6f))
+                                          : mix (skyBase, cloudLight, juce::jmin (1.0f, (n - 0.5f) * 1.4f));
+
                 const auto s = historyAt (x, y);
                 const auto hue = 0.8f * (1.0f - ny) + 0.06f * (float) x / (float) w;
                 const auto rainbow = juce::Colour::fromHSV (hue, 0.6f, 1.0f, 1.0f);
