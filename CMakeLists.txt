@@ -30,6 +30,7 @@ at_plugin(GreenRooskie CODE Grsk)
 at_plugin(Shifty CODE Shft)
 at_plugin(SkyChorus CODE Skyc)
 at_plugin(Cabinet CODE Cabn)
+at_plugin(SevenRooms CODE Svnr)
 
 if(AT_BUILD_TOOLS)
     add_subdirectory(tools/WaterfallPreview)
