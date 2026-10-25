@@ -46,7 +46,7 @@ private:
     std::atomic<float>& mixParam;
 
     std::array<at::dsp::CombResonator, Chords::numVoices> voices;
-    std::array<float, Chords::numVoices> panLeft {}, panRight {};
+    std::array<juce::SmoothedValue<float>, Chords::numVoices> panLeft, panRight;
     int currentKey = -1, currentChord = -1;
 
     juce::dsp::DryWetMixer<float> dryWet;
