@@ -242,13 +242,16 @@ namespace
         }
     }
 
-    /** Early reflections and a short diffuse tail around the IR. Each channel gets its own seed. */
-    std::vector<float> addRoom (const std::vector<float>& ir, double sampleRate, float amount, juce::int64 seed)
+    /** Early reflections and a short diffuse tail around the IR, for one side of the stereo pair (+1 left,
+        -1 right). Panning a stereo track in most DAWs is a balance control, so each side has to sound like
+        the cab on its own: the reflections are shared, and the tail is a shared part plus a smaller side
+        part added on the left and taken away on the right. */
+    std::vector<float> addRoom (const std::vector<float>& ir, double sampleRate, float amount, float side)
     {
         if (amount <= 0.0f)
             return ir;
 
-        juce::Random random (seed);
+        juce::Random random (0x5eed);
         constexpr float rt60 = 0.3f;
         const auto tailLength = (size_t) (sampleRate * rt60 * 1.1);
         std::vector<float> out (ir.size() + tailLength);
@@ -279,13 +282,17 @@ namespace
         }
 
         // Diffuse tail: decaying noise, faded in once the reflections thin out.
+        constexpr float sideWidth = 0.4f;
+        juce::Random sideRandom (0x51de);
+        random.setSeed (0x7a11);
         std::vector<float> tail (tailLength);
         auto tailEnergy = 0.0f;
         for (size_t i = 0; i < tailLength; ++i)
         {
             const auto t = (float) ((double) i / sampleRate);
             const auto fadeIn = juce::jlimit (0.0f, 1.0f, (t - 0.008f) / 0.015f);
-            tail[i] = (random.nextFloat() * 2.0f - 1.0f) * fadeIn * std::exp (-6.91f * t / rt60);
+            const auto noise = (random.nextFloat() * 2.0f - 1.0f) + side * sideWidth * (sideRandom.nextFloat() * 2.0f - 1.0f);
+            tail[i] = noise * fadeIn * std::exp (-6.91f * t / rt60);
         }
         tail = onePoleLowPass (std::move (tail), sampleRate, 3500.0f);
         for (auto s : tail)
@@ -401,7 +408,7 @@ juce::AudioBuffer<float> buildImpulse (const Settings& settings, double sampleRa
 
     const auto roomAmount = settings.room * (0.6f + 0.4f * settings.distance);
     for (size_t ch = 0; ch < channels.size(); ++ch)
-        channels[ch] = addRoom (channels[ch], sampleRate, roomAmount, 0x5eed + (juce::int64) ch * 977);
+        channels[ch] = addRoom (channels[ch], sampleRate, roomAmount, ch == 0 ? 1.0f : -1.0f);
 
     const auto length = juce::jmax (channels[0].size(), channels[1].size());
     juce::AudioBuffer<float> result (2, (int) length);
