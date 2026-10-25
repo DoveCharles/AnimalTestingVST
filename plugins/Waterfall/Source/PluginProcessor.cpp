@@ -3,9 +3,13 @@
 
 namespace
 {
-    // Voices alternate left/right and are detuned by a few cents for a wide, shimmering ring.
-    constexpr std::array<float, Chords::numVoices> voicePan    { -0.7f, 0.7f, -0.35f, 0.35f, -0.9f, 0.9f };
-    constexpr std::array<float, Chords::numVoices> voiceDetune { -4.0f, 4.0f,  -2.0f,  2.0f, -6.0f, 6.0f };
+    // Pan and detune by each tone's place in the chord, lowest first, for a wide, shimmering ring. Each
+    // side gets an even share of low and high tones and its detunes cancel, so panning the track (a
+    // balance control on stereo tracks in most DAWs) doesn't make it brighter or sharper on one side.
+    // No tone is more than about 8 dB louder on one side, so panning thins the chord rather than losing notes;
+    // most of the width comes from the detune between partners.
+    constexpr std::array<float, Chords::numVoices> rankPan    { -0.4f, 0.5f,  0.4f, -0.5f, -0.2f,  0.2f };
+    constexpr std::array<float, Chords::numVoices> rankDetune { -4.0f, 4.0f, -6.0f,  6.0f, -2.0f,  2.0f };
 
     constexpr float outputDrive = 0.6f;
 }
@@ -18,13 +22,6 @@ PluginProcessor::PluginProcessor()
       decayParam      (at::params::raw (apvts, ParamIDs::decay)),
       mixParam        (at::params::raw (apvts, ParamIDs::mix))
 {
-    for (size_t v = 0; v < voices.size(); ++v)
-    {
-        // Equal-power pan.
-        const auto angle = (voicePan[v] + 1.0f) * juce::MathConstants<float>::pi * 0.25f;
-        panLeft[v]  = std::cos (angle);
-        panRight[v] = std::sin (angle);
-    }
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParameterLayout()
@@ -47,8 +44,20 @@ void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     for (auto& voice : voices)
         voice.prepare (sampleRate, lowestHz);
 
+    for (size_t v = 0; v < voices.size(); ++v)
+    {
+        panLeft[v].reset (sampleRate, 0.05);
+        panRight[v].reset (sampleRate, 0.05);
+    }
+
     currentKey = currentChord = -1;
     updateTuning();
+
+    for (size_t v = 0; v < voices.size(); ++v)
+    {
+        panLeft[v].setCurrentAndTargetValue (panLeft[v].getTargetValue());
+        panRight[v].setCurrentAndTargetValue (panRight[v].getTargetValue());
+    }
 
     dryWet.prepare ({ sampleRate, (juce::uint32) samplesPerBlock, numChannels });
     dryWet.setMixingRule (juce::dsp::DryWetMixingRule::balanced);
@@ -67,10 +76,20 @@ void PluginProcessor::updateTuning()
     currentChord = chord;
 
     const auto& intervals = Chords::all[(size_t) chord].intervals;
-    for (size_t v = 0; v < voices.size(); ++v)
+    std::array<size_t, Chords::numVoices> order {};
+    std::iota (order.begin(), order.end(), size_t { 0 });
+    std::stable_sort (order.begin(), order.end(), [&] (size_t a, size_t b) { return intervals[a] < intervals[b]; });
+
+    for (size_t rank = 0; rank < order.size(); ++rank)
     {
-        const auto note = (float) (Chords::rootMidiNote + key + intervals[v]) + voiceDetune[v] / 100.0f;
+        const auto v = order[rank];
+        const auto note = (float) (Chords::rootMidiNote + key + intervals[v]) + rankDetune[rank] / 100.0f;
         voices[v].setFrequency (440.0f * std::pow (2.0f, (note - 69.0f) / 12.0f));
+
+        // Equal-power pan.
+        const auto angle = (rankPan[rank] + 1.0f) * juce::MathConstants<float>::pi * 0.25f;
+        panLeft[v].setTargetValue (std::cos (angle));
+        panRight[v].setTargetValue (std::sin (angle));
     }
 }
 
@@ -116,8 +135,8 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
         for (size_t v = 0; v < voices.size(); ++v)
         {
             const auto y = voices[v].processSample (in);
-            outL += y * panLeft[v];
-            outR += y * panRight[v];
+            outL += y * panLeft[v].getNextValue();
+            outR += y * panRight[v].getNextValue();
         }
 
         // Soft limiter: long decays on loud, tonal input can stack up a lot of energy.

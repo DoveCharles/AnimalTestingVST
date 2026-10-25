@@ -1,7 +1,8 @@
 // Renders the Waterfall editor offline while an audio file plays through the processor, and saves
-// PNG snapshots of it. Lets you check the spectrogram with real audio without a DAW.
+// PNG snapshots of it. Lets you check the spectrogram with real audio without a DAW. --wav also saves
+// the processed audio as waterfall.wav in the output folder.
 //
-//   WaterfallPreview <audio file> <output folder> [--every=5] [--length=60] [--key=E] [--chord=Add9]
+//   WaterfallPreview <audio file> <output folder> [--every=5] [--length=60] [--wav] [--key=E] [--chord=Add9]
 //                    [--brightness=86] [--decay=10] [--mix=100]
 
 #include "PluginProcessor.h"
@@ -79,6 +80,7 @@ int main (int argc, char* argv[])
     jassert (visual != nullptr);
 
     juce::AudioBuffer<float> buffer (2, blockSize);
+    juce::AudioBuffer<float> rendered (2, args.containsOption ("--wav") ? (int) (length * sampleRate) + blockSize : 0);
     juce::MidiBuffer midi;
     juce::int64 position = 0;
     auto nextSnapshot = snapshotEvery;
@@ -93,6 +95,9 @@ int main (int argc, char* argv[])
             buffer.setSize (2, n, false, false, true);
             reader->read (&buffer, 0, n, position, true, true);
             processor.processBlock (buffer, midi);
+            for (int ch = 0; ch < 2; ++ch)
+                if (position + n <= rendered.getNumSamples())
+                    rendered.copyFrom (ch, (int) position, buffer, ch, 0, n);
             position += n;
         }
 
@@ -110,6 +115,17 @@ int main (int argc, char* argv[])
             std::cout << "Wrote " << file.getFullPathName() << "\n";
             nextSnapshot += snapshotEvery;
         }
+    }
+
+    if (rendered.getNumSamples() > 0)
+    {
+        const auto file = outputDir.getChildFile ("waterfall.wav");
+        file.deleteFile();
+        std::unique_ptr<juce::OutputStream> stream (file.createOutputStream());
+        const auto options = juce::AudioFormatWriterOptions{}.withSampleRate (sampleRate).withNumChannels (2).withBitsPerSample (24);
+        if (auto writer = juce::WavAudioFormat().createWriterFor (stream, options))
+            writer->writeFromAudioSampleBuffer (rendered, 0, (int) juce::jmin ((juce::int64) rendered.getNumSamples(), position));
+        std::cout << "Wrote " << file.getFullPathName() << "\n";
     }
 
     editor.reset();
