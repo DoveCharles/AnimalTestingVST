@@ -12,6 +12,7 @@ A monorepo of audio plugins by **Animal Testing**. Each plugin builds as VST3 (W
 | [AT Cabinet](plugins/Cabinet) | `Cabn` | 1.0.0 | Cab simulator: six built-in cabs (4x12 Vintage and Modern, 2x12 Open Alnico, 1x12 Open Combo, 4x10 Tweed, 1x8 Practice) with Dynamic, Ribbon or Condenser mic, a speaker pad for mic Position and Distance, Room, Push (speaker drive), Low/High Cut and Output, or load your own IR (embedded in the session); zero latency |
 | [AT Seven Rooms](plugins/SevenRooms) | `Svnr` | 1.0.0 | Stereo digital reverb after the DigiTech HardWire RV-7: Level, Liveliness, Decay and seven Reverb Types (Room, Plate, Reverse, Modulated, Gated, Hall, Spring), with a Tails switch so the reverb rings out after bypass; Reverse is wet-only, like the original |
 | [AT Voice Box](plugins/VoiceBox) | `Vbox` | 0.1.0 | Vocal pitch and formant shifter (PSOLA with YIN tracking, so pitch and formant move independently): Transpose, Quantize (Key/Scale/Retune) and Robot modes, a Gender macro, and a Character section with Chest Cut, Air, Breath, Drive and delayed Vibrato; about 40 ms latency, reported to the host |
+| [AT Smooth Operator](plugins/SmoothOperator) | `Smop` | 0.1.0 | Dynamic resonance suppressor: an STFT that cuts whatever sticks up out of the sound's own (harmonic-smoothed) spectrum, with Depth, Sharpness, Selectivity, Attack/Release, five-band weighting, Stereo or Mid/Side, Delta listen and a live cut display; about 43 ms latency, reported to the host |
 
 ## Layout
 
