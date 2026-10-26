@@ -5,7 +5,7 @@
 //       with a second of tail.
 //
 //   TapewormRender snapshot <output.png> [--<param>=<value> ...]
-//       Saves a picture of the editor.
+//       Saves a picture of the editor. --at=<seconds> shows the reels that far into the song.
 
 #include "PluginProcessor.h"
 
@@ -22,6 +22,8 @@ namespace
 
             const auto id = arg.text.fromFirstOccurrenceOf ("--", false, false).upToFirstOccurrenceOf ("=", false, false);
             const auto value = arg.text.fromFirstOccurrenceOf ("=", false, false);
+            if (id == "at")
+                continue;
             if (auto* param = processor.apvts.getParameter (id))
                 param->setValueNotifyingHost (param->getValueForText (value));
             else
@@ -33,6 +35,7 @@ namespace
     {
         auto processor = std::make_unique<PluginProcessor>();
         processor->setPlayConfigDetails (numInputs, 2, sampleRate, blockSize);
+        processor->setNonRealtime (true);
         applyParameters (*processor, args);
         processor->prepareToPlay (sampleRate, blockSize);
         return processor;
@@ -104,6 +107,7 @@ namespace
     int snapshot (const juce::ArgumentList& args)
     {
         auto processor = makeProcessor (args, 48000.0, 1);
+        processor->hostSeconds = args.getValueForOption ("--at").getDoubleValue();
         std::unique_ptr<juce::AudioProcessorEditor> editor (processor->createEditor());
         juce::MessageManager::getInstance()->runDispatchLoopUntil (200);
 

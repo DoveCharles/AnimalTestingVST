@@ -49,8 +49,14 @@ PluginProcessor::PluginProcessor()
       outputParam      (at::params::raw (apvts, ParamIDs::output)),
       tapeStopParam    (at::params::raw (apvts, ParamIDs::tapeStop)),
       stopSpeedParam   (at::params::raw (apvts, ParamIDs::stopSpeed)),
-      catchUpParam     (at::params::raw (apvts, ParamIDs::catchUp))
+      catchUpParam     (at::params::raw (apvts, ParamIDs::catchUp)),
+      speedParam       (at::params::raw (apvts, ParamIDs::speed))
 {
+}
+
+PluginProcessor::~PluginProcessor()
+{
+    cancelPendingUpdate();
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParameterLayout()
@@ -71,6 +77,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
     layout.add (makeSwitch (ParamIDs::tapeStop, "Tape Stop", false));
     layout.add (at::params::makeChoice (ParamIDs::stopSpeed, "Stop Speed", StopSpeeds::names, 3));
     layout.add (at::params::makeChoice (ParamIDs::catchUp, "Tape Catch-up", CatchUps::names, CatchUps::instant));
+    layout.add (at::params::makeFloat (ParamIDs::speed, "Speed", { 0.25f, 1.0f, 0.01f }, 1.0f, "x", 2));
     return layout;
 }
 
@@ -88,10 +95,16 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
         buffer.clear (ch, 0, buffer.getNumSamples());
 
     auto bpm = 120.0;
+    auto playing = false;
     if (auto* playHead = getPlayHead())
         if (const auto position = playHead->getPosition())
+        {
             if (const auto hostBpm = position->getBpm(); hostBpm.hasValue() && *hostBpm > 0.0)
                 bpm = *hostBpm;
+            if (const auto seconds = position->getTimeInSeconds())
+                hostSeconds = *seconds;
+            playing = position->getIsPlaying();
+        }
 
     TapeMachine::Settings settings;
     settings.drive = driveParam.load() / 100.0f;
@@ -110,9 +123,26 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
     // Bars of 4/4 at the host tempo.
     settings.stopSeconds = StopSpeeds::bars[(size_t) juce::jlimit (0, 5, (int) stopSpeedParam.load())] * 4.0 * 60.0 / bpm;
     settings.fastForward = (int) catchUpParam.load() == CatchUps::fastForward;
+    settings.speed = speedParam.load();
     tape.setSettings (settings);
 
+    // The long tape is made off the audio thread, unless this is an offline render, where
+    // there may be no message loop to make it and nothing is lost by waiting.
+    if (tape.needsLongTape())
+    {
+        if (isNonRealtime())
+            tape.offerLongTape();
+        else
+            triggerAsyncUpdate();
+    }
+    // Pressing play starts the tape in step with the song, however far behind it had fallen.
+    if (playing && ! wasPlaying)
+        tape.resync();
+    wasPlaying = playing;
+
     tape.process (buffer, getTotalNumOutputChannels());
+    hostPlaying = playing;
+    tapeSpeed = tape.getSpeed();
 }
 
 juce::AudioProcessorEditor* PluginProcessor::createEditor()
