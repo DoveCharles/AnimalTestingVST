@@ -18,6 +18,13 @@
     - The strings of one key meet at a resistive bridge. The in-phase motion drives the bridge and
       dies fast (the prompt sound); out-of-phase motion barely moves it and rings on (the
       aftersound), so slightly mistuned unisons give the piano's two-stage decay and slow beating.
+    - Loud notes stretch their strings, raising the tension: the pitch starts a little sharp and
+      settles, and the stretching adds "phantom" partials at sums of the string's frequencies,
+      strongest near the string's longitudinal resonance. This is the bite in a hard bass note.
+    - Every key whose damper is off (held, pedalled, or above the dampers) has a resonator that
+      the bridge drives: the open strings ring along with what is played.
+    - The action makes noise: the key hits the keybed, it knocks back up, dampers land, and the
+      pedal lifts and drops the whole damper rail (setting the open strings faintly ringing).
     - The bridge velocity of all keys goes through a soundboard: a synthetic modal impulse response.
 
     Two voicings: a clean, freshly tuned studio upright, and "Mills", after the Abbey Road
@@ -50,6 +57,9 @@ namespace piano
         double highFrequency = 3000.0;
         std::array<double, maxStrings> unisonCents {}; // fixed per-key detune, before the Unison control
         double outputGain = 1.0;    // evens out loudness across the keyboard (what the board radiates)
+        double tension = 0.0;       // pitch rise, as a fraction, per unit of normalised string energy
+        double phantom = 0.0;       // level of the phantom partials relative to the string at mf
+        double longitudinalFrequency = 1000.0;
         bool hasDamper = true;
     };
 
@@ -70,10 +80,16 @@ namespace piano
 
     struct Controls
     {
-        float hardness = 0.5f; // 0..1
-        float unison = 0.3f;   // 0..1
-        float decay = 1.0f;    // T60 scale
+        float hardness = 0.5f;  // 0..1
+        float unison = 0.3f;    // 0..1
+        float decay = 1.0f;     // T60 scale
+        float resonance = 0.5f; // 0..1, sympathetic resonance
+        float noise = 0.5f;     // 0..1, action noise
     };
+
+    /** Bridge velocity times the key's output gain, for a key struck at velocity 0.7: about the
+        peak each key reaches. The tension and phantom partials are scaled from it. */
+    constexpr float referenceLevel = 0.04f;
 
     //==============================================================================
     /** Runs the hammer against an ideal string and records the contact force. */
@@ -102,8 +118,9 @@ namespace piano
         void strike (Hammer&, double velocity, const Controls&);
         void reset();
 
-        /** Adds this key's bridge velocity to `out`. */
-        void render (float* out, int numSamples);
+        /** Adds this key's bridge velocity to `bridgeOut`, and what the board radiates from it
+            (levelled, with the phantom partials) to `radiatedOut`. */
+        void render (float* bridgeOut, float* radiatedOut, int numSamples);
 
         bool active = false;
         bool held = false;
@@ -145,7 +162,81 @@ namespace piano
         std::vector<float> force;
         int forceLength = 0, forcePos = 0, combDelay = 1;
         int quietSamples = 0, loopLength = 0;
+
+        // Tension modulation and phantom partials.
+        float energy = 0.0f, energyCoef = 0.0f;
+        float tensionSamples = 0.0f, maxShift = 0.0f;
+        float phantomLow = 0.0f, phantomLowCoef = 0.0f;
+        float bandA1 = 0.0f, bandA2 = 0.0f, bandA3 = 0.0f, bandK = 1.0f, bandIc1 = 0.0f, bandIc2 = 0.0f;
         juce::Random random;
+    };
+
+    //==============================================================================
+    /** A key's strings as the other keys hear them: one loop, without dispersion, that the bridge
+        drives while the key's damper is off. */
+    class Resonator
+    {
+    public:
+        void prepare (const KeySpec&, const LoopDesign&, double sampleRate);
+        void reset();
+
+        /** Drives the loop with `input` (bridge velocity) and adds what it radiates to `radiatedOut`. */
+        void render (const float* input, float* radiatedOut, int numSamples, bool undamped, float drive, float decay);
+
+        bool isQuiet() const noexcept { return quietSamples > loopLength; }
+
+    private:
+        std::vector<float> line;
+        int mask = 0, pos = 0, delay = 1, loopLength = 0, quietSamples = 0;
+        float tuneCoef = 0.0f, tuneState = 0.0f;
+        float lossPole = 0.0f, lossState = 0.0f, lossGain = 1.0f, lossScale = 1.0f;
+        float damper = 1.0f, damperCoef = 0.0f, damperLoopGain = 1.0f;
+        float outputGain = 0.0f;
+        double frequency = 440.0, sustainT60 = 10.0, rate = 48000.0, tunedDecay = 0.0;
+    };
+
+    //==============================================================================
+    /** Knocks and thumps from the action: short filtered noise bursts and low thumps. */
+    class ActionNoise
+    {
+    public:
+        void prepare (double sampleRate);
+        void reset();
+        void setAmount (float newAmount) noexcept { amount = newAmount; }
+
+        void keyDown (int midiNote, float velocity01);
+        void keyUp (int midiNote, bool damperLands);
+        void pedal (bool down);
+
+        /** Adds the noises to `radiatedOut`, and the rush of the damper rail lifting off every
+            string to `stringsOut`, which drives the resonators. */
+        void render (float* radiatedOut, float* stringsOut, int numSamples);
+        bool isActive() const noexcept;
+
+    private:
+        struct Sound
+        {
+            double waitMs = 0.0;
+            double noiseHz = 1000.0, noiseQ = 1.0, noiseMs = 5.0, noiseLevel = 0.0;
+            double thumpHz = 100.0, thumpMs = 20.0, thumpLevel = 0.0;
+            bool toStrings = false;
+        };
+
+        struct Event
+        {
+            int wait = 0, remaining = 0;
+            bool toStrings = false;
+            float noise = 0.0f, noiseDecay = 0.0f;
+            float a1 = 0.0f, a2 = 0.0f, a3 = 0.0f, k = 1.0f, ic1 = 0.0f, ic2 = 0.0f;
+            float thump = 0.0f, thumpDecay = 0.0f, cosW = 1.0f, sinW = 0.0f, re = 1.0f, im = 0.0f;
+        };
+
+        void add (const Sound&);
+
+        std::array<Event, 24> events {};
+        juce::Random random { 1729 };
+        double rate = 48000.0;
+        float amount = 1.0f;
     };
 
     //==============================================================================
@@ -158,8 +249,9 @@ namespace piano
         void setControls (const Controls& c) noexcept { controls = c; }
         void noteOn (int midiNote, float velocity01);
         void noteOff (int midiNote);
-        void setSustain (bool down) noexcept { sustain = down; }
-        void setSoftPedal (bool down) noexcept { soft = down; }
+        /** `audible` is false for an engine that only follows the pedal for notes already ringing. */
+        void setSustain (bool on, bool audible = true);
+        void setSoftPedal (bool on) noexcept { soft = on; }
         void allNotesOff();
 
         /** Adds the summed bridge velocity of all keys (mono) to `out`. */
@@ -170,7 +262,14 @@ namespace piano
     private:
         void updateDampers();
 
+        /** Keys and resonators couple through the bridge in steps this long. */
+        static constexpr int subBlock = 32;
+
         std::array<Key, numKeys> keys;
+        std::array<Resonator, numKeys> resonators;
+        std::array<bool, numKeys> down {}; // the key is held, whether or not its strings still sound
+        std::array<std::array<float, subBlock>, numKeys> keyBridge {};
+        ActionNoise noise;
         Hammer hammer;
         Controls controls;
         Voicing voicing = Voicing::mills;

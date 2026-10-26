@@ -28,7 +28,7 @@ namespace
                 continue;
 
             const auto id = arg.text.fromFirstOccurrenceOf ("--", false, false).upToFirstOccurrenceOf ("=", false, false);
-            if (id == "note" || id == "velocity" || id == "seconds")
+            if (id == "note" || id == "velocity" || id == "seconds" || id == "pedal")
                 continue;
 
             const auto value = arg.text.fromFirstOccurrenceOf ("=", false, false);
@@ -92,7 +92,13 @@ namespace
         applyParameters (processor, args);
 
         juce::MidiBuffer midi;
-        midi.addEvent (juce::MidiMessage::noteOn (1, key == 0 ? 60 : key, velocity), 0);
+        // --pedal holds the sustain pedal from the start until near the end.
+        if (args.containsOption ("--pedal"))
+        {
+            midi.addEvent (juce::MidiMessage::controllerEvent (1, 64, 127), 0);
+            midi.addEvent (juce::MidiMessage::controllerEvent (1, 64, 0), (int) (seconds * 0.9 * sampleRate));
+        }
+        midi.addEvent (juce::MidiMessage::noteOn (1, key == 0 ? 60 : key, velocity), (int) (0.05 * sampleRate));
         midi.addEvent (juce::MidiMessage::noteOff (1, key == 0 ? 60 : key), (int) (seconds * 0.5 * sampleRate));
 
         return writeWav (args[1].resolveAsFile(), renderMidi (processor, midi, seconds)) ? 0 : 1;
@@ -174,7 +180,7 @@ namespace
         piano::Engine engine;
         engine.prepare (sampleRate, voicing);
         piano::Controls controls;
-        controls.unison = 0.0f;
+        controls.unison = controls.resonance = controls.noise = 0.0f;
         engine.setControls (controls);
 
         for (int key : { 21, 28, 33, 40, 48, 55, 60, 64, 69, 76, 84, 91, 96, 103, 108 })
@@ -246,6 +252,53 @@ namespace
         return 0;
     }
 
+    /** Pitch of the first partial over time for a hard strike, against where it settles. */
+    int glide()
+    {
+        piano::Engine engine;
+        engine.prepare (sampleRate, piano::Voicing::studio);
+        piano::Controls controls;
+        controls.unison = controls.resonance = controls.noise = 0.0f;
+        engine.setControls (controls);
+
+        for (int key : { 21, 33, 48, 60, 72 })
+        {
+            const auto spec = piano::specFor (key, piano::Voicing::studio);
+            std::printf (" note %3d:", key);
+            for (auto velocity : { 1.0f, 0.7f })
+            {
+                engine.allNotesOff();
+                engine.noteOn (key, velocity);
+                const auto total = (int) (sampleRate * 4.0);
+                std::vector<float> signal ((size_t) total, 0.0f);
+                for (int start = 0; start < total; start += blockSize)
+                    engine.render (signal.data() + start, juce::jmin (blockSize, total - start));
+
+                // 0.25 s Hann windows, zero-padded to 2^17 points.
+                auto pitchAt = [&] (double from)
+                {
+                    constexpr int order = 17;
+                    constexpr int fftSize = 1 << order;
+                    juce::dsp::FFT fft (order);
+                    std::vector<float> data ((size_t) fftSize * 2, 0.0f);
+                    const auto length = (int) (0.25 * sampleRate);
+                    const auto offset = (int) (from * sampleRate);
+                    for (int i = 0; i < length; ++i)
+                        data[(size_t) i] = signal[(size_t) (offset + i)] * (0.5f - 0.5f * std::cos (juce::MathConstants<float>::twoPi * (float) i / (float) length));
+                    fft.performFrequencyOnlyForwardTransform (data.data(), true);
+                    return findPeak (data, fftSize, spec.frequency, 40.0);
+                };
+
+                const auto settled = pitchAt (3.5);
+                std::printf ("  v%.1f", velocity);
+                for (auto t : { 0.02, 0.1, 0.25, 0.5, 1.0 })
+                    std::printf (" %+5.1f", 1200.0 * std::log2 (pitchAt (t) / settled));
+            }
+            std::printf ("   (cents at 0.02 0.1 0.25 0.5 1 s)\n");
+        }
+        return 0;
+    }
+
     int cpu()
     {
         for (auto voicing : { piano::Voicing::studio, piano::Voicing::mills })
@@ -289,6 +342,7 @@ int main (int argc, char* argv[])
     if (command == "demo" && args.size() >= 2)  return demo (args);
     if (command == "measure")                   return measure (args);
     if (command == "cpu")                       return cpu();
+    if (command == "glide")                     return glide();
 
     std::cout << "Usage:\n"
                  "  UprightRender note <output.wav> [--note=60] [--velocity=0.7] [--seconds=6] [--<param>=<value> ...]\n"
