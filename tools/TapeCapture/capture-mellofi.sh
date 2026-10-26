@@ -1,12 +1,13 @@
 #!/bin/sh
 # Takes the full set of measurements off Tape MELLO-FI into renders-mellofi/ (one text file per
 # test). Build first with -DAT_BUILD_TOOLS=ON. Each file starts with the settings it ran with.
+# PLUGIN=<path> OUT=<folder> runs the same tests on another plugin, e.g. our own Tapeworm.
 set -e
 cd "$(dirname "$0")/../.."
 T=build/tools/TapeCapture/TapeCapture_artefacts/Release/TapeCapture
-OUT=renders-mellofi
+OUT=${OUT:-renders-mellofi}
 mkdir -p "$OUT"
-run() { name=$1; shift; echo "$name"; "$T" "$@" > "$OUT/$name.txt"; }
+run() { name=$1; shift; echo "$name"; "$T" "$@" ${PLUGIN:+"--plugin=$PLUGIN"} > "$OUT/$name.txt"; }
 
 $T selftest > "$OUT/00-selftest.txt"
 run 01-params params
