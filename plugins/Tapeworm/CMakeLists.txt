@@ -5,4 +5,5 @@ at_add_plugin(${PROJECT_NAME}
     PRODUCT_NAME "AT Tapeworm"
     SOURCES
         Source/PluginProcessor.cpp
-        Source/PluginEditor.cpp)
+        Source/PluginEditor.cpp
+        Source/DeckLookAndFeel.cpp)

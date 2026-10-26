@@ -12,7 +12,10 @@
                across five fitted settings. Off leaves only the gentle base path.
       Wear     amplitude flutter (fast level noise) and random speed jitter.
       Transport  wow (0.82 Hz), flutter (a few fixed rates) and wear jitter all move the read
-               point of one delay line; Tape Stop slows it to a halt and catches up.
+               point of one delay line; Tape Stop slows it to a halt and catches up. Speed below
+               1 plays the tape slower than real time, so the read point falls further behind:
+               the line grows to five minutes (allocated off the audio thread, see offerLongTape)
+               and when that runs out the tape holds there at normal speed.
       Filter   bipolar: below zero a low-pass, above zero a high-pass.
       Mechanical noise  a looped motor rumble with a 23 Hz rhythm, added after the voicing.
 
@@ -36,7 +39,10 @@ public:
         bool tapeStop = false;
         double stopSeconds = 2.0;      // how long the tape takes to stop
         bool fastForward = false;      // catch up by speeding through the backlog, or jump back
+        float speed = 1.0f;            // playback speed, 0.25..1
     };
+
+    ~TapeMachine() { delete offeredTape.exchange (nullptr); }
 
     void prepare (double newSampleRate, int maxBlockSize)
     {
@@ -45,11 +51,10 @@ public:
             maxChannels, oversamplingOrder, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, true, false);
         oversampling->initProcessing ((size_t) maxBlockSize);
 
-        maxLag = 4.0 * sampleRate;
-        const auto delaySize = juce::nextPowerOfTwo ((int) (maxLag + 0.1 * sampleRate) + 16);
-        delayMask = delaySize - 1;
-        for (auto& line : delayLines)
-            line.assign ((size_t) delaySize, 0.0f);
+        delete offeredTape.exchange (nullptr);
+        spareTape.reset();
+        tape = std::make_unique<Tape> (lengthFor (shortTapeSeconds));
+        longTapeRequested = false;
 
         for (auto& filter : base)
             filter.reset();
@@ -65,6 +70,7 @@ public:
 
         smoothing = 1.0f - std::exp (-1.0f / (0.2f * (float) sampleRate));
         fastSmoothing = 1.0f - std::exp (-1.0f / (0.01f * (float) sampleRate));
+        speedGlide = 1.0 - std::exp (-1.0 / (0.25 * sampleRate));
         jitterPole = std::exp (-juce::MathConstants<float>::twoPi * 10.0f / (float) sampleRate);
         amPole = 1.0f - std::exp (-juce::MathConstants<float>::twoPi * 350.0f / (float) sampleRate);
 
@@ -75,7 +81,7 @@ public:
     void reset()
     {
         writeIndex = 0;
-        for (auto& line : delayLines)
+        for (auto& line : tape->lines)
             std::fill (line.begin(), line.end(), 0.0f);
         for (auto& m : modulators)
             m = {};
@@ -84,7 +90,7 @@ public:
         modulators[1].noise.seed = 0x2545f491u;
         transport = Transport::running;
         speed = 1.0;
-        lag = 0.0;
+        lag = restLag = 0.0;
         jumpGain = 1.0f;
         oversampling->reset();
         shownTone = shownFilter = -2.0f;
@@ -96,11 +102,41 @@ public:
 
     void setSettings (const Settings& s) { settings = s; }
 
+    /** True once, on the audio thread, when Speed first drops below 1 and the tape needs to grow:
+        the caller should then call offerLongTape() from the message thread. */
+    bool needsLongTape() noexcept
+    {
+        if (longTapeRequested || settings.speed >= 0.999f || tape->size > lengthFor (shortTapeSeconds))
+            return false;
+        longTapeRequested = true;
+        return true;
+    }
+
+    /** Message thread: allocates the five-minute tape; process() picks it up. */
+    void offerLongTape()
+    {
+        delete offeredTape.exchange (new Tape (lengthFor (longTapeSeconds)));
+    }
+
+    /** Back to real time with a short fade, e.g. when the host starts playing. */
+    void resync() noexcept
+    {
+        if (settings.tapeStop || lag < 0.5)
+            return;
+        restLag = 0.0;
+        transport = Transport::jumping;
+    }
+
+    /** The tape's current speed (1 is normal, 0 stopped), for the reels. */
+    float getSpeed() const noexcept { return (float) speed; }
+
     int getLatency() const { return juce::roundToInt (oversampling->getLatencyInSamples()) + minimumDelay; }
 
     void process (juce::AudioBuffer<float>& buffer, int numChannels)
     {
         numChannels = juce::jmin (numChannels, maxChannels);
+        if (auto* longTape = offeredTape.exchange (nullptr))
+            adopt (longTape);
         saturate (buffer, numChannels);
 
         const auto targets = blockTargets();
@@ -147,7 +183,7 @@ public:
                     x = base[1].process (base[0].process (x, ch), ch);
                     x *= 1.0f + am[c];
 
-                    auto& line = delayLines[c];
+                    auto& line = tape->lines[c];
                     line[(size_t) writeIndex] = x;
                     const auto delay = juce::jmax (2.0, (double) minimumDelay + lag + delaySeconds[c] * sampleRate);
                     x = transportGain * readHermite (line, delay);
@@ -159,7 +195,8 @@ public:
                     data[ch][n] = smoothed.output * x;
                 }
 
-                writeIndex = (writeIndex + 1) & delayMask;
+                if (++writeIndex == tape->size)
+                    writeIndex = 0;
             }
         }
     }
@@ -463,18 +500,28 @@ private:
     //==============================================================================
     enum class Transport { running, stopping, catchingUp, jumping };
 
-    /** Moves the tape: lag is how far (samples) the read point has fallen behind real time.
+    /** Moves the tape: lag is how far (samples) the read point has fallen behind real time, and
+        restLag is where the Speed setting alone would have it (catching up stops there).
         Returns the level for this sample (a stopping tape fades as it slows). */
     float advanceTransport() noexcept
     {
+        const auto target = juce::jlimit (0.25, 1.0, (double) settings.speed);
+        const auto atSpeed = target >= 0.999;
+        const auto catchUp = settings.fastForward ? Transport::catchingUp : Transport::jumping;
+
         if (settings.tapeStop)
         {
             transport = Transport::stopping;
-            speed = juce::jmax (0.0, juce::jmin (speed, 1.0) - 1.0 / (settings.stopSeconds * sampleRate));
+            speed = juce::jmax (0.0, juce::jmin (speed, target) - target / (settings.stopSeconds * sampleRate));
         }
         else if (transport == Transport::stopping)
         {
-            transport = settings.fastForward ? Transport::catchingUp : Transport::jumping;
+            transport = catchUp;
+        }
+        else if (transport == Transport::running && atSpeed && lag > 0.5)
+        {
+            restLag = 0.0;
+            transport = catchUp;
         }
 
         const auto fade = 1.0f / (0.005f * (float) sampleRate);
@@ -482,15 +529,16 @@ private:
         {
             case Transport::running:
                 jumpGain = juce::jmin (1.0f, jumpGain + fade);
+                speed += speedGlide * (target - speed);
                 break;
             case Transport::stopping:
                 break;
             case Transport::catchingUp:
                 speed = juce::jmin (4.0, speed + 4.0 / (0.3 * sampleRate));
-                if (lag <= 0.0)
+                if (lag <= restLag)
                 {
-                    lag = 0.0;
-                    speed = 1.0;
+                    lag = restLag;
+                    speed = target;
                     transport = Transport::running;
                 }
                 break;
@@ -499,31 +547,71 @@ private:
                 if (jumpGain <= 0.0f)
                 {
                     jumpGain = 0.0f;
-                    lag = 0.0;
-                    speed = 1.0;
+                    lag = restLag;
+                    speed = target;
                     transport = Transport::running;
                 }
                 break;
         }
 
-        if (transport != Transport::running)
-            lag = juce::jlimit (0.0, maxLag, lag + 1.0 - speed);
+        // At the end of the tape the read point can fall no further behind: it plays at normal speed.
+        lag = juce::jlimit (0.0, maxLag(), lag + 1.0 - speed);
+        if (transport == Transport::running)
+            restLag = lag;
+        else
+            restLag = atSpeed ? 0.0 : juce::jmin (maxLag(), restLag + 1.0 - target);
 
-        return jumpGain * (float) juce::jmin (1.0, 3.0 * speed);
+        return jumpGain * (transport == Transport::running ? 1.0f : (float) juce::jmin (1.0, 3.0 * speed));
     }
 
     float readHermite (const std::vector<float>& line, double delay) const noexcept
     {
-        const auto pos = (double) writeIndex - delay;
+        const auto size = tape->size;
+        auto pos = (double) writeIndex - delay;
+        if (pos < 0.0)
+            pos += size;
         const auto floorPos = std::floor (pos);
         const auto i = (int) floorPos;
         const auto f = (float) (pos - floorPos);
-        const auto xm1 = line[(size_t) ((i - 1) & delayMask)], x0 = line[(size_t) (i & delayMask)];
-        const auto x1 = line[(size_t) ((i + 1) & delayMask)], x2 = line[(size_t) ((i + 2) & delayMask)];
+        const auto at = [&] (int k) { return line[(size_t) (k < 0 ? k + size : (k >= size ? k - size : k))]; };
+        const auto xm1 = at (i - 1), x0 = at (i), x1 = at (i + 1), x2 = at (i + 2);
         const auto c1 = 0.5f * (x1 - xm1);
         const auto c2 = xm1 - 2.5f * x0 + 2.0f * x1 - 0.5f * x2;
         const auto c3 = 0.5f * (x2 - xm1) + 1.5f * (x0 - x1);
         return ((c3 * f + c2) * f + c1) * f + x0;
+    }
+
+    /** One delay line per channel, in a ring of `size` samples. */
+    struct Tape
+    {
+        explicit Tape (int length) : size (length)
+        {
+            for (auto& line : lines)
+                line.assign ((size_t) length, 0.0f);
+        }
+
+        std::array<std::vector<float>, maxChannels> lines;
+        int size;
+    };
+
+    static constexpr double shortTapeSeconds = 4.0, longTapeSeconds = 300.0;
+
+    /** Room for `seconds` of lag plus the wow and flutter swing on top. */
+    int lengthFor (double seconds) const { return (int) ((seconds + 0.1) * sampleRate) + 16; }
+
+    double maxLag() const noexcept { return (double) tape->size - 0.1 * sampleRate - 16.0; }
+
+    /** Swaps in the long tape with everything on the short one, oldest first, so the read point
+        keeps its place. The short tape is kept (not freed) to stay off the allocator. */
+    void adopt (Tape* longTape) noexcept
+    {
+        const auto oldSize = tape->size;
+        for (size_t c = 0; c < maxChannels; ++c)
+            for (int i = 0; i < oldSize; ++i)
+                longTape->lines[c][(size_t) i] = tape->lines[c][(size_t) ((writeIndex + i) % oldSize)];
+        writeIndex = oldSize;
+        spareTape = std::move (tape);
+        tape.reset (longTape);
     }
 
     //==============================================================================
@@ -606,10 +694,12 @@ private:
     Noise hissNoise { 0x1234567u };
     Biquad hissShelf, hissLowPass;
 
-    std::array<std::vector<float>, maxChannels> delayLines;
-    int writeIndex = 0, delayMask = 0;
+    std::unique_ptr<Tape> tape, spareTape;
+    std::atomic<Tape*> offeredTape { nullptr };
+    bool longTapeRequested = false;
+    int writeIndex = 0;
     Transport transport = Transport::running;
-    double speed = 1.0, lag = 0.0, maxLag = 0.0;
+    double speed = 1.0, lag = 0.0, restLag = 0.0, speedGlide = 0.0;
     float jumpGain = 1.0f;
 
     std::vector<float> mechanicalLoop;

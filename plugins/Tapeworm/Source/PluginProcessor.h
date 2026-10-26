@@ -19,6 +19,7 @@ namespace ParamIDs
     inline constexpr auto tapeStop    = "tapeStop";
     inline constexpr auto stopSpeed   = "stopSpeed";
     inline constexpr auto catchUp     = "catchUp";
+    inline constexpr auto speed       = "speed";
 }
 
 namespace StopSpeeds
@@ -34,11 +35,19 @@ namespace CatchUps
 }
 
 /** Lo-fi tape: drive, a tape voicing, wow, flutter, wear, hiss and motor noise, a bipolar
-    filter and a tempo-synced tape stop (see TapeMachine). */
-class PluginProcessor final : public at::ProcessorBase
+    filter, a tempo-synced tape stop and slow playback (see TapeMachine). */
+class PluginProcessor final : public at::ProcessorBase,
+                              private juce::AsyncUpdater
 {
 public:
     PluginProcessor();
+    ~PluginProcessor() override;
+
+    /** For the reels: is the host playing, how fast is the tape going (1 is normal), and where
+        is the host (seconds). */
+    std::atomic<bool> hostPlaying { false };
+    std::atomic<float> tapeSpeed { 1.0f };
+    std::atomic<double> hostSeconds { 0.0 };
 
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
@@ -48,7 +57,10 @@ public:
     juce::AudioProcessorEditor* createEditor() override;
 
 private:
+    void handleAsyncUpdate() override { tape.offerLongTape(); }
+
     TapeMachine tape;
+    bool wasPlaying = false;
 
     std::atomic<float>& driveParam;
     std::atomic<float>& boostParam;
@@ -65,6 +77,7 @@ private:
     std::atomic<float>& tapeStopParam;
     std::atomic<float>& stopSpeedParam;
     std::atomic<float>& catchUpParam;
+    std::atomic<float>& speedParam;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 };

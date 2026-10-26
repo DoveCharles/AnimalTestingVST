@@ -7,7 +7,8 @@ set(tapeworm_source "${CMAKE_SOURCE_DIR}/plugins/Tapeworm/Source")
 target_sources(TapewormRender PRIVATE
     Main.cpp
     "${tapeworm_source}/PluginProcessor.cpp"
-    "${tapeworm_source}/PluginEditor.cpp")
+    "${tapeworm_source}/PluginEditor.cpp"
+    "${tapeworm_source}/DeckLookAndFeel.cpp")
 
 target_include_directories(TapewormRender PRIVATE "${tapeworm_source}")
 

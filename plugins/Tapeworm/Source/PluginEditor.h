@@ -1,6 +1,8 @@
 #pragma once
 
 #include "PluginProcessor.h"
+#include "DeckLookAndFeel.h"
+#include "ReelDeck.h"
 
 class PluginEditor final : public juce::AudioProcessorEditor
 {
@@ -17,10 +19,12 @@ private:
 
     void drawSection (juce::Graphics&, juce::Rectangle<int>, const juce::String& title) const;
 
-    juce::SharedResourcePointer<at::LookAndFeel> sharedLookAndFeel;
+    DeckLookAndFeel lookAndFeel;
+    juce::Image plate;
 
     at::PresetBar presetBar;
-    at::Knob drive, tone, filter, output, wow, flutter, wear, noise, mechanical;
+    ReelDeck reels;
+    at::Knob speed, drive, tone, filter, output, wow, flutter, wear, noise, mechanical;
 
     juce::TextButton boost { "BOOST" }, toneEnable { "TONE" }, stereoWidth { "WIDE" }, tapeStop { "STOP" };
     ButtonAttachment boostAttachment, toneEnableAttachment, stereoWidthAttachment, tapeStopAttachment;
@@ -28,7 +32,7 @@ private:
     juce::ComboBox stopSpeed, catchUp;
     ComboBoxAttachment stopSpeedAttachment, catchUpAttachment;
 
-    juce::Rectangle<int> driveArea, toneArea, outputArea, motionArea, noiseArea, stopArea;
+    juce::Rectangle<int> faceplate, header, transportArea, driveArea, toneArea, outputArea, motionArea, noiseArea;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };
