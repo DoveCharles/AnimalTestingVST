@@ -6,10 +6,10 @@
 
     Every hop, each channel's frame is analysed in dB and compared with a smoothed copy of
     itself (a moving average across log frequency). Bins standing above that local average by
-    more than the Selectivity threshold are resonances; the excess becomes a cut, limited to
-    Depth, weighted by frequency, smoothed across neighbouring bins (so it doesn't comb) and
-    across frames with attack and release (so it doesn't warble). Broad tilts and transients
-    don't stick out of their own neighbourhood, so they pass.
+    more than the Selectivity threshold are resonances and are cut by up to Depth (a couple of dB
+    past the threshold is enough for most of it). The cut is weighted by frequency, smoothed
+    across neighbouring bins (so it doesn't comb) and across frames with attack and release (so
+    it doesn't warble). Broad tilts and transients don't stick out of their own neighbourhood, so they pass.
 
     sqrt-Hann analysis and synthesis windows at 4x overlap; latency is one frame. */
 class ResonanceSuppressor
@@ -173,7 +173,7 @@ private:
 
         // Sharpness 0 compares each bin with the 2 octaves around it, 1 with a third of an octave.
         const auto envelopeOctaves = 2.0f * std::pow (1.0f / 6.0f, settings.sharpness);
-        const auto threshold = 0.5f + 8.0f * settings.selectivity;
+        const auto threshold = 6.0f * settings.selectivity;
         const auto depth = juce::jmax (0.0f, settings.depthDb);
         const auto framesPerSecond = (float) sampleRate / (float) hop;
         const auto coef = [framesPerSecond] (float seconds)
@@ -227,13 +227,14 @@ private:
             smoothAcrossFrequency (clipped, envelope, envelopeOctaves);
             const auto bias = 1.5f;   // the clipped average sits low by about this much on noise
 
-            // Above the threshold the cut grows one for one and then bends over towards Depth;
-            // bins near silence are left alone so the noise floor isn't chewed up.
+            // Depth is the amount: a bin a few dB past the threshold gets most of it, so Depth
+            // and Selectivity each do something audible. Bins near silence are left alone so the
+            // noise floor isn't chewed up.
             for (int k = 0; k < bins; ++k)
             {
                 const auto over = level[(size_t) k] - envelope[(size_t) k] - bias - threshold;
                 const auto audible = juce::jlimit (0.0f, 1.0f, (level[(size_t) k] + 90.0f) / 20.0f);
-                excess[(size_t) k] = over > 0.0f && depth > 0.0f ? audible * weightCurve[(size_t) k] * depth * std::tanh (over / depth) : 0.0f;
+                excess[(size_t) k] = over > 0.0f && depth > 0.0f ? audible * weightCurve[(size_t) k] * depth * (1.0f - std::exp (-over / knee)) : 0.0f;
             }
             excess[0] = 0.0f;
 
@@ -294,6 +295,7 @@ private:
     std::vector<int> displayBand;
     std::vector<float> clipped;
     std::array<std::vector<float>, maxChannels> input, output, cut, power;
+    static constexpr float knee = 2.0f;   // dB past the threshold for about 63 % of Depth
     static constexpr float detectorSeconds = 0.05f;
     static constexpr double resolutionHz = 300.0;
     int resolutionHalfBins = 7;
