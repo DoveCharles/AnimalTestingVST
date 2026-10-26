@@ -6,6 +6,10 @@
 //   UprightRender demo <output.wav> [--<param>=<value> ...]
 //       A short pub-piano passage: stride bass, chords and runs, with the sustain pedal.
 //
+//   UprightRender play <score.txt> <output.wav> [--<param>=<value> ...]
+//       Plays a score of lines "<start s> <end s> <velocity> <note> [<note> ...]" or
+//       "pedal <down s> <up s>", for comparing against a recording of the same notes.
+//
 //   UprightRender measure [--voicing=Mills|Studio]
 //       For a spread of keys: first-partial tuning error, measured vs. modelled inharmonicity,
 //       loop design, peak level and decay times, from the engine's bridge signal.
@@ -102,6 +106,43 @@ namespace
         midi.addEvent (juce::MidiMessage::noteOff (1, key == 0 ? 60 : key), (int) (seconds * 0.5 * sampleRate));
 
         return writeWav (args[1].resolveAsFile(), renderMidi (processor, midi, seconds)) ? 0 : 1;
+    }
+
+    int play (const juce::ArgumentList& args)
+    {
+        PluginProcessor processor;
+        applyParameters (processor, args);
+
+        juce::StringArray lines;
+        args[1].resolveAsFile().readLines (lines);
+
+        juce::MidiBuffer midi;
+        double seconds = 0.0;
+        auto at = [] (const juce::String& t) { return (int) (t.getDoubleValue() * sampleRate); };
+
+        for (const auto& line : lines)
+        {
+            const auto tokens = juce::StringArray::fromTokens (line.upToFirstOccurrenceOf ("#", false, false), true);
+            if (tokens.size() < 3)
+                continue;
+
+            seconds = juce::jmax (seconds, tokens[1].getDoubleValue());
+            if (tokens[0] == "pedal")
+            {
+                midi.addEvent (juce::MidiMessage::controllerEvent (1, 64, 127), at (tokens[1]));
+                midi.addEvent (juce::MidiMessage::controllerEvent (1, 64, 0), at (tokens[2]));
+                seconds = juce::jmax (seconds, tokens[2].getDoubleValue());
+                continue;
+            }
+
+            for (int i = 3; i < tokens.size(); ++i)
+            {
+                midi.addEvent (juce::MidiMessage::noteOn (1, tokens[i].getIntValue(), tokens[2].getFloatValue()), at (tokens[0]));
+                midi.addEvent (juce::MidiMessage::noteOff (1, tokens[i].getIntValue()), at (tokens[1]));
+            }
+        }
+
+        return writeWav (args[2].resolveAsFile(), renderMidi (processor, midi, seconds + 1.5)) ? 0 : 1;
     }
 
     int demo (const juce::ArgumentList& args)
@@ -340,6 +381,7 @@ int main (int argc, char* argv[])
 
     if (command == "note" && args.size() >= 2)  return note (args);
     if (command == "demo" && args.size() >= 2)  return demo (args);
+    if (command == "play" && args.size() >= 3)  return play (args);
     if (command == "measure")                   return measure (args);
     if (command == "cpu")                       return cpu();
     if (command == "glide")                     return glide();
@@ -347,6 +389,7 @@ int main (int argc, char* argv[])
     std::cout << "Usage:\n"
                  "  UprightRender note <output.wav> [--note=60] [--velocity=0.7] [--seconds=6] [--<param>=<value> ...]\n"
                  "  UprightRender demo <output.wav> [--<param>=<value> ...]\n"
+                 "  UprightRender play <score.txt> <output.wav> [--<param>=<value> ...]\n"
                  "  UprightRender measure [--voicing=Mills|Studio]\n"
                  "  UprightRender cpu\n";
     return 1;

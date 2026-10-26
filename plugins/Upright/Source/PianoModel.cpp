@@ -145,10 +145,11 @@ namespace piano
             // Hard, worn felt with grooves pressed in: much stiffer, so the tone is bright and jangly.
             s.feltStiffness *= std::pow (10.0, 0.45);
             s.strikePosition *= 0.85;
-            // Old strings and a tired board: less sustain, and the upper partials go first. (The
-            // wide unisons below already shorten the decay: each string drains on its own.)
-            s.sustainT60 *= 0.7;
-            s.highT60 *= 0.85;
+            // Against a recording of the real thing the first decay is slower than a modern
+            // upright's and the jangle of the upper partials hangs on: the old board takes energy
+            // from the strings less eagerly.
+            s.promptT60 *= 3.0;
+            s.highT60 *= 4.0;
             // Honky-tonk unisons, a different spread on every key.
             const auto spread = 3.0 + 1.5 * keyRandom (midiNote, 5);
             s.unisonCents = { -spread * (0.6 + 0.4 * std::abs (keyRandom (midiNote, 6))),
@@ -170,6 +171,8 @@ namespace piano
                                                             { 96, 17.7 }, { 103, 21.0 }, { 108, 19.2 } } });
         if (s.numStrings == 1)
             gainDb = 13.6;
+        else if (mills)
+            gainDb += 9.5; // the Mills unisons couple more loosely (promptT60 above), so move the bridge less
         s.outputGain = juce::Decibels::decibelsToGain (gainDb);
 
         // Tension modulation is strongest on the long, heavy bass strings, which swing furthest.
@@ -178,6 +181,12 @@ namespace piano
         s.tension = across (n, std::array<Anchor, 4> { { { 21, 0.015 }, { 48, 0.01 }, { 72, 0.004 }, { 96, 0.0 } } });
         s.phantom = across (n, std::array<Anchor, 4> { { { 21, 0.05 }, { 60, 0.035 }, { 84, 0.012 }, { 100, 0.0 } } });
         s.longitudinalFrequency = 17.0 * s.frequency;
+
+        // The horizontal plane: a lone bass string has nothing else to carry its tail, so its
+        // plane is louder and slower; on a unison it only roughens the aftersound a little.
+        s.planeCents = (0.3 + 0.6 * std::abs (keyRandom (midiNote, 9))) * (mills ? 1.6 : 1.0);
+        s.planeLevel = (s.numStrings == 1 ? 0.2 : 0.02) * (1.0 + 0.3 * keyRandom (midiNote, 10));
+        s.planeDecay = s.numStrings == 1 ? 2.5 : 0.9;
 
         s.highT60 = juce::jmin (s.highT60, s.sustainT60);
         s.hasDamper = n <= 88; // the top of the keyboard has no dampers
@@ -297,13 +306,14 @@ namespace piano
     }
 
     //==============================================================================
-    juce::AudioBuffer<float> makeSoundboard (double sampleRate, Voicing voicing)
+    juce::AudioBuffer<float> makeSoundboard (double sampleRate, Voicing voicing, DrivingPoint point)
     {
         const auto mills = voicing == Voicing::mills;
         const auto length = (int) (sampleRate * (mills ? 0.4 : 0.5));
         juce::AudioBuffer<float> ir (2, length);
         ir.clear();
 
+        // The same random board for every driving point.
         juce::Random rng (mills ? 1905 : 1977);
 
         // Board mobility as heard from the front of an upright: small board, weak low end.
@@ -312,8 +322,8 @@ namespace piano
             const auto lowCorner = mills ? 105.0 : 75.0;
             double db = 0.0;
             if (f < lowCorner) db += 40.0 * std::log10 (f / lowCorner);
-            if (f > 1000.0)    db -= 13.3 * std::log10 (f / 1000.0);
-            if (f > 5000.0)    db -= 26.6 * std::log10 (f / 5000.0);
+            if (f > 1000.0)    db -= (mills ? 6.6 : 13.3) * std::log10 (f / 1000.0);
+            if (f > 5000.0)    db -= (mills ? 13.3 : 26.6) * std::log10 (f / 5000.0);
 
             auto bump = [f] (double centre, double gainDb, double octaves)
             {
@@ -327,8 +337,29 @@ namespace piano
             return db;
         };
 
+        // Positions on a 1.4 x 0.9 m board, in metres from the bass end and the bottom edge.
+        struct Place { double x, y; };
+        const Place drive = point == DrivingPoint::bass  ? Place { 0.30, 0.30 }
+                          : point == DrivingPoint::tenor ? Place { 0.60, 0.35 }
+                                                         : Place { 1.15, 0.72 };
+        const std::array<Place, 2> mics { { { 0.30, 0.60 }, { 1.10, 0.60 } } };
+
+        // Each mode's shape near a point is roughly a plane wave of bending: a 9 mm spruce board
+        // has wavenumber k = 0.286 sqrt (2 pi f) rad/m, so low modes move nearby points together
+        // and high ones don't.
         auto addMode = [&] (double f, double amplitude, double t60)
         {
+            const auto k = 0.286 * std::sqrt (twoPi * f);
+            const auto direction = twoPi * rng.nextDouble();
+            const auto phase = twoPi * rng.nextDouble();
+            const auto kx = k * std::cos (direction), ky = k * std::sin (direction);
+            auto shape = [&] (Place p) { return std::sqrt (2.0) * std::cos (kx * p.x + ky * p.y + phase); };
+
+            // Below a few hundred hertz the board is small against the wavelength in air, so both
+            // mics hear its net motion alike; only higher up do they pick out their own patch of it.
+            const auto local = f * f / (f * f + 250.0 * 250.0);
+            auto heard = [&] (Place p) { return std::sqrt (1.0 - local) + std::sqrt (local) * shape (p); };
+
             const auto w = twoPi * f / sampleRate;
             const auto r = std::pow (10.0, -3.0 / (t60 * sampleRate));
             const auto samples = juce::jmin (length, (int) (t60 * sampleRate * 1.4));
@@ -336,9 +367,7 @@ namespace piano
 
             for (int ch = 0; ch < 2; ++ch)
             {
-                // Two listening positions: same modes, different amplitudes and phases.
-                const auto a = amplitude * std::sqrt (-2.0 * std::log (1.0 - rng.nextDouble() * 0.999));
-                auto z = std::polar (a, twoPi * rng.nextDouble());
+                auto z = std::complex<double> (amplitude * shape (drive) * heard (mics[(size_t) ch]), 0.0);
                 auto* out = ir.getWritePointer (ch);
                 for (int i = 0; i < samples; ++i)
                 {
@@ -383,6 +412,61 @@ namespace piano
                 ir.setSample (ch, length - fade + i, ir.getSample (ch, length - fade + i) * g);
         }
 
+        return ir;
+    }
+
+    juce::AudioBuffer<float> makeRoom (double sampleRate)
+    {
+        const auto length = (int) (sampleRate * 1.3);
+        juce::AudioBuffer<float> ir (2, length);
+        ir.clear();
+        juce::Random rng (1931); // the year Studio Two opened
+
+        for (int ch = 0; ch < 2; ++ch)
+        {
+            auto* out = ir.getWritePointer (ch);
+
+            // Early reflections off the floor, the screens round the piano and the near walls,
+            // darker the later they arrive.
+            constexpr int numReflections = 14;
+            for (int i = 0; i < numReflections; ++i)
+            {
+                const auto time = 0.006 + 0.07 * std::pow ((i + rng.nextDouble()) / numReflections, 1.4);
+                const auto gain = (rng.nextBool() ? 1.0 : -1.0) * 0.5 * std::exp (-time / 0.05);
+                const auto at = (int) (time * sampleRate);
+                const auto smear = 1 + (int) (time * sampleRate * 0.08); // absorbed highs
+                for (int j = 0; j < smear && at + j < length; ++j)
+                    out[at + j] += (float) (gain / smear);
+            }
+
+            // Diffuse tail: noise faded in as the reflections thin out, decaying with a 1.1 s
+            // T60, and darker as it goes on.
+            float lowPass = 0.0f;
+            for (int i = 0; i < length; ++i)
+            {
+                const auto t = i / sampleRate;
+                const auto fadeIn = juce::jlimit (0.0, 1.0, (t - 0.02) / 0.06);
+                const auto envelope = 0.12 * fadeIn * std::pow (10.0, -3.0 * t / 1.1);
+                const auto cutoff = 9000.0 * std::pow (0.2, t / 1.1);
+                const auto coef = (float) (1.0 - std::exp (-twoPi * cutoff / sampleRate));
+                lowPass += ((float) (rng.nextDouble() * 2.0 - 1.0) - lowPass) * coef;
+                out[i] += (float) envelope * lowPass;
+            }
+        }
+
+        double energy = 0.0;
+        for (int ch = 0; ch < 2; ++ch)
+            for (int i = 0; i < length; ++i)
+                energy += juce::square ((double) ir.getSample (ch, i));
+        ir.applyGain ((float) (1.0 / std::sqrt (energy * 0.5)));
+
+        const auto fade = length / 6;
+        for (int i = 0; i < fade; ++i)
+        {
+            const auto g = (float) (0.5 + 0.5 * std::cos (juce::MathConstants<double>::pi * i / fade));
+            for (int ch = 0; ch < 2; ++ch)
+                ir.setSample (ch, length - fade + i, ir.getSample (ch, length - fade + i) * g);
+        }
         return ir;
     }
 
@@ -465,6 +549,9 @@ namespace piano
 
         force.assign ((size_t) std::ceil (0.016 * sampleRate) + 8, 0.0f);
         damperCoef = (float) (1.0 - std::exp (-1.0 / (0.02 * sampleRate))); // felt settles in ~20 ms
+        // The felt soaks up the high partials in a few passes; well above the fundamental, so it
+        // barely pulls the pitch on the way down.
+        dampCoef = (float) (1.0 - std::exp (-twoPi * juce::jmin (juce::jmax (8.0 * spec.frequency, 1200.0), 0.4 * sampleRate) / sampleRate));
 
         energyCoef = (float) (1.0 - std::exp (-1.0 / (0.01 * sampleRate)));
         phantomLowCoef = (float) (1.0 - std::exp (-twoPi * 0.5 * spec.frequency / sampleRate));
@@ -478,7 +565,7 @@ namespace piano
         {
             std::fill (s.line.begin(), s.line.end(), 0.0f);
             s.pos = 0;
-            s.lossState = s.tuneState = 0.0f;
+            s.lossState = s.tuneState = s.dampState = 0.0f;
             s.apState.fill (0.0f);
         }
         forceLength = forcePos = 0;
@@ -537,10 +624,19 @@ namespace piano
         const auto x = (1.0 - g) / (1.0 + g);
         coupling = (float) (2.0 * x / (numStrings * (1.0 + x)));
 
+        // The horizontal plane: hit at a slight angle, so weakly excited, and drained by its own
+        // loss rather than through the vertical bridge.
+        auto& plane = strings[(size_t) numStrings];
+        tuneString (plane, spec.frequency * std::pow (2.0, (spec.unisonCents[0] + spec.planeCents) / 1200.0),
+                    spec.sustainT60 * spec.planeDecay * decay);
+        plane.exciteGain = (float) (1.0 / (2.0 * numStrings * spec.impedance));
+        plane.damperLoopGain = strings[0].damperLoopGain;
+        planeCoupling = (float) (spec.planeLevel * coupling * numStrings);
+
         auto shortest = strings[0].delay;
-        for (int i = 1; i < numStrings; ++i)
+        for (int i = 1; i <= numStrings; ++i)
             shortest = juce::jmin (shortest, strings[(size_t) i].delay);
-        maxShift = (float) juce::jmax (0, shortest - 2);
+        maxShift = (float) juce::jmax (0, shortest - 3); // the read looks two samples ahead
         tensionSamples = (float) (spec.tension * period);
 
         loopLength = (int) std::ceil (period) + 1;
@@ -580,14 +676,21 @@ namespace piano
             const auto whole = (int) shift;
             const auto frac = shift - (float) whole;
 
-            std::array<float, maxStrings> arriving {};
+            std::array<float, maxStrings + 1> arriving {};
             float sum = 0.0f;
-            for (int i = 0; i < numStrings; ++i)
+            for (int i = 0; i <= numStrings; ++i)
             {
                 auto& s = strings[(size_t) i];
+                // Cubic Lagrange: a linear read would lowpass the loop on every pass while the
+                // shift is fractional, and strip the attack of its upper partials.
                 const auto at = s.pos - s.delay + whole;
-                const auto older = s.line[(size_t) (at & s.mask)];
-                auto y = older + frac * (s.line[(size_t) ((at + 1) & s.mask)] - older);
+                const auto ym1 = s.line[(size_t) ((at - 1) & s.mask)];
+                const auto y0 = s.line[(size_t) (at & s.mask)];
+                const auto y1 = s.line[(size_t) ((at + 1) & s.mask)];
+                const auto y2 = s.line[(size_t) ((at + 2) & s.mask)];
+                const auto d = frac;
+                auto y = -d * (d - 1.0f) * (d - 2.0f) / 6.0f * ym1 + (d + 1.0f) * (d - 1.0f) * (d - 2.0f) / 2.0f * y0
+                         - (d + 1.0f) * d * (d - 2.0f) / 2.0f * y1 + (d + 1.0f) * d * (d - 1.0f) / 6.0f * y2;
 
                 s.lossState = s.lossGain * (1.0f - s.lossPole) * y + s.lossPole * s.lossState;
                 y = s.lossState;
@@ -603,17 +706,25 @@ namespace piano
                 s.tuneState = y - s.tuneCoef * o;
 
                 arriving[(size_t) i] = o;
-                sum += o;
+                if (i < numStrings)
+                    sum += o;
             }
 
-            const auto bridge = coupling * sum;
+            const auto vertical = coupling * sum;
+            const auto bridge = vertical + planeCoupling * arriving[(size_t) numStrings];
 
-            for (int i = 0; i < numStrings; ++i)
+            for (int i = 0; i <= numStrings; ++i)
             {
                 auto& s = strings[(size_t) i];
                 const auto dampedGain = fastRelease ? fastLoopGain : s.damperLoopGain;
                 const auto loopGain = 1.0f - damper * (1.0f - dampedGain);
-                const auto w = (arriving[(size_t) i] - bridge + excite * s.exciteGain) * loopGain;
+                const auto reflected = i < numStrings ? vertical : 0.0f;
+                auto w = (arriving[(size_t) i] - reflected + excite * s.exciteGain) * loopGain;
+
+                // The felt takes the high partials off first.
+                s.dampState += (w - s.dampState) * dampCoef;
+                w += 0.5f * damper * (s.dampState - w);
+
                 s.line[(size_t) s.pos] = w;
                 s.pos = (s.pos + 1) & s.mask;
                 peak = juce::jmax (peak, std::abs (w));
@@ -630,8 +741,14 @@ namespace piano
             const auto high = squared - phantomLow;
             const auto band = bandpass (high, bandA1, bandA2, bandA3, bandIc1, bandIc2);
 
+            // While the felt is landing it rattles against the moving string.
+            auto buzz = 0.0f;
+            const auto landing = damper * (1.0f - damper);
+            if (dampersOn && landing > 0.01f)
+                buzz = feltNoise * 1.4f * landing * bridge * (random.nextFloat() * 2.0f - 1.0f);
+
             bridgeOut[n] += bridge;
-            radiatedOut[n] += bridge * outputGain + phantomGain * (high + 3.0f * bandK * band);
+            radiatedOut[n] += (bridge + buzz) * outputGain + phantomGain * (high + 3.0f * bandK * band);
         }
 
         level = peak;
@@ -747,8 +864,10 @@ namespace piano
 
         e.thump = (float) (sound.thumpLevel * amount);
         e.thumpDecay = (float) std::exp (-1000.0 / (sound.thumpMs * rate));
-        e.cosW = (float) std::cos (twoPi * sound.thumpHz / rate);
-        e.sinW = (float) std::sin (twoPi * sound.thumpHz / rate);
+        // No two knocks ring at quite the same pitch, so a chord's don't pile up in phase.
+        const auto thumpHz = sound.thumpHz * (0.85 + 0.3 * random.nextDouble());
+        e.cosW = (float) std::cos (twoPi * thumpHz / rate);
+        e.sinW = (float) std::sin (twoPi * thumpHz / rate);
 
         e.remaining = e.wait + (int) (7.0 * juce::jmax (sound.noiseMs, sound.thumpMs) * 0.001 * rate);
     }
@@ -762,7 +881,7 @@ namespace piano
         const auto place = (midiNote - lowestNote) / (double) (numKeys - 1);
         // The key bottoming on the keybed, just after the hammer lands: a click and a knock
         // through the key frame.
-        add ({ 1.5, 1800.0 + 800.0 * place, 1.2, 5.0, 0.004 * v, 95.0 + 40.0 * place, 18.0, 0.006 * v, false });
+        add ({ 1.5, 1800.0 + 800.0 * place, 1.2, 5.0, 0.004 * v, 95.0 + 40.0 * place, 18.0, 0.003 * v, false });
     }
 
     void ActionNoise::keyUp (int midiNote, bool damperLands)
@@ -836,7 +955,29 @@ namespace piano
             const auto design = designLoop (spec, sampleRate);
             keys[(size_t) i].prepare (spec, design, sampleRate);
             resonators[(size_t) i].prepare (spec, design, sampleRate);
+
+            // Singles and bichords sit on the bass bridge; the rest along the treble bridge. The
+            // board feeds sum to one, so the mono sum is the same as before the split.
+            auto& r = routing[(size_t) i];
+            r.fill (0.0f);
+            if (spec.numStrings < 3)
+            {
+                r[bassBoard] = 1.0f;
+            }
+            else
+            {
+                const auto t = (float) (lowestNote + i - 47) / (float) (highestNote - 47);
+                r[tenorBoard] = 1.0f - t;
+                r[topBoard] = t;
+            }
+
+            // The close mics hear the strings themselves too, bass on the left.
+            const auto place = (float) i / (float) (numKeys - 1);
+            const auto angle = juce::MathConstants<float>::pi * (0.25f + 0.32f * (place - 0.5f));
+            r[dryLeft] = std::sqrt (2.0f) * std::cos (angle);
+            r[dryRight] = std::sqrt (2.0f) * std::sin (angle);
         }
+        noiseRouting = { 0.0f, 1.0f, 0.0f, 1.0f, 1.0f };
         down.fill (false);
     }
 
@@ -919,10 +1060,13 @@ namespace piano
             k.dampersOn = k.fastRelease || (! k.held && ! sustain && k.getSpec().hasDamper);
     }
 
-    void Engine::render (float* out, int numSamples)
+    void Engine::render (const Buses& buses, int numSamples)
     {
         updateDampers();
         noise.setAmount (2.0f * controls.noise);
+        for (auto& k : keys)
+            k.feltNoise = 2.0f * controls.noise;
+
         // Off its own pitches each open string still passes some of the bridge motion back, and
         // with up to 88 of them that adds up: at full, the halo is about as loud as the note.
         const auto drive = 0.65f * controls.resonance;
@@ -930,9 +1074,16 @@ namespace piano
         for (int start = 0; start < numSamples; start += subBlock)
         {
             const auto n = juce::jmin (subBlock, numSamples - start);
-            std::array<float, subBlock> bridge {}, radiated {};
+            std::array<float, subBlock> bridge {}, radiated;
             std::array<bool, numKeys> sounding {};
             bool anySounding = false;
+
+            auto route = [&] (const std::array<float, numBuses>& gains)
+            {
+                for (int b = 0; b < numBuses; ++b)
+                    if (gains[(size_t) b] != 0.0f)
+                        juce::FloatVectorOperations::addWithMultiply (buses[(size_t) b] + start, radiated.data(), gains[(size_t) b], n);
+            };
 
             for (size_t i = 0; i < keys.size(); ++i)
             {
@@ -942,15 +1093,19 @@ namespace piano
 
                 auto& own = keyBridge[i];
                 std::fill_n (own.begin(), n, 0.0f);
+                std::fill_n (radiated.begin(), n, 0.0f);
                 k.render (own.data(), radiated.data(), n);
                 juce::FloatVectorOperations::add (bridge.data(), own.data(), n);
+                route (routing[i]);
                 sounding[i] = anySounding = true;
 
                 if (k.isSilent())
                     k.reset();
             }
 
+            std::fill_n (radiated.begin(), n, 0.0f);
             noise.render (radiated.data(), bridge.data(), n);
+            route (noiseRouting);
 
             // The open strings ring with everything else on the bridge, but not with themselves:
             // a key's own strings are already in its loops.
@@ -965,10 +1120,22 @@ namespace piano
                 std::array<float, subBlock> input;
                 for (int j = 0; j < n; ++j)
                     input[(size_t) j] = bridge[(size_t) j] - (sounding[i] ? keyBridge[i][(size_t) j] : 0.0f);
+                std::fill_n (radiated.begin(), n, 0.0f);
                 r.render (input.data(), radiated.data(), n, undamped, drive, controls.decay);
+                route (routing[i]);
             }
+        }
+    }
 
-            juce::FloatVectorOperations::add (out + start, radiated.data(), n);
+    void Engine::render (float* out, int numSamples)
+    {
+        for (int start = 0; start < numSamples; start += subBlock)
+        {
+            const auto n = juce::jmin (subBlock, numSamples - start);
+            std::array<std::array<float, subBlock>, numBuses> bus {};
+            render (Buses { bus[0].data(), bus[1].data(), bus[2].data(), bus[3].data(), bus[4].data() }, n);
+            for (int b = bassBoard; b <= topBoard; ++b)
+                juce::FloatVectorOperations::add (out + start, bus[(size_t) b].data(), n);
         }
     }
 }

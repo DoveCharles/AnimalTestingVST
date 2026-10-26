@@ -10,6 +10,7 @@ PluginEditor::PluginEditor (PluginProcessor& p)
       resonance (p.apvts, ParamIDs::resonance, "Resonance"),
       noise    (p.apvts, ParamIDs::noise, "Noise"),
       body     (p.apvts, ParamIDs::body, "Body"),
+      room     (p.apvts, ParamIDs::room, "Room"),
       volume   (p.apvts, ParamIDs::volume, "Volume"),
       keyboard (p.keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard)
 {
@@ -31,11 +32,11 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     addAndMakeVisible (presetBar);
     addAndMakeVisible (voicingLabel);
     addAndMakeVisible (voicing);
-    for (auto* k : { &hardness, &unison, &decay, &resonance, &noise, &body, &volume })
+    for (auto* k : { &hardness, &unison, &decay, &resonance, &noise, &body, &room, &volume })
         addAndMakeVisible (*k);
     addAndMakeVisible (keyboard);
 
-    setSize (700, 380);
+    setSize (780, 380);
 }
 
 PluginEditor::~PluginEditor()
@@ -63,7 +64,7 @@ void PluginEditor::resized()
     keyboard.setBounds (area.removeFromBottom (90));
     area.removeFromBottom (10);
 
-    const auto knobWidth = area.getWidth() / 7;
-    for (auto* k : { &hardness, &unison, &decay, &resonance, &noise, &body, &volume })
+    const auto knobWidth = area.getWidth() / 8;
+    for (auto* k : { &hardness, &unison, &decay, &resonance, &noise, &body, &room, &volume })
         k->setBounds (area.removeFromLeft (knobWidth));
 }
