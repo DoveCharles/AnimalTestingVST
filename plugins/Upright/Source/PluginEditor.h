@@ -20,7 +20,7 @@ private:
     juce::ComboBox voicing;
     juce::AudioProcessorValueTreeState::ComboBoxAttachment voicingAttachment;
 
-    at::Knob hardness, unison, decay, resonance, noise, body, volume;
+    at::Knob hardness, unison, decay, resonance, noise, body, room, volume;
 
     juce::MidiKeyboardComponent keyboard;
 

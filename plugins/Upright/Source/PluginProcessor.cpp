@@ -6,6 +6,9 @@ namespace
     /** Bridge velocity (m/s) to output level: a pedalled stride passage at velocity 0.7 peaks
         around -9 dBFS, leaving room for fortissimo chords. */
     constexpr float outputScale = 0.7f;
+
+    /** The room is heard from close mics: even at full it sits well behind the piano. */
+    float roomLevelFor (float percent) { return 0.5f * percent / 100.0f; }
 }
 
 PluginProcessor::PluginProcessor()
@@ -17,6 +20,7 @@ PluginProcessor::PluginProcessor()
       resonanceParam (at::params::raw (apvts, ParamIDs::resonance)),
       noiseParam    (at::params::raw (apvts, ParamIDs::noise)),
       bodyParam     (at::params::raw (apvts, ParamIDs::body)),
+      roomParam     (at::params::raw (apvts, ParamIDs::room)),
       volumeParam   (at::params::raw (apvts, ParamIDs::volume))
 {
 }
@@ -31,6 +35,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
     layout.add (at::params::makePercent (ParamIDs::resonance, "Resonance", 50.0f));
     layout.add (at::params::makePercent (ParamIDs::noise, "Noise", 50.0f));
     layout.add (at::params::makePercent (ParamIDs::body, "Body", 85.0f));
+    layout.add (at::params::makePercent (ParamIDs::room, "Room", 25.0f));
     layout.add (at::params::makeDecibels (ParamIDs::volume, "Volume", -24.0f, 12.0f, 0.0f));
     return layout;
 }
@@ -44,21 +49,37 @@ void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
         const auto voicing = v == 0 ? piano::Voicing::studio : piano::Voicing::mills;
         engines[(size_t) v].prepare (sampleRate, voicing);
 
-        soundboards[(size_t) v].loadImpulseResponse (piano::makeSoundboard (sampleRate, voicing), sampleRate,
-                                                     juce::dsp::Convolution::Stereo::yes,
-                                                     juce::dsp::Convolution::Trim::no,
-                                                     juce::dsp::Convolution::Normalise::no);
-        soundboards[(size_t) v].prepare (spec);
-        boardBuffers[(size_t) v].setSize (2, samplesPerBlock);
+        for (int p = 0; p < piano::numDrivingPoints; ++p)
+        {
+            auto& board = soundboards[(size_t) v][(size_t) p];
+            board.loadImpulseResponse (piano::makeSoundboard (sampleRate, voicing, (piano::DrivingPoint) p), sampleRate,
+                                       juce::dsp::Convolution::Stereo::yes,
+                                       juce::dsp::Convolution::Trim::no,
+                                       juce::dsp::Convolution::Normalise::no);
+            board.prepare (spec);
+            boardBuffers[(size_t) v][(size_t) p].setSize (2, samplesPerBlock);
+        }
     }
 
-    bridge.assign ((size_t) samplesPerBlock, 0.0f);
+    room.loadImpulseResponse (piano::makeRoom (sampleRate), sampleRate,
+                              juce::dsp::Convolution::Stereo::yes,
+                              juce::dsp::Convolution::Trim::no,
+                              juce::dsp::Convolution::Normalise::no);
+    room.prepare (spec);
+    roomBuffer.setSize (2, samplesPerBlock);
+    dry.setSize (2, samplesPerBlock);
+    mix.setSize (2, samplesPerBlock);
 
-    dryHighPass.coefficients = juce::dsp::IIR::Coefficients<float>::makeHighPass (sampleRate, 30.0);
-    dryHighPass.reset();
+    for (auto& f : dryHighPass)
+    {
+        f.coefficients = juce::dsp::IIR::Coefficients<float>::makeHighPass (sampleRate, 30.0);
+        f.reset();
+    }
 
     body.reset (sampleRate, 0.05);
     body.setCurrentAndTargetValue (bodyParam.load() / 100.0f);
+    roomLevel.reset (sampleRate, 0.05);
+    roomLevel.setCurrentAndTargetValue (roomLevelFor (roomParam.load()));
     volume.reset (sampleRate, 0.05);
     volume.setCurrentAndTargetValue (juce::Decibels::decibelsToGain (volumeParam.load()));
 }
@@ -104,19 +125,24 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
 
     const auto selected = (size_t) juce::jlimit (0, 1, (int) voicingParam.load());
 
-    // Each engine goes through its own soundboard; the bridge signal of both is the dry path.
-    std::fill (bridge.begin(), bridge.begin() + numSamples, 0.0f);
+    // Each engine drives its own boards; the strings as the close mics hear them are shared.
+    dry.clear (0, 0, numSamples);
+    dry.clear (1, 0, numSamples);
 
     for (size_t v = 0; v < engines.size(); ++v)
     {
-        auto& board = boardBuffers[v];
-        board.clear (0, 0, numSamples);
+        auto& boards = boardBuffers[v];
+        for (auto& b : boards)
+            b.clear (0, 0, numSamples);
 
         int position = 0;
         auto render = [&] (int end)
         {
             if (end > position)
-                engines[v].render (board.getWritePointer (0, position), end - position);
+                engines[v].render ({ boards[0].getWritePointer (0, position), boards[1].getWritePointer (0, position),
+                                     boards[2].getWritePointer (0, position), dry.getWritePointer (0, position),
+                                     dry.getWritePointer (1, position) },
+                                   end - position);
             position = end;
         };
 
@@ -127,28 +153,51 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
         }
         render (numSamples);
 
-        juce::FloatVectorOperations::add (bridge.data(), board.getReadPointer (0), numSamples);
-        board.copyFrom (1, 0, board, 0, 0, numSamples);
-
-        juce::dsp::AudioBlock<float> block (board.getArrayOfWritePointers(), 2, (size_t) numSamples);
-        soundboards[v].process (juce::dsp::ProcessContextReplacing<float> (block));
+        for (size_t p = 0; p < boards.size(); ++p)
+        {
+            boards[p].copyFrom (1, 0, boards[p], 0, 0, numSamples);
+            juce::dsp::AudioBlock<float> block (boards[p].getArrayOfWritePointers(), 2, (size_t) numSamples);
+            soundboards[v][p].process (juce::dsp::ProcessContextReplacing<float> (block));
+        }
     }
 
     body.setTargetValue (bodyParam.load() / 100.0f);
+    roomLevel.setTargetValue (roomLevelFor (roomParam.load()));
     volume.setTargetValue (juce::Decibels::decibelsToGain (volumeParam.load()));
+
+    for (int ch = 0; ch < 2; ++ch)
+    {
+        auto* d = dry.getWritePointer (ch);
+        for (int i = 0; i < numSamples; ++i)
+            d[i] = dryHighPass[(size_t) ch].processSample (d[i]);
+    }
+
+    for (int i = 0; i < numSamples; ++i)
+    {
+        const auto wet = body.getNextValue();
+        for (int ch = 0; ch < 2; ++ch)
+        {
+            float boardSample = 0.0f;
+            for (const auto& voicingBoards : boardBuffers)
+                for (const auto& b : voicingBoards)
+                    boardSample += b.getSample (ch, i);
+            mix.setSample (ch, i, dry.getSample (ch, i) * (1.0f - wet) + wet * boardSample);
+        }
+    }
+
+    // The room hears the whole piano.
+    for (int ch = 0; ch < 2; ++ch)
+        roomBuffer.copyFrom (ch, 0, mix, ch, 0, numSamples);
+    juce::dsp::AudioBlock<float> roomBlock (roomBuffer.getArrayOfWritePointers(), 2, (size_t) numSamples);
+    room.process (juce::dsp::ProcessContextReplacing<float> (roomBlock));
 
     const auto outChannels = juce::jmin (2, buffer.getNumChannels());
     for (int i = 0; i < numSamples; ++i)
     {
-        const auto wet = body.getNextValue();
         const auto gain = volume.getNextValue() * outputScale;
-        const auto dry = dryHighPass.processSample (bridge[(size_t) i]) * (1.0f - wet);
-
+        const auto roomGain = roomLevel.getNextValue();
         for (int ch = 0; ch < outChannels; ++ch)
-        {
-            const auto boardSample = boardBuffers[0].getSample (ch, i) + boardBuffers[1].getSample (ch, i);
-            buffer.setSample (ch, i, gain * (dry + wet * boardSample));
-        }
+            buffer.setSample (ch, i, gain * (mix.getSample (ch, i) + roomGain * roomBuffer.getSample (ch, i)));
     }
 }
 

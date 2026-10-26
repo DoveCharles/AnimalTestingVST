@@ -12,6 +12,7 @@ namespace ParamIDs
     inline constexpr auto resonance = "resonance";
     inline constexpr auto noise    = "noise";
     inline constexpr auto body     = "body";
+    inline constexpr auto room     = "room";
     inline constexpr auto volume   = "volume";
 }
 
@@ -24,7 +25,7 @@ public:
 
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
-    double getTailLengthSeconds() const override { return 0.5; }
+    double getTailLengthSeconds() const override { return 1.3; }
 
     juce::AudioProcessorEditor* createEditor() override;
 
@@ -42,17 +43,22 @@ private:
     std::atomic<float>& resonanceParam;
     std::atomic<float>& noiseParam;
     std::atomic<float>& bodyParam;
+    std::atomic<float>& roomParam;
     std::atomic<float>& volumeParam;
 
     // One engine per voicing: switching never rebuilds anything on the audio thread, and notes
     // already ringing finish in the voicing they were struck in.
     std::array<piano::Engine, 2> engines;
-    std::array<juce::dsp::Convolution, 2> soundboards;
 
-    std::array<juce::AudioBuffer<float>, 2> boardBuffers;
-    std::vector<float> bridge;
-    juce::dsp::IIR::Filter<float> dryHighPass;
-    juce::SmoothedValue<float> body, volume;
+    // Per voicing, one board response per driving point.
+    std::array<std::array<juce::dsp::Convolution, piano::numDrivingPoints>, 2> soundboards;
+    std::array<std::array<juce::AudioBuffer<float>, piano::numDrivingPoints>, 2> boardBuffers;
+
+    juce::AudioBuffer<float> dry, mix;
+    std::array<juce::dsp::IIR::Filter<float>, 2> dryHighPass;
+    juce::dsp::Convolution room;
+    juce::AudioBuffer<float> roomBuffer;
+    juce::SmoothedValue<float> body, roomLevel, volume;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 };

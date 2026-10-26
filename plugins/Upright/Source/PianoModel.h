@@ -15,6 +15,9 @@
       once per strike at 4x the sample rate. Its force pulse, combed by the reflection from the
       near end of the string, excites the loops. Harder hits compress the felt further, which is
       stiffer, so the pulse gets shorter and the tone brighter.
+    - Each key also has a horizontal plane of vibration: a separate loop, a fraction of a cent
+      off, that the hammer barely excites and the bridge barely drains. It takes over once the
+      vertical motion has gone, giving the slow tail and the uneven decay of real strings.
     - The strings of one key meet at a resistive bridge. The in-phase motion drives the bridge and
       dies fast (the prompt sound); out-of-phase motion barely moves it and rings on (the
       aftersound), so slightly mistuned unisons give the piano's two-stage decay and slow beating.
@@ -23,9 +26,13 @@
       strongest near the string's longitudinal resonance. This is the bite in a hard bass note.
     - Every key whose damper is off (held, pedalled, or above the dampers) has a resonator that
       the bridge drives: the open strings ring along with what is played.
+    - A damper takes the high partials first, and buzzes briefly as its felt lands.
     - The action makes noise: the key hits the keybed, it knocks back up, dampers land, and the
       pedal lifts and drops the whole damper rail (setting the open strings faintly ringing).
     - The bridge velocity of all keys goes through a soundboard: a synthetic modal impulse response.
+      The bass bridge and the two ends of the treble bridge drive the board at different points,
+      so each has its own response, heard through two close mics over the bass and treble ends.
+      The strings themselves are picked up too, panned by key, and a short room goes round it all.
 
     Two voicings: a clean, freshly tuned studio upright, and "Mills", after the Abbey Road
     Studio Two upright: hard, worn hammers, wide honky-tonk unisons, keys a little off from each
@@ -60,6 +67,9 @@ namespace piano
         double tension = 0.0;       // pitch rise, as a fraction, per unit of normalised string energy
         double phantom = 0.0;       // level of the phantom partials relative to the string at mf
         double longitudinalFrequency = 1000.0;
+        double planeCents = 0.5;    // the horizontal plane's tuning against the first string
+        double planeLevel = 0.1;    // its level at the strike, against the vertical motion
+        double planeDecay = 2.0;    // its T60 against sustainT60
         bool hasDamper = true;
     };
 
@@ -75,8 +85,16 @@ namespace piano
 
     LoopDesign designLoop (const KeySpec&, double sampleRate);
 
-    /** A stereo soundboard + cabinet impulse response, built from damped modes. */
-    juce::AudioBuffer<float> makeSoundboard (double sampleRate, Voicing);
+    /** Where the strings drive the board: the bass bridge, and the low and high ends of the treble bridge. */
+    enum class DrivingPoint { bass, tenor, top };
+    constexpr int numDrivingPoints = 3;
+
+    /** A stereo soundboard + cabinet impulse response, built from damped modes, as two close mics
+        (over the bass end, left, and the treble end, right) hear it when `point` is driven. */
+    juce::AudioBuffer<float> makeSoundboard (double sampleRate, Voicing, DrivingPoint point);
+
+    /** A stereo impulse response of a short, large studio room heard from close mics. */
+    juce::AudioBuffer<float> makeRoom (double sampleRate);
 
     struct Controls
     {
@@ -86,6 +104,11 @@ namespace piano
         float resonance = 0.5f; // 0..1, sympathetic resonance
         float noise = 0.5f;     // 0..1, action noise
     };
+
+    /** The engine's outputs: what each driving point puts into the board, and the strings as the
+        close mics hear them directly. */
+    enum Bus { bassBoard, tenorBoard, topBoard, dryLeft, dryRight, numBuses };
+    using Buses = std::array<float*, numBuses>;
 
     /** Bridge velocity times the key's output gain, for a key struck at velocity 0.7: about the
         peak each key reaches. The tension and phantom partials are scaled from it. */
@@ -126,6 +149,7 @@ namespace piano
         bool held = false;
         bool dampersOn = false; // set by the engine from key, pedal and stealing
         bool fastRelease = false;
+        float feltNoise = 1.0f; // scale of the damper felt's buzz
         float level = 0.0f;
         int age = 0;
 
@@ -146,6 +170,7 @@ namespace piano
             float tuneCoef = 0.0f, tuneState = 0.0f;
             float exciteGain = 1.0f;
             float damperLoopGain = 1.0f;
+            float dampState = 0.0f;
         };
 
         void tuneString (String&, double frequency, double t60);
@@ -153,11 +178,12 @@ namespace piano
         KeySpec spec;
         LoopDesign design;
         double rate = 48000.0;
-        std::array<String, maxStrings> strings;
+        // The vertical strings, then the horizontal plane at index numStrings.
+        std::array<String, maxStrings + 1> strings;
         int numStrings = 1;
-        float coupling = 0.0f;
+        float coupling = 0.0f, planeCoupling = 0.0f;
         float damper = 0.0f;
-        float damperCoef = 0.0f;
+        float damperCoef = 0.0f, dampCoef = 0.0f;
 
         std::vector<float> force;
         int forceLength = 0, forcePos = 0, combDelay = 1;
@@ -254,7 +280,10 @@ namespace piano
         void setSoftPedal (bool on) noexcept { soft = on; }
         void allNotesOff();
 
-        /** Adds the summed bridge velocity of all keys (mono) to `out`. */
+        /** Adds the radiated output of all keys to the buses. */
+        void render (const Buses&, int numSamples);
+
+        /** Adds everything the board gets, as one signal, to `out` (for measuring). */
         void render (float* out, int numSamples);
 
         static constexpr int maxActiveKeys = 48;
@@ -269,6 +298,8 @@ namespace piano
         std::array<Resonator, numKeys> resonators;
         std::array<bool, numKeys> down {}; // the key is held, whether or not its strings still sound
         std::array<std::array<float, subBlock>, numKeys> keyBridge {};
+        std::array<std::array<float, numBuses>, numKeys> routing {};
+        std::array<float, numBuses> noiseRouting {};
         ActionNoise noise;
         Hammer hammer;
         Controls controls;
