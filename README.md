@@ -111,6 +111,17 @@ build/tools/WaterfallPreview/WaterfallPreview_artefacts/Release/WaterfallPreview
 
 Parameters take the same text the knobs show (`--key=E`, `--brightness=86`, `--mix=100`).
 
+## Measuring a reference plugin
+
+`TapeCapture` loads an installed VST3/AU (by default Arturia's Tape MELLO-FI), plays test signals through it and prints gain curves and harmonics, frequency response, wow/flutter rates and depths, noise spectra and stereo correlation. These are the targets for a model of our own:
+
+```bash
+cmake --build build --target TapeCapture
+tools/TapeCapture/capture-mellofi.sh
+```
+
+That writes every test to `renders-mellofi/` (gitignored). A summary of the results is in [tools/TapeCapture/mellofi-targets.md](tools/TapeCapture/mellofi-targets.md). Single tests take parameters by name with normalised values, e.g. `TapeCapture wow --Wow=0.5 --"Stereo Width"=1`; `TapeCapture selftest` checks the analysis against signals with known answers.
+
 ## CI
 
 `.github/workflows/build.yml`:
