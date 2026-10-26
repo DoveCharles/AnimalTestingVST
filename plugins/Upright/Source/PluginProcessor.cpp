@@ -14,6 +14,8 @@ PluginProcessor::PluginProcessor()
       hardnessParam (at::params::raw (apvts, ParamIDs::hardness)),
       unisonParam   (at::params::raw (apvts, ParamIDs::unison)),
       decayParam    (at::params::raw (apvts, ParamIDs::decay)),
+      resonanceParam (at::params::raw (apvts, ParamIDs::resonance)),
+      noiseParam    (at::params::raw (apvts, ParamIDs::noise)),
       bodyParam     (at::params::raw (apvts, ParamIDs::body)),
       volumeParam   (at::params::raw (apvts, ParamIDs::volume))
 {
@@ -26,6 +28,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
     layout.add (at::params::makePercent (ParamIDs::hardness, "Hardness", 50.0f));
     layout.add (at::params::makePercent (ParamIDs::unison, "Unison", 30.0f));
     layout.add (at::params::makeFloat (ParamIDs::decay, "Decay", { 25.0f, 200.0f, 1.0f }, 100.0f, "%", 0));
+    layout.add (at::params::makePercent (ParamIDs::resonance, "Resonance", 50.0f));
+    layout.add (at::params::makePercent (ParamIDs::noise, "Noise", 50.0f));
     layout.add (at::params::makePercent (ParamIDs::body, "Body", 85.0f));
     layout.add (at::params::makeDecibels (ParamIDs::volume, "Volume", -24.0f, 12.0f, 0.0f));
     return layout;
@@ -72,7 +76,8 @@ void PluginProcessor::handleMidi (const juce::MidiMessage& m, piano::Engine& eng
     }
     else if (m.isSustainPedalOn() || m.isSustainPedalOff())
     {
-        engine.setSustain (m.isSustainPedalOn());
+        // Only the selected voicing's pedal makes a noise; the other just follows it.
+        engine.setSustain (m.isSustainPedalOn(), strikes);
     }
     else if (m.isSoftPedalOn() || m.isSoftPedalOff())
     {
@@ -92,7 +97,8 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
     buffer.clear();
     keyboardState.processNextMidiBuffer (midi, 0, numSamples, true);
 
-    const piano::Controls controls { hardnessParam.load() / 100.0f, unisonParam.load() / 100.0f, decayParam.load() / 100.0f };
+    const piano::Controls controls { hardnessParam.load() / 100.0f, unisonParam.load() / 100.0f, decayParam.load() / 100.0f,
+                                     resonanceParam.load() / 100.0f, noiseParam.load() / 100.0f };
     for (auto& e : engines)
         e.setControls (controls);
 

@@ -9,6 +9,8 @@ namespace ParamIDs
     inline constexpr auto hardness = "hardness";
     inline constexpr auto unison   = "unison";
     inline constexpr auto decay    = "decay";
+    inline constexpr auto resonance = "resonance";
+    inline constexpr auto noise    = "noise";
     inline constexpr auto body     = "body";
     inline constexpr auto volume   = "volume";
 }
@@ -37,6 +39,8 @@ private:
     std::atomic<float>& hardnessParam;
     std::atomic<float>& unisonParam;
     std::atomic<float>& decayParam;
+    std::atomic<float>& resonanceParam;
+    std::atomic<float>& noiseParam;
     std::atomic<float>& bodyParam;
     std::atomic<float>& volumeParam;
 

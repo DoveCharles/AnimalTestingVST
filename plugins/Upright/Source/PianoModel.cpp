@@ -57,6 +57,51 @@ namespace piano
         {
             return std::pow (10.0, -3.0 / (t60 * frequency));
         }
+
+        struct LoopTuning { int delay; double coef; };
+
+        /** Splits what's left of a loop's period, after its filters, into whole samples and a
+            first-order allpass that makes up the fraction exactly at the fundamental. */
+        LoopTuning tuneLoop (double sampleRate, double frequency, int stages, double dispersionCoef,
+                             double lossPole, int maxDelay)
+        {
+            const auto w1 = twoPi * frequency / sampleRate;
+            const auto remaining = sampleRate / frequency
+                                 - stages * (stages > 0 ? allpassPhaseDelay (dispersionCoef, w1) : 0.0)
+                                 - onePolePhaseDelay (lossPole, w1);
+
+            const auto delay = juce::jlimit (1, maxDelay, (int) std::floor (remaining - 0.5));
+            const auto fraction = remaining - delay;
+
+            double lo = -0.95, hi = 0.95;
+            for (int i = 0; i < 40; ++i)
+            {
+                const auto c = 0.5 * (lo + hi);
+                (allpassPhaseDelay (c, w1) > fraction ? lo : hi) = c;
+            }
+            return { delay, 0.5 * (lo + hi) };
+        }
+
+        /** Coefficients of a TPT state-variable bandpass; its output times k peaks at unity. */
+        void bandpassCoefs (double frequency, double q, double sampleRate, float& a1, float& a2, float& a3, float& k)
+        {
+            const auto g = std::tan (juce::MathConstants<double>::pi * juce::jmin (frequency, 0.45 * sampleRate) / sampleRate);
+            k = (float) (1.0 / q);
+            a1 = (float) (1.0 / (1.0 + g * (g + k)));
+            a2 = (float) (g * a1);
+            a3 = (float) (g * a2);
+        }
+
+        /** One step of that bandpass; returns the band output (times k for unity peak). */
+        float bandpass (float x, float a1, float a2, float a3, float& ic1, float& ic2)
+        {
+            const auto v3 = x - ic2;
+            const auto v1 = a1 * ic1 + a2 * v3;
+            const auto v2 = ic2 + a2 * ic1 + a3 * v3;
+            ic1 = 2.0f * v1 - ic1;
+            ic2 = 2.0f * v2 - ic2;
+            return v1;
+        }
     }
 
     //==============================================================================
@@ -126,6 +171,13 @@ namespace piano
         if (s.numStrings == 1)
             gainDb = 13.6;
         s.outputGain = juce::Decibels::decibelsToGain (gainDb);
+
+        // Tension modulation is strongest on the long, heavy bass strings, which swing furthest.
+        // Phantom partials gather around the longitudinal resonance, roughly 17 times the
+        // fundamental (Conklin); above the tenor it is out of hearing range.
+        s.tension = across (n, std::array<Anchor, 4> { { { 21, 0.015 }, { 48, 0.01 }, { 72, 0.004 }, { 96, 0.0 } } });
+        s.phantom = across (n, std::array<Anchor, 4> { { { 21, 0.05 }, { 60, 0.035 }, { 84, 0.012 }, { 100, 0.0 } } });
+        s.longitudinalFrequency = 17.0 * s.frequency;
 
         s.highT60 = juce::jmin (s.highT60, s.sustainT60);
         s.hasDamper = n <= 88; // the top of the keyboard has no dampers
@@ -413,6 +465,10 @@ namespace piano
 
         force.assign ((size_t) std::ceil (0.016 * sampleRate) + 8, 0.0f);
         damperCoef = (float) (1.0 - std::exp (-1.0 / (0.02 * sampleRate))); // felt settles in ~20 ms
+
+        energyCoef = (float) (1.0 - std::exp (-1.0 / (0.01 * sampleRate)));
+        phantomLowCoef = (float) (1.0 - std::exp (-twoPi * 0.5 * spec.frequency / sampleRate));
+        bandpassCoefs (spec.longitudinalFrequency, 2.5, sampleRate, bandA1, bandA2, bandA3, bandK);
         reset();
     }
 
@@ -426,6 +482,7 @@ namespace piano
             s.apState.fill (0.0f);
         }
         forceLength = forcePos = 0;
+        energy = phantomLow = bandIc1 = bandIc2 = 0.0f;
         damper = 0.0f;
         active = held = dampersOn = fastRelease = false;
         level = 0.0f;
@@ -435,24 +492,11 @@ namespace piano
     void Key::tuneString (String& s, double frequency, double t60)
     {
         const auto w1 = twoPi * frequency / rate;
-        const auto a = design.dispersionCoef;
-        const auto remaining = rate / frequency
-                             - design.stages * (design.stages > 0 ? allpassPhaseDelay (a, w1) : 0.0)
-                             - onePolePhaseDelay (design.lossPole, w1);
+        const auto tuning = tuneLoop (rate, frequency, design.stages, design.dispersionCoef, design.lossPole, s.mask - 1);
 
-        s.delay = juce::jlimit (1, s.mask - 1, (int) std::floor (remaining - 0.5));
-        const auto fraction = remaining - s.delay;
-
-        // The tuning allpass makes up the fractional delay exactly at the fundamental.
-        double lo = -0.95, hi = 0.95;
-        for (int i = 0; i < 40; ++i)
-        {
-            const auto c = 0.5 * (lo + hi);
-            (allpassPhaseDelay (c, w1) > fraction ? lo : hi) = c;
-        }
-
-        s.tuneCoef = (float) (0.5 * (lo + hi));
-        s.apCoef = (float) a;
+        s.delay = tuning.delay;
+        s.tuneCoef = (float) tuning.coef;
+        s.apCoef = (float) design.dispersionCoef;
         s.lossPole = (float) design.lossPole;
         s.lossGain = (float) juce::jmin (0.99999, perPassGain (t60, frequency) / onePoleMagnitude (design.lossPole, w1));
     }
@@ -493,6 +537,12 @@ namespace piano
         const auto x = (1.0 - g) / (1.0 + g);
         coupling = (float) (2.0 * x / (numStrings * (1.0 + x)));
 
+        auto shortest = strings[0].delay;
+        for (int i = 1; i < numStrings; ++i)
+            shortest = juce::jmin (shortest, strings[(size_t) i].delay);
+        maxShift = (float) juce::jmax (0, shortest - 2);
+        tensionSamples = (float) (spec.tension * period);
+
         loopLength = (int) std::ceil (period) + 1;
         active = true;
         fastRelease = false;
@@ -500,11 +550,13 @@ namespace piano
         age = quietSamples = 0;
     }
 
-    void Key::render (float* out, int numSamples)
+    void Key::render (float* bridgeOut, float* radiatedOut, int numSamples)
     {
         const auto damperTarget = dampersOn ? 1.0f : 0.0f;
-        const auto outputGain = (float) spec.outputGain;
         const auto fastLoopGain = (float) perPassGain (0.03, spec.frequency);
+        const auto outputGain = (float) spec.outputGain;
+        const auto normalise = outputGain / referenceLevel;
+        const auto phantomGain = (float) spec.phantom * referenceLevel;
         float peak = 0.0f;
 
         for (int n = 0; n < numSamples; ++n)
@@ -522,12 +574,20 @@ namespace piano
 
             damper += (damperTarget - damper) * damperCoef;
 
+            // A loud string is stretched further, so it's tauter and waves go round faster:
+            // reading the line `shift` samples nearer the write head shortens the loop.
+            const auto shift = juce::jmin (tensionSamples * energy, maxShift);
+            const auto whole = (int) shift;
+            const auto frac = shift - (float) whole;
+
             std::array<float, maxStrings> arriving {};
             float sum = 0.0f;
             for (int i = 0; i < numStrings; ++i)
             {
                 auto& s = strings[(size_t) i];
-                auto y = s.line[(size_t) ((s.pos - s.delay) & s.mask)];
+                const auto at = s.pos - s.delay + whole;
+                const auto older = s.line[(size_t) (at & s.mask)];
+                auto y = older + frac * (s.line[(size_t) ((at + 1) & s.mask)] - older);
 
                 s.lossState = s.lossGain * (1.0f - s.lossPole) * y + s.lossPole * s.lossState;
                 y = s.lossState;
@@ -559,12 +619,201 @@ namespace piano
                 peak = juce::jmax (peak, std::abs (w));
             }
 
-            out[n] += bridge * outputGain;
+            // The stretch goes with the square of the motion, so the force it puts on the bridge
+            // has the sums (and differences) of the string's frequencies: phantom partials. The
+            // slow beats among the differences are filtered off, and the longitudinal resonance
+            // brings out the partials near it.
+            const auto u = bridge * normalise;
+            const auto squared = u * u;
+            energy += (squared - energy) * energyCoef;
+            phantomLow += (squared - phantomLow) * phantomLowCoef;
+            const auto high = squared - phantomLow;
+            const auto band = bandpass (high, bandA1, bandA2, bandA3, bandIc1, bandIc2);
+
+            bridgeOut[n] += bridge;
+            radiatedOut[n] += bridge * outputGain + phantomGain * (high + 3.0f * bandK * band);
         }
 
         level = peak;
         age += numSamples;
         quietSamples = peak < 3e-6f ? quietSamples + numSamples : 0;
+    }
+
+    //==============================================================================
+    void Resonator::prepare (const KeySpec& spec, const LoopDesign& design, double sampleRate)
+    {
+        rate = sampleRate;
+        frequency = spec.frequency;
+        sustainT60 = spec.sustainT60;
+
+        const auto longest = (int) std::ceil (sampleRate / frequency * 1.01) + 4;
+        line.assign ((size_t) juce::nextPowerOfTwo (longest), 0.0f);
+        mask = (int) line.size() - 1;
+        loopLength = (int) std::ceil (sampleRate / frequency) + 1;
+
+        const auto tuning = tuneLoop (sampleRate, frequency, 0, 0.0, design.lossPole, mask - 1);
+        delay = tuning.delay;
+        tuneCoef = (float) tuning.coef;
+        lossPole = (float) design.lossPole;
+        lossScale = (float) (1.0 / onePoleMagnitude (design.lossPole, twoPi * frequency / sampleRate));
+        tunedDecay = 0.0;
+
+        damperLoopGain = (float) perPassGain (0.25, frequency);
+        damperCoef = (float) (1.0 - std::exp (-1.0 / (0.02 * sampleRate)));
+
+        // What the strings give back to the board, through a bridge as stiff as their key's.
+        const auto g = perPassGain (spec.promptT60, frequency);
+        const auto x = (1.0 - g) / (1.0 + g);
+        outputGain = (float) (2.0 * x / (1.0 + x) * spec.outputGain);
+
+        reset();
+    }
+
+    void Resonator::reset()
+    {
+        std::fill (line.begin(), line.end(), 0.0f);
+        pos = 0;
+        lossState = tuneState = 0.0f;
+        damper = 1.0f;
+        quietSamples = loopLength + 1;
+    }
+
+    void Resonator::render (const float* input, float* radiatedOut, int numSamples, bool undamped, float drive, float decay)
+    {
+        if (! juce::exactlyEqual ((double) decay, tunedDecay))
+        {
+            tunedDecay = decay;
+            lossGain = (float) juce::jmin (0.99999, perPassGain (sustainT60 * decay, frequency) * lossScale);
+        }
+
+        const auto damperTarget = undamped ? 0.0f : 1.0f;
+        float peak = 0.0f;
+
+        for (int n = 0; n < numSamples; ++n)
+        {
+            damper += (damperTarget - damper) * damperCoef;
+
+            lossState = lossGain * (1.0f - lossPole) * line[(size_t) ((pos - delay) & mask)] + lossPole * lossState;
+            const auto o = tuneCoef * lossState + tuneState;
+            tuneState = lossState - tuneCoef * o;
+
+            const auto w = (o + drive * input[n]) * (1.0f - damper * (1.0f - damperLoopGain));
+            line[(size_t) pos] = w;
+            pos = (pos + 1) & mask;
+
+            radiatedOut[n] += o * outputGain;
+            peak = juce::jmax (peak, std::abs (w));
+        }
+
+        quietSamples = peak < 3e-7f ? quietSamples + numSamples : 0;
+    }
+
+    //==============================================================================
+    void ActionNoise::prepare (double sampleRate)
+    {
+        rate = sampleRate;
+        reset();
+    }
+
+    void ActionNoise::reset()
+    {
+        for (auto& e : events)
+            e.remaining = 0;
+    }
+
+    bool ActionNoise::isActive() const noexcept
+    {
+        return std::any_of (events.begin(), events.end(), [] (const Event& e) { return e.remaining > 0; });
+    }
+
+    void ActionNoise::add (const Sound& sound)
+    {
+        // A free slot, or else the one nearest its end.
+        auto* slot = &events[0];
+        for (auto& e : events)
+        {
+            if (e.remaining <= 0) { slot = &e; break; }
+            if (e.remaining < slot->remaining) slot = &e;
+        }
+
+        auto& e = *slot;
+        e = {};
+        e.wait = (int) (sound.waitMs * 0.001 * rate);
+        e.toStrings = sound.toStrings;
+
+        e.noise = (float) (sound.noiseLevel * amount);
+        e.noiseDecay = (float) std::exp (-1000.0 / (sound.noiseMs * rate));
+        bandpassCoefs (sound.noiseHz, sound.noiseQ, rate, e.a1, e.a2, e.a3, e.k);
+
+        e.thump = (float) (sound.thumpLevel * amount);
+        e.thumpDecay = (float) std::exp (-1000.0 / (sound.thumpMs * rate));
+        e.cosW = (float) std::cos (twoPi * sound.thumpHz / rate);
+        e.sinW = (float) std::sin (twoPi * sound.thumpHz / rate);
+
+        e.remaining = e.wait + (int) (7.0 * juce::jmax (sound.noiseMs, sound.thumpMs) * 0.001 * rate);
+    }
+
+    // Levels are in the units of a key's radiated output (a key at velocity 0.7 peaks near
+    // referenceLevel), except the damper rail's rush, which is bridge velocity into the strings.
+
+    void ActionNoise::keyDown (int midiNote, float velocity01)
+    {
+        const auto v = std::pow ((double) juce::jlimit (0.0f, 1.0f, velocity01), 1.5);
+        const auto place = (midiNote - lowestNote) / (double) (numKeys - 1);
+        // The key bottoming on the keybed, just after the hammer lands: a click and a knock
+        // through the key frame.
+        add ({ 1.5, 1800.0 + 800.0 * place, 1.2, 5.0, 0.004 * v, 95.0 + 40.0 * place, 18.0, 0.006 * v, false });
+    }
+
+    void ActionNoise::keyUp (int midiNote, bool damperLands)
+    {
+        juce::ignoreUnused (midiNote);
+        // The key knocking back against its rail.
+        add ({ 0.0, 1100.0, 1.0, 4.0, 0.0012, 140.0, 10.0, 0.0012, false });
+        // The damper felt settling back on the strings.
+        if (damperLands)
+            add ({ 8.0, 500.0, 0.8, 25.0, 0.001, 100.0, 10.0, 0.0, false });
+    }
+
+    void ActionNoise::pedal (bool down)
+    {
+        if (down)
+        {
+            // The rail lifts every damper at once: a thump, and a faint rush as the felts leave
+            // the strings and set the open ones ringing.
+            add ({ 0.0, 350.0, 0.7, 70.0, 0.003, 75.0, 40.0, 0.005, false });
+            add ({ 5.0, 900.0, 0.5, 60.0, 0.0006, 100.0, 10.0, 0.0, true });
+        }
+        else
+        {
+            add ({ 0.0, 300.0, 0.7, 50.0, 0.0025, 65.0, 30.0, 0.004, false });
+        }
+    }
+
+    void ActionNoise::render (float* radiatedOut, float* stringsOut, int numSamples)
+    {
+        for (auto& e : events)
+        {
+            auto* out = e.toStrings ? stringsOut : radiatedOut;
+            for (int n = 0; n < numSamples && e.remaining > 0; ++n)
+            {
+                --e.remaining;
+                if (e.wait > 0)
+                {
+                    --e.wait;
+                    continue;
+                }
+
+                const auto band = bandpass (random.nextFloat() * 2.0f - 1.0f, e.a1, e.a2, e.a3, e.ic1, e.ic2);
+                const auto re = e.re * e.cosW - e.im * e.sinW;
+                e.im = e.re * e.sinW + e.im * e.cosW;
+                e.re = re;
+
+                out[n] += e.noise * e.k * band + e.thump * e.im;
+                e.noise *= e.noiseDecay;
+                e.thump *= e.thumpDecay;
+            }
+        }
     }
 
     //==============================================================================
@@ -579,12 +828,16 @@ namespace piano
         rate = sampleRate;
         voicing = newVoicing;
         hammer.prepare (sampleRate);
+        noise.prepare (sampleRate);
 
         for (int i = 0; i < numKeys; ++i)
         {
             const auto spec = specFor (lowestNote + i, voicing);
-            keys[(size_t) i].prepare (spec, designLoop (spec, sampleRate), sampleRate);
+            const auto design = designLoop (spec, sampleRate);
+            keys[(size_t) i].prepare (spec, design, sampleRate);
+            resonators[(size_t) i].prepare (spec, design, sampleRate);
         }
+        down.fill (false);
     }
 
     void Engine::noteOn (int midiNote, float velocity01)
@@ -623,18 +876,40 @@ namespace piano
 
         key.strike (hammer, speed, controls);
         key.held = true;
+        down[(size_t) (midiNote - lowestNote)] = true;
+        noise.keyDown (midiNote, velocity01);
     }
 
     void Engine::noteOff (int midiNote)
     {
-        if (midiNote >= lowestNote && midiNote <= highestNote)
-            keys[(size_t) (midiNote - lowestNote)].held = false;
+        if (midiNote < lowestNote || midiNote > highestNote)
+            return;
+
+        const auto i = (size_t) (midiNote - lowestNote);
+        auto& key = keys[i];
+        key.held = false;
+
+        // Only for keys struck here: the other voicing's engine sees the note-off too.
+        if (down[i])
+            noise.keyUp (midiNote, key.active && key.getSpec().hasDamper && ! sustain);
+        down[i] = false;
+    }
+
+    void Engine::setSustain (bool newDown, bool audible)
+    {
+        if (newDown != sustain && audible)
+            noise.pedal (newDown);
+        sustain = newDown;
     }
 
     void Engine::allNotesOff()
     {
         for (auto& k : keys)
             k.reset();
+        for (auto& r : resonators)
+            r.reset();
+        noise.reset();
+        down.fill (false);
         sustain = soft = false;
     }
 
@@ -647,16 +922,53 @@ namespace piano
     void Engine::render (float* out, int numSamples)
     {
         updateDampers();
+        noise.setAmount (2.0f * controls.noise);
+        // Off its own pitches each open string still passes some of the bridge motion back, and
+        // with up to 88 of them that adds up: at full, the halo is about as loud as the note.
+        const auto drive = 0.65f * controls.resonance;
 
-        for (auto& k : keys)
+        for (int start = 0; start < numSamples; start += subBlock)
         {
-            if (! k.active)
-                continue;
+            const auto n = juce::jmin (subBlock, numSamples - start);
+            std::array<float, subBlock> bridge {}, radiated {};
+            std::array<bool, numKeys> sounding {};
+            bool anySounding = false;
 
-            k.render (out, numSamples);
+            for (size_t i = 0; i < keys.size(); ++i)
+            {
+                auto& k = keys[i];
+                if (! k.active)
+                    continue;
 
-            if (k.isSilent())
-                k.reset();
+                auto& own = keyBridge[i];
+                std::fill_n (own.begin(), n, 0.0f);
+                k.render (own.data(), radiated.data(), n);
+                juce::FloatVectorOperations::add (bridge.data(), own.data(), n);
+                sounding[i] = anySounding = true;
+
+                if (k.isSilent())
+                    k.reset();
+            }
+
+            noise.render (radiated.data(), bridge.data(), n);
+
+            // The open strings ring with everything else on the bridge, but not with themselves:
+            // a key's own strings are already in its loops.
+            const auto driving = drive > 0.0f && (anySounding || noise.isActive());
+            for (size_t i = 0; i < resonators.size(); ++i)
+            {
+                auto& r = resonators[i];
+                const auto undamped = down[i] || sustain || ! keys[i].getSpec().hasDamper;
+                if (! (undamped && driving) && r.isQuiet())
+                    continue;
+
+                std::array<float, subBlock> input;
+                for (int j = 0; j < n; ++j)
+                    input[(size_t) j] = bridge[(size_t) j] - (sounding[i] ? keyBridge[i][(size_t) j] : 0.0f);
+                r.render (input.data(), radiated.data(), n, undamped, drive, controls.decay);
+            }
+
+            juce::FloatVectorOperations::add (out + start, radiated.data(), n);
         }
     }
 }
