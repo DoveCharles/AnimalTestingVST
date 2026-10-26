@@ -11,6 +11,10 @@ public:
     Treadle() : juce::Button ("Footswitch") { setClickingTogglesState (true); }
 
     void paintButton (juce::Graphics&, bool highlighted, bool down) override;
+    void resized() override;
+
+private:
+    juce::Image wash;
 };
 
 /** Three-way stereo mode switch: one latching button per mode, bound to the stereo choice parameter. */
@@ -47,6 +51,7 @@ private:
     Treadle treadle;
     juce::AudioProcessorValueTreeState::ButtonAttachment treadleAttachment;
 
+    juce::Image wash;
     juce::Rectangle<int> ledArea;
     float ledPulse = 1.0f;
 
