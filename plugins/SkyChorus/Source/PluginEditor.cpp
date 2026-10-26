@@ -9,11 +9,18 @@ void Treadle::paintButton (juce::Graphics& g, bool highlighted, bool down)
 {
     const auto plate = getLocalBounds().toFloat().reduced (1.0f).translated (0.0f, down ? 1.5f : 0.0f);
 
-    // Plate body: same powder coat as the enclosure, lit from above, with a dark hinge gap.
-    g.setGradientFill (juce::ColourGradient (Palette::enclosure.brighter (0.08f), plate.getTopLeft(),
-                                             Palette::enclosure.darker (0.12f), plate.getBottomLeft(), false));
-    g.fillRoundedRectangle (plate, 8.0f);
-    g.setColour (Palette::enclosureDark.darker (highlighted ? 0.4f : 0.2f));
+    // Plate body: the same painted wash as the enclosure, shaded from above, with a dark hinge gap.
+    {
+        juce::Graphics::ScopedSaveState state (g);
+        juce::Path outline;
+        outline.addRoundedRectangle (plate, 8.0f);
+        g.reduceClipRegion (outline);
+        g.drawImageAt (wash, (int) plate.getX(), (int) plate.getY());
+        g.setGradientFill (juce::ColourGradient (juce::Colours::white.withAlpha (0.08f), plate.getTopLeft(),
+                                                 Palette::shadow.withAlpha (0.25f), plate.getBottomLeft(), false));
+        g.fillRect (plate);
+    }
+    g.setColour (Palette::shadow.withAlpha (highlighted ? 0.9f : 0.6f));
     g.drawRoundedRectangle (plate, 8.0f, 2.0f);
 
     auto area = plate.reduced (18.0f, 12.0f);
@@ -26,15 +33,19 @@ void Treadle::paintButton (juce::Graphics& g, bool highlighted, bool down)
     g.drawText ("v" JucePlugin_VersionString, logoRow, juce::Justification::centredRight);
     area.removeFromTop (8.0f);
 
-    // Navy nameplate stripe across the plate.
+    // Slate nameplate stripe across the plate, edged in the creature's mustard.
     auto stripe = juce::Rectangle<float> (plate.getX(), area.getY(), plate.getWidth(), 58.0f);
     g.setColour (Palette::nameplate);
     g.fillRect (stripe);
+    g.setColour (Palette::mustard);
+    g.fillRect (stripe.withHeight (2.0f));
+    g.fillRect (stripe.withTop (stripe.getBottom() - 2.0f));
     stripe.reduce (18.0f, 0.0f);
-    g.setColour (Palette::nameText);
+    g.setColour (Palette::pink);
     g.setFont (juce::FontOptions (34.0f, juce::Font::bold).withHorizontalScale (0.9f));
     g.drawText ("SKY CHORUS", stripe, juce::Justification::centredLeft);
     auto caption = stripe.removeFromRight (150.0f);
+    g.setColour (Palette::cream);
     g.setFont (juce::FontOptions (13.0f, juce::Font::bold));
     g.drawText ("Bi-Phase Stereo", caption.removeFromTop (caption.getHeight() * 0.5f),
                 juce::Justification::bottomRight);
@@ -53,6 +64,11 @@ void Treadle::paintButton (juce::Graphics& g, bool highlighted, bool down)
     g.drawRoundedRectangle (pad, 6.0f, 1.0f);
 }
 
+void Treadle::resized()
+{
+    wash = PedalLookAndFeel::paintWash (getWidth(), getHeight(), 7);
+}
+
 StereoSwitch::StereoSwitch (juce::AudioProcessorValueTreeState& state)
     : attachment (*state.getParameter (ParamIDs::stereo),
                   [this] (float mode)
@@ -68,10 +84,10 @@ StereoSwitch::StereoSwitch (juce::AudioProcessorValueTreeState& state)
         button.setTooltip (StereoModes::names[i]);
         button.setClickingTogglesState (true);
         button.setRadioGroupId (1);
-        button.setColour (juce::TextButton::buttonColourId,   Palette::enclosureDark.withAlpha (0.5f));
+        button.setColour (juce::TextButton::buttonColourId,   Palette::enclosureLight.withAlpha (0.45f));
         button.setColour (juce::TextButton::buttonOnColourId, Palette::nameplate);
         button.setColour (juce::TextButton::textColourOffId,  Palette::silkscreen);
-        button.setColour (juce::TextButton::textColourOnId,   Palette::nameText);
+        button.setColour (juce::TextButton::textColourOnId,   Palette::pink);
         button.onClick = [this, i]
         {
             if (buttons[(size_t) i].getToggleState())
@@ -147,30 +163,39 @@ void PluginEditor::paint (juce::Graphics& g)
 {
     const auto bounds = getLocalBounds().toFloat();
 
-    // Powder-blue enclosure with a faint top-down sheen.
-    g.fillAll (juce::Colour (0xff1a1b1d));
+    // Painted enclosure with a faint top-down sheen.
+    g.fillAll (Palette::silkscreen);
     const auto box = bounds.reduced (6.0f);
-    g.setGradientFill (juce::ColourGradient (Palette::enclosure.brighter (0.1f), box.getTopLeft(),
-                                             Palette::enclosure.darker (0.1f), box.getBottomLeft(), false));
-    g.fillRoundedRectangle (box, 12.0f);
-    g.setColour (Palette::enclosureDark);
+    {
+        juce::Graphics::ScopedSaveState state (g);
+        juce::Path outline;
+        outline.addRoundedRectangle (box, 12.0f);
+        g.reduceClipRegion (outline);
+        g.drawImageAt (wash, (int) box.getX(), (int) box.getY());
+        g.setGradientFill (juce::ColourGradient (juce::Colours::white.withAlpha (0.1f), box.getTopLeft(),
+                                                 Palette::shadow.withAlpha (0.15f), box.getBottomLeft(), false));
+        g.fillRect (box);
+    }
+    g.setColour (Palette::shadow);
     g.drawRoundedRectangle (box, 12.0f, 2.0f);
 
-    // Check LED: lit while the effect is engaged.
+    // Check LED, set in a cobalt and mustard bezel like the creature's eye: lit while engaged.
     const auto led = ledArea.toFloat();
     const auto engaged = ! treadle.getToggleState();
     const auto ledColour = Palette::ledOff.interpolatedWith (Palette::ledOn, ledPulse);
+    g.setColour (Palette::mustard);
+    g.fillEllipse (led.expanded (4.5f));
+    g.setColour (Palette::cobalt);
+    g.fillEllipse (led.expanded (3.0f));
     if (engaged)
     {
         g.setColour (Palette::ledOn.withAlpha (0.25f * ledPulse));
-        g.fillEllipse (led.expanded (6.0f));
+        g.fillEllipse (led.expanded (8.0f));
     }
     g.setColour (engaged ? ledColour : Palette::ledOff);
     g.fillEllipse (led);
     g.setColour (juce::Colours::white.withAlpha (engaged ? 0.6f * ledPulse : 0.15f));
     g.fillEllipse (led.reduced (led.getWidth() * 0.3f).translated (-1.5f, -1.5f));
-    g.setColour (juce::Colour (0xff8a8c86));
-    g.drawEllipse (led.expanded (1.5f), 1.5f);
 
     g.setColour (Palette::silkscreen);
     g.setFont (juce::FontOptions (10.0f, juce::Font::bold));
@@ -184,6 +209,8 @@ void PluginEditor::paint (juce::Graphics& g)
 
 void PluginEditor::resized()
 {
+    wash = PedalLookAndFeel::paintWash (getWidth() - 12, getHeight() - 12, 3);
+
     auto area = getLocalBounds().reduced (24, 20);
 
     auto knobRow = area.removeFromTop (150);
