@@ -40,7 +40,7 @@ void PluginEditor::Choice::resized()
 
 PluginEditor::PluginEditor (PluginProcessor& p)
     : juce::AudioProcessorEditor (p),
-      larynx (p),
+      voiceBox (p),
       presetBar (p.presets),
       mode     (p, ParamIDs::mode,     "Mode"),
       key      (p, ParamIDs::key,      "Key"),
@@ -78,7 +78,7 @@ PluginEditor::~PluginEditor()
 
 void PluginEditor::timerCallback()
 {
-    const auto in = larynx.inputHz.load(), out = larynx.outputHz.load();
+    const auto in = voiceBox.inputHz.load(), out = voiceBox.outputHz.load();
     const auto text = in > 0.0f ? "IN  " + noteName (in) + "   " + juce::String (in, 0) + " Hz\nOUT " + noteName (out) + "   " + juce::String (out, 0) + " Hz"
                                 : juce::String ("IN  --\nOUT --");
     if (text != readout)
@@ -100,7 +100,7 @@ void PluginEditor::drawSection (juce::Graphics& g, juce::Rectangle<int> area, co
 
 void PluginEditor::paint (juce::Graphics& g)
 {
-    at::LookAndFeel::drawEditorChrome (g, getLocalBounds(), "Larynx", JucePlugin_VersionString);
+    at::LookAndFeel::drawEditorChrome (g, getLocalBounds(), "Voice Box", JucePlugin_VersionString);
 
     drawSection (g, shiftArea, "Shift");
 

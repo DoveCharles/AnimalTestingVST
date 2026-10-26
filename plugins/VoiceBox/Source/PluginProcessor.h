@@ -103,9 +103,10 @@ private:
     float correction = 0.0f;
     float vibPhase = 0.0f, voicedSeconds = 0.0f;
 
-    // Character: chest cut (high-pass + low-mid dip), air shelf and exciter, shaped breath noise.
+    // Character: chest cut (high-pass + low-mid dip), air shelf and exciter, and breath noise that
+    // follows the vocal's own top end (breathSense) through a vocal-tract-scaled band (breathShape, breathTone).
     std::array<juce::dsp::IIR::Filter<float>, maxChannels> chestHighPass, chestDip, airShelf, exciterBand,
-                                                           breathLow, breathHigh;
+                                                           breathSense, breathShape, breathTone;
     std::array<float, maxChannels> envelope {};
     float voicedLevel = 0.0f;
     juce::Random noise;
