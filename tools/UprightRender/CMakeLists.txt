@@ -7,6 +7,7 @@ set(upright_source "${CMAKE_SOURCE_DIR}/plugins/Upright/Source")
 target_sources(UprightRender PRIVATE
     Main.cpp
     "${upright_source}/PianoModel.cpp"
+    "${upright_source}/HousePiano.cpp"
     "${upright_source}/PluginProcessor.cpp"
     "${upright_source}/PluginEditor.cpp")
 
