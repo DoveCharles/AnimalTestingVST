@@ -28,7 +28,7 @@ PluginProcessor::PluginProcessor()
 juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParameterLayout()
 {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
-    layout.add (at::params::makeChoice (ParamIDs::voicing, "Voicing", { "Studio", "Mills" }, 1));
+    layout.add (at::params::makeChoice (ParamIDs::voicing, "Voicing", { "Studio", "Mills", "House" }, 1));
     layout.add (at::params::makePercent (ParamIDs::hardness, "Hardness", 50.0f));
     layout.add (at::params::makePercent (ParamIDs::unison, "Unison", 30.0f));
     layout.add (at::params::makeFloat (ParamIDs::decay, "Decay", { 25.0f, 200.0f, 1.0f }, 100.0f, "%", 0));
@@ -60,6 +60,9 @@ void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
             boardBuffers[(size_t) v][(size_t) p].setSize (2, samplesPerBlock);
         }
     }
+
+    house.prepare (sampleRate);
+    houseBuffer.setSize (2, samplesPerBlock);
 
     room.loadImpulseResponse (piano::makeRoom (sampleRate), sampleRate,
                               juce::dsp::Convolution::Stereo::yes,
@@ -110,6 +113,27 @@ void PluginProcessor::handleMidi (const juce::MidiMessage& m, piano::Engine& eng
     }
 }
 
+void PluginProcessor::handleMidi (const juce::MidiMessage& m, piano::HousePiano& house, bool strikes)
+{
+    if (m.isNoteOn())
+    {
+        if (strikes)
+            house.noteOn (m.getNoteNumber(), m.getFloatVelocity());
+    }
+    else if (m.isNoteOff())
+    {
+        house.noteOff (m.getNoteNumber());
+    }
+    else if (m.isSustainPedalOn() || m.isSustainPedalOff())
+    {
+        house.setSustain (m.isSustainPedalOn());
+    }
+    else if (m.isAllNotesOff() || m.isAllSoundOff())
+    {
+        house.allNotesOff();
+    }
+}
+
 void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
     juce::ScopedNoDenormals noDenormals;
@@ -122,8 +146,9 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
                                      resonanceParam.load() / 100.0f, noiseParam.load() / 100.0f };
     for (auto& e : engines)
         e.setControls (controls);
+    house.setControls (controls);
 
-    const auto selected = (size_t) juce::jlimit (0, 1, (int) voicingParam.load());
+    const auto selected = (size_t) juce::jlimit (0, 2, (int) voicingParam.load());
 
     // Each engine drives its own boards; the strings as the close mics hear them are shared.
     dry.clear (0, 0, numSamples);
@@ -161,6 +186,25 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
         }
     }
 
+    houseBuffer.clear (0, 0, numSamples);
+    houseBuffer.clear (1, 0, numSamples);
+    {
+        int position = 0;
+        auto render = [&] (int end)
+        {
+            if (end > position)
+                house.render (houseBuffer.getWritePointer (0, position), houseBuffer.getWritePointer (1, position), end - position);
+            position = end;
+        };
+
+        for (const auto metadata : midi)
+        {
+            render (juce::jmin (metadata.samplePosition, numSamples));
+            handleMidi (metadata.getMessage(), house, selected == 2);
+        }
+        render (numSamples);
+    }
+
     body.setTargetValue (bodyParam.load() / 100.0f);
     roomLevel.setTargetValue (roomLevelFor (roomParam.load()));
     volume.setTargetValue (juce::Decibels::decibelsToGain (volumeParam.load()));
@@ -181,7 +225,7 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
             for (const auto& voicingBoards : boardBuffers)
                 for (const auto& b : voicingBoards)
                     boardSample += b.getSample (ch, i);
-            mix.setSample (ch, i, dry.getSample (ch, i) * (1.0f - wet) + wet * boardSample);
+            mix.setSample (ch, i, dry.getSample (ch, i) * (1.0f - wet) + wet * boardSample + houseBuffer.getSample (ch, i));
         }
     }
 

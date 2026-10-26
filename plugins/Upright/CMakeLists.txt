@@ -6,5 +6,6 @@ at_add_plugin(${PROJECT_NAME}
     IS_SYNTH
     SOURCES
         Source/PianoModel.cpp
+        Source/HousePiano.cpp
         Source/PluginProcessor.cpp
         Source/PluginEditor.cpp)

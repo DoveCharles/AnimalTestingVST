@@ -2,6 +2,7 @@
 
 #include <at_shared/at_shared.h>
 #include "PianoModel.h"
+#include "HousePiano.h"
 
 namespace ParamIDs
 {
@@ -35,6 +36,7 @@ public:
 private:
     /** Every engine sees every message; only the selected voicing's engine strikes new notes. */
     static void handleMidi (const juce::MidiMessage&, piano::Engine&, bool strikes);
+    static void handleMidi (const juce::MidiMessage&, piano::HousePiano&, bool strikes);
 
     std::atomic<float>& voicingParam;
     std::atomic<float>& hardnessParam;
@@ -50,11 +52,14 @@ private:
     // already ringing finish in the voicing they were struck in.
     std::array<piano::Engine, 2> engines;
 
+    // The House voicing plays recordings of the model, so it skips the board and goes straight to the mix.
+    piano::HousePiano house;
+
     // Per voicing, one board response per driving point.
     std::array<std::array<juce::dsp::Convolution, piano::numDrivingPoints>, 2> soundboards;
     std::array<std::array<juce::AudioBuffer<float>, piano::numDrivingPoints>, 2> boardBuffers;
 
-    juce::AudioBuffer<float> dry, mix;
+    juce::AudioBuffer<float> dry, mix, houseBuffer;
     std::array<juce::dsp::IIR::Filter<float>, 2> dryHighPass;
     juce::dsp::Convolution room;
     juce::AudioBuffer<float> roomBuffer;
