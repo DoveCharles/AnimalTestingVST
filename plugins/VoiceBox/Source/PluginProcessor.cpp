@@ -13,6 +13,8 @@ namespace
     constexpr float genderAir = 0.5f;
     constexpr float genderBreath = 0.3f;
 
+    constexpr float breathLevel = 0.8f;
+
     float onePole (double sampleRate, double seconds)
     {
         return seconds <= 0.0 ? 1.0f : (float) (1.0 - std::exp (-1.0 / (seconds * sampleRate)));
@@ -115,7 +117,8 @@ void PluginProcessor::prepareToPlay (double newSampleRate, int)
     const juce::dsp::ProcessSpec spec { sampleRate, 1, 1 };
     for (int ch = 0; ch < maxChannels; ++ch)
         for (auto* filter : { &chestHighPass[(size_t) ch], &chestDip[(size_t) ch], &airShelf[(size_t) ch],
-                              &exciterBand[(size_t) ch], &breathLow[(size_t) ch], &breathHigh[(size_t) ch] })
+                              &exciterBand[(size_t) ch], &breathSense[(size_t) ch], &breathShape[(size_t) ch],
+                              &breathTone[(size_t) ch] })
         {
             filter->prepare (spec);
             filter->reset();
@@ -160,12 +163,14 @@ void PluginProcessor::updateFilters (const Settings& settings)
     if (std::abs (settings.formant - lastFormant) > 0.005f)
     {
         lastFormant = settings.formant;
-        const auto low = Coefficients::makeBandPass (sampleRate, juce::jmin (1800.0f * settings.formant, nyquistSafe), 0.9f);
-        const auto high = Coefficients::makeBandPass (sampleRate, juce::jmin (4500.0f * settings.formant, nyquistSafe), 0.7f);
+        const auto sense = Coefficients::makeHighPass (sampleRate, juce::jmin (2500.0f, nyquistSafe), 0.707f);
+        const auto shape = Coefficients::makeHighPass (sampleRate, juce::jmin (1500.0f * settings.formant, nyquistSafe), 0.707f);
+        const auto tone = Coefficients::makeLowPass (sampleRate, juce::jmin (9000.0f * settings.formant, nyquistSafe), 0.707f);
         for (int ch = 0; ch < maxChannels; ++ch)
         {
-            *breathLow[(size_t) ch].coefficients = *low;
-            *breathHigh[(size_t) ch].coefficients = *high;
+            *breathSense[(size_t) ch].coefficients = *sense;
+            *breathShape[(size_t) ch].coefficients = *shape;
+            *breathTone[(size_t) ch].coefficients = *tone;
         }
     }
 }
@@ -219,7 +224,7 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
     const auto vibDepth = vibDepthParam.load() / 100.0f;
     const auto vibDelay = vibDelayParam.load();
     const auto voicedCoef = onePole (sampleRate, 0.02);
-    const auto attack = onePole (sampleRate, 0.005), release = onePole (sampleRate, 0.06);
+    const auto attack = onePole (sampleRate, 0.001), release = onePole (sampleRate, 0.03);
 
     const auto numChannels = juce::jmin (buffer.getNumChannels(), maxChannels);
     const auto numSamples = buffer.getNumSamples();
@@ -269,10 +274,12 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
             x = airShelf[c].processSample (x);
             x += airNow * 0.25f * std::tanh (4.0f * exciterBand[c].processSample (x));
 
-            const auto level = std::abs (x);
+            // The noise rides the vocal's own top end, glottal pulses included, so it only appears
+            // where the voice is already bright and stays well under it (about -20 dB at full Breath).
+            const auto level = std::abs (breathSense[c].processSample (x));
             envelope[c] += (level > envelope[c] ? attack : release) * (level - envelope[c]);
             const auto hiss = envelope[c] * (2.0f * noise.nextFloat() - 1.0f);
-            x += 1.5f * breathNow * voicedLevel * (breathLow[c].processSample (hiss) + breathHigh[c].processSample (hiss));
+            x += breathLevel * breathNow * voicedLevel * breathTone[c].processSample (breathShape[c].processSample (hiss));
 
             if (driveNow > 0.0f)
             {

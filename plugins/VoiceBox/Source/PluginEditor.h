@@ -26,7 +26,7 @@ private:
     void timerCallback() override;
     void drawSection (juce::Graphics&, juce::Rectangle<int>, const juce::String& title) const;
 
-    PluginProcessor& larynx;
+    PluginProcessor& voiceBox;
     juce::SharedResourcePointer<at::LookAndFeel> sharedLookAndFeel;
 
     at::PresetBar presetBar;

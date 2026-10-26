@@ -1,14 +1,14 @@
-// Offline checks for Larynx, without a DAW.
+// Offline checks for Voice Box, without a DAW.
 //
-//   LarynxRender render <input audio> <output.wav> [--<param>=<value> ...]
+//   VoiceBoxRender render <input audio> <output.wav> [--<param>=<value> ...]
 //       Plays a file through the processor (all parameters by ID, values as the host shows them).
 //
-//   LarynxRender measure [--tone=1000] [--<param>=<value> ...]
+//   VoiceBoxRender measure [--tone=1000] [--<param>=<value> ...]
 //       Feeds a -12 dBFS sine through the wet path alone (Mix 100 unless overridden) and
 //       prints the pitch sweep in cents, the strongest harmonics and spurs, the hiss floor and the
 //       CPU cost.
 //
-//   LarynxRender snapshot <output.png> [--<param>=<value> ...]
+//   VoiceBoxRender snapshot <output.png> [--<param>=<value> ...]
 //       Saves a picture of the editor.
 
 #include "PluginProcessor.h"
@@ -221,8 +221,8 @@ int main (int argc, char* argv[])
     if (command == "snapshot" && args.size() >= 2) return snapshot (args);
 
     std::cerr << "Usage:\n"
-                 "  LarynxRender render <input> <output.wav> [--<param>=<value> ...]\n"
-                 "  LarynxRender measure [--tone=1000] [--<param>=<value> ...]\n"
-                 "  LarynxRender snapshot <output.png> [--<param>=<value> ...]\n";
+                 "  VoiceBoxRender render <input> <output.wav> [--<param>=<value> ...]\n"
+                 "  VoiceBoxRender measure [--tone=1000] [--<param>=<value> ...]\n"
+                 "  VoiceBoxRender snapshot <output.png> [--<param>=<value> ...]\n";
     return 1;
 }
