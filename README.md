@@ -13,6 +13,7 @@ A monorepo of audio plugins by **Animal Testing**. Each plugin builds as VST3 (W
 | [AT Seven Rooms](plugins/SevenRooms) | `Svnr` | 1.0.0 | Stereo digital reverb after the DigiTech HardWire RV-7: Level, Liveliness, Decay and seven Reverb Types (Room, Plate, Reverse, Modulated, Gated, Hall, Spring), with a Tails switch so the reverb rings out after bypass; Reverse is wet-only, like the original |
 | [AT Voice Box](plugins/VoiceBox) | `Vbox` | 0.1.0 | Vocal pitch and formant shifter (PSOLA with YIN tracking, so pitch and formant move independently): Transpose, Quantize (Key/Scale/Retune) and Robot modes, a Gender macro, and a Character section with Chest Cut, Air, Breath, Drive and delayed Vibrato; about 40 ms latency, reported to the host |
 | [AT Smooth Operator](plugins/SmoothOperator) | `Smop` | 0.1.0 | Dynamic resonance suppressor: an STFT that cuts whatever sticks up out of the sound's own (harmonic-smoothed) spectrum, with Depth, Sharpness, Selectivity, Attack/Release, five-band weighting, Stereo or Mid/Side, Delta listen and a live cut display; about 43 ms latency, reported to the host |
+| [AT Tapeworm](plugins/Tapeworm) | `Tpwm` | 0.1.0 | Lo-fi tape machine fitted to TapeCapture measurements: Drive (4x oversampled) with Boost, a morphing tape voicing (Tone) and a bipolar low/high-pass Filter, Wow, Flutter and Wear with an optional wide stereo transport, mono tape hiss and motor noise, Output, and a tempo-synced Tape Stop (1/4 to 8 bars) with Instant or Fast-Forward catch-up |
 
 ## Layout
 
@@ -120,7 +121,7 @@ cmake --build build --target TapeCapture
 tools/TapeCapture/capture-mellofi.sh
 ```
 
-That writes every test to `renders-mellofi/` (gitignored). A summary of the results is in [tools/TapeCapture/mellofi-targets.md](tools/TapeCapture/mellofi-targets.md). Single tests take parameters by name with normalised values, e.g. `TapeCapture wow --Wow=0.5 --"Stereo Width"=1`; `TapeCapture selftest` checks the analysis against signals with known answers.
+That writes every test to `renders-mellofi/` (gitignored). A summary of the results is in [tools/TapeCapture/mellofi-targets.md](tools/TapeCapture/mellofi-targets.md). Single tests take parameters by name with normalised values, e.g. `TapeCapture wow --Wow=0.5 --"Stereo Width"=1`; `TapeCapture selftest` checks the analysis against signals with known answers. To measure our own model the same way, point it at another plugin and folder: `PLUGIN="$HOME/Library/Audio/Plug-Ins/VST3/AT Tapeworm.vst3" OUT=renders-tapeworm tools/TapeCapture/capture-mellofi.sh`.
 
 ## CI
 
