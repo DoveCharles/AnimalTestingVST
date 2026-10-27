@@ -19,7 +19,7 @@ class PluginProcessor::VirtualPort : private juce::Thread
 {
 public:
     explicit VirtualPort (std::unique_ptr<juce::MidiOutput> device)
-        : juce::Thread ("Big Mouth MIDI"), output (std::move (device))
+        : juce::Thread ("Mouth Box MIDI"), output (std::move (device))
     {
         startThread (juce::Thread::Priority::high);
     }
@@ -69,7 +69,7 @@ PluginProcessor::PluginProcessor (bool openVirtualPort)
         // One port per instance; later instances get a number so they can be told apart.
         static std::atomic<int> instances { 0 };
         const auto number = ++instances;
-        virtualPortName = number == 1 ? juce::String ("AT Big Mouth") : "AT Big Mouth " + juce::String (number);
+        virtualPortName = number == 1 ? juce::String ("AT Mouth Box") : "AT Mouth Box " + juce::String (number);
         if (auto device = juce::MidiOutput::createNewDevice (virtualPortName))
             virtualPort = std::make_unique<VirtualPort> (std::move (device));
         else

@@ -1,15 +1,15 @@
-// Offline checks for Big Mouth, without a DAW.
+// Offline checks for Mouth Box, without a DAW.
 //
-//   BigMouthRender test [--seed=1] [--<param>=<value> ...]
+//   MouthBoxRender test [--seed=1] [--<param>=<value> ...]
 //       Plays a synthetic beatbox pattern (kick, snare and hi-hat sounds with random pitch, length,
 //       level and background noise) through the processor, untrained and then trained on a
 //       separate take, and prints how many hits were found, how many went to the right pad and
 //       how late the notes come.
 //
-//   BigMouthRender render <input audio> [output.mid] [--<param>=<value> ...]
+//   MouthBoxRender render <input audio> [output.mid] [--<param>=<value> ...]
 //       Prints every hit found in a recording (time, pad, velocity) and can save them as a MIDI file.
 //
-//   BigMouthRender snapshot <output.png> [--<param>=<value> ...]
+//   MouthBoxRender snapshot <output.png> [--<param>=<value> ...]
 //       Saves a picture of the editor.
 
 #include "PluginProcessor.h"
@@ -312,8 +312,8 @@ int main (int argc, char* argv[])
     if (command == "snapshot" && args.size() >= 2) return snapshot (args);
 
     std::cerr << "Usage:\n"
-                 "  BigMouthRender test [--seed=1] [--<param>=<value> ...]\n"
-                 "  BigMouthRender render <input> [output.mid] [--<param>=<value> ...]\n"
-                 "  BigMouthRender snapshot <output.png> [--<param>=<value> ...]\n";
+                 "  MouthBoxRender test [--seed=1] [--<param>=<value> ...]\n"
+                 "  MouthBoxRender render <input> [output.mid] [--<param>=<value> ...]\n"
+                 "  MouthBoxRender snapshot <output.png> [--<param>=<value> ...]\n";
     return 1;
 }

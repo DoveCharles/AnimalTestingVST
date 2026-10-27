@@ -23,7 +23,7 @@ namespace Slots
 /** Beatbox to MIDI drums: an audio effect that listens to a mic, finds each hit, decides which
     pad it is (by brightness, or by comparing with sounds you trained) and sends a drum note.
     Notes go to the host's MIDI output and, on macOS, to a virtual MIDI port called
-    "AT Big Mouth" that any track or app can take as its input. */
+    "AT Mouth Box" that any track or app can take as its input. */
 class PluginProcessor final : public at::ProcessorBase,
                               private juce::Timer,
                               private juce::ValueTree::Listener
