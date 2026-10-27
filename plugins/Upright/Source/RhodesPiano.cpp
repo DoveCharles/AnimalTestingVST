@@ -8,6 +8,9 @@ namespace piano
         constexpr float outputLevel = 0.2f;
         constexpr float preampDrive = 2.5f;
 
+        /** The keys' acoustic noise against the amplified sound. */
+        constexpr float keyNoiseLevel = 2.5f;
+
         constexpr double speakerLowHz = 70.0, speakerHighHz = 6000.0;
         constexpr double tremoloHz = 4.2;
 
@@ -22,6 +25,7 @@ namespace piano
         rate = sampleRate;
         highPassCoef = (float) (1.0 - std::exp (-juce::MathConstants<double>::twoPi * speakerLowHz / sampleRate));
         lowPassCoef = (float) (1.0 - std::exp (-juce::MathConstants<double>::twoPi * juce::jmin (speakerHighHz, 0.4 * sampleRate) / sampleRate));
+        keyNoise.prepare (sampleRate);
         allNotesOff();
     }
 
@@ -29,6 +33,9 @@ namespace piano
     {
         if (midiNote < lowestNote || midiNote > highestNote)
             return;
+
+        keyNoise.setAmount (2.0f * controls.noise);
+        keyNoise.keyDown (midiNote, velocity01);
 
         auto& v = voices[(size_t) (midiNote - lowestNote)];
         const auto t = place (midiNote);
@@ -116,6 +123,9 @@ namespace piano
             return;
 
         auto& v = voices[(size_t) (midiNote - lowestNote)];
+        keyNoise.setAmount (2.0f * controls.noise);
+        keyNoise.keyUp (midiNote, v.sounding && ! v.damped && ! sustain);
+
         v.held = false;
         if (v.sounding && ! sustain)
             damp (v);
@@ -123,6 +133,12 @@ namespace piano
 
     void RhodesPiano::setSustain (bool on)
     {
+        if (on != sustain)
+        {
+            keyNoise.setAmount (2.0f * controls.noise);
+            keyNoise.pedal (on);
+        }
+
         sustain = on;
         if (! on)
             for (auto& v : voices)
@@ -135,18 +151,23 @@ namespace piano
         for (auto& v : voices)
             v = {};
         sustain = false;
+        keyNoise.reset();
         highPassState = lowPass1 = lowPass2 = 0.0f;
     }
 
     void RhodesPiano::render (float* left, float* right, int numSamples)
     {
         constexpr int chunk = 64;
-        std::array<float, chunk> mono {};
+        std::array<float, chunk> mono {}, room {}, unused {};
 
         for (int start = 0; start < numSamples; start += chunk)
         {
             const auto n = juce::jmin (chunk, numSamples - start);
             std::fill (mono.begin(), mono.end(), 0.0f);
+            std::fill (room.begin(), room.end(), 0.0f);
+            std::fill (unused.begin(), unused.end(), 0.0f);
+            if (keyNoise.isActive())
+                keyNoise.render (room.data(), unused.data(), n);
 
             for (auto& v : voices)
             {
@@ -203,8 +224,9 @@ namespace piano
                 lowPass2 += lowPassCoef * (lowPass1 - lowPass2);
 
                 const auto pan = (float) std::sin (tremoloPhase);
-                left[start + i] += lowPass2 * (1.0f - 0.5f * depth * (1.0f + pan));
-                right[start + i] += lowPass2 * (1.0f - 0.5f * depth * (1.0f - pan));
+                const auto keys = keyNoiseLevel * room[(size_t) i];
+                left[start + i] += lowPass2 * (1.0f - 0.5f * depth * (1.0f + pan)) + keys;
+                right[start + i] += lowPass2 * (1.0f - 0.5f * depth * (1.0f - pan)) + keys;
 
                 tremoloPhase += phaseStep;
                 if (tremoloPhase > juce::MathConstants<double>::twoPi)
