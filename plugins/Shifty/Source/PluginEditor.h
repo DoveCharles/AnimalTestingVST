@@ -3,17 +3,18 @@
 #include "PluginProcessor.h"
 #include "PedalLookAndFeel.h"
 
-/** The big hinged pedal plate that covers the lower half, bound to the bypass parameter.
-    It carries the nameplate and the rubber pad; its toggle state is "bypassed". */
-class Treadle final : public juce::Button
+/** The footswitch: a squishy pill bound to the bypass parameter, pink and glowing while the effect
+    is on, grey while bypassed. Its toggle state is "bypassed". */
+class Blob final : public juce::Button
 {
 public:
-    Treadle() : juce::Button ("Footswitch") { setClickingTogglesState (true); }
+    Blob() : juce::Button ("Footswitch") { setClickingTogglesState (true); }
 
     void paintButton (juce::Graphics&, bool highlighted, bool down) override;
 };
 
-class PluginEditor final : public juce::AudioProcessorEditor
+class PluginEditor final : public juce::AudioProcessorEditor,
+                           private juce::Timer
 {
 public:
     explicit PluginEditor (PluginProcessor&);
@@ -23,15 +24,20 @@ public:
     void resized() override;
 
 private:
+    void timerCallback() override;
+    void drawTitle (juce::Graphics&);
     juce::String fineText (double finePercent);
 
     PedalLookAndFeel lookAndFeel;
 
     at::Knob balance, feedback, fine, mode;
-    Treadle treadle;
-    juce::AudioProcessorValueTreeState::ButtonAttachment treadleAttachment;
+    Blob blob;
+    juce::AudioProcessorValueTreeState::ButtonAttachment blobAttachment;
 
-    juce::Rectangle<int> ledArea;
+    // Drives the sparkles' twinkle; they dim while bypassed.
+    float clock = 0.0f, awake = 1.0f;
+
+    juce::Rectangle<int> titleArea, cardArea;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };
