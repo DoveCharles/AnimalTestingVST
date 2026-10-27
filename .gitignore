@@ -23,6 +23,9 @@ compile_commands.json
 Thumbs.db
 desktop.ini
 
+# Third-party sample sources, installed to Application Support at build time
+Redtron_SE/
+
 # Local listening renders (third-party audio)
 renders-voicebox/
 renders-smoothoperator/
