@@ -3,6 +3,7 @@
 #include <at_shared/at_shared.h>
 #include "PianoModel.h"
 #include "HousePiano.h"
+#include "RhodesPiano.h"
 
 namespace ParamIDs
 {
@@ -36,7 +37,14 @@ public:
 private:
     /** Every engine sees every message; only the selected voicing's engine strikes new notes. */
     static void handleMidi (const juce::MidiMessage&, piano::Engine&, bool strikes);
-    static void handleMidi (const juce::MidiMessage&, piano::HousePiano&, bool strikes);
+
+    /** For the House and Rhodes voicings, which have no soft pedal or pedal noise. */
+    template <typename Instrument>
+    static void handleMidi (const juce::MidiMessage&, Instrument&, bool strikes);
+
+    /** Renders one of the board-less voicings into `out`, applying the block's MIDI on the way. */
+    template <typename Instrument>
+    static void renderWithMidi (Instrument&, const juce::MidiBuffer&, juce::AudioBuffer<float>& out, int numSamples, bool strikes);
 
     std::atomic<float>& voicingParam;
     std::atomic<float>& hardnessParam;
@@ -55,11 +63,14 @@ private:
     // The House voicing plays recordings of the model, so it skips the board and goes straight to the mix.
     piano::HousePiano house;
 
+    // The Rhodes is tines and pickups, not strings: it has no board either.
+    piano::RhodesPiano rhodes;
+
     // Per voicing, one board response per driving point.
     std::array<std::array<juce::dsp::Convolution, piano::numDrivingPoints>, 2> soundboards;
     std::array<std::array<juce::AudioBuffer<float>, piano::numDrivingPoints>, 2> boardBuffers;
 
-    juce::AudioBuffer<float> dry, mix, houseBuffer;
+    juce::AudioBuffer<float> dry, mix, houseBuffer, rhodesBuffer;
     std::array<juce::dsp::IIR::Filter<float>, 2> dryHighPass;
     juce::dsp::Convolution room;
     juce::AudioBuffer<float> roomBuffer;
