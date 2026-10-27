@@ -18,11 +18,13 @@ namespace piano
           the pole's axis, so small swings give a clean tone with some second harmonic and big
           ones swing past the axis and "bark".
         - Felt dampers take a key's tines quickly on release.
+        - The wooden keys and the action are heard in the room, not through the pickups: each key
+          knocks on the keybed and back against its rail, and the pedal's damper rail thumps.
         - The keys' sum goes through a Suitcase-style preamp that rounds off peaks, a speaker's
           band limit, and its stereo tremolo, which pans the sound between the two sides.
 
         Hardness moves the tines towards their pickups (more bark), Unison is the tremolo depth,
-        Resonance the tonebar's share, and Noise the hammer and damper clicks. */
+        Resonance the tonebar's share, and Noise the key, hammer and damper noises. */
     class RhodesPiano
     {
     public:
@@ -65,6 +67,7 @@ namespace piano
         double rate = 44100.0;
         bool sustain = false;
         juce::Random random;
+        ActionNoise keyNoise;
 
         // The Suitcase after the keys.
         float highPassState = 0.0f, highPassCoef = 0.0f;
