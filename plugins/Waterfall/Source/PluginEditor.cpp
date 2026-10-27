@@ -12,6 +12,18 @@ namespace
         juce::Colour::fromHSV (0.93f, 0.50f, 1.0f, 1.0f),   // Mix: rose
     };
 
+    // Windows XP's Luna blue, for the desk the river's window sits on.
+    const juce::Colour deskTop    { 0xff3c84f2 };
+    const juce::Colour deskBottom { 0xff1a4fc4 };
+    const juce::Colour frameDark  { 0xff0a2a7a };
+
+    constexpr float windowCorner = 7.0f;
+
+    juce::ColourGradient deskGradient (juce::Rectangle<float> area)
+    {
+        return { deskTop, 0.0f, area.getY(), deskBottom, 0.0f, area.getBottom(), false };
+    }
+
     // RMS level to 0..1 over a 54 dB range.
     float toUnit (float rms)
     {
@@ -48,7 +60,7 @@ PluginEditor::PluginEditor (PluginProcessor& p)
 
     visual.onTick = [this] (float time) { animate (time); };
 
-    setSize (600, 360);
+    setSize (600, 400);
 }
 
 PluginEditor::~PluginEditor()
@@ -91,16 +103,52 @@ void PluginEditor::animate (float time)
     chordReadout.setTime (time);
 }
 
+void PluginEditor::paint (juce::Graphics& g)
+{
+    const auto area = getLocalBounds().toFloat();
+    g.setGradientFill (deskGradient (area));
+    g.fillAll();
+
+    // A soft gloss across the top, like the XP taskbar, and a shadow under the window.
+    g.setGradientFill ({ juce::Colours::white.withAlpha (0.16f), 0.0f, 0.0f,
+                         juce::Colours::white.withAlpha (0.0f), 0.0f, 60.0f, false });
+    g.fillRect (area.withHeight (60.0f));
+
+    juce::Path outline;
+    outline.addRoundedRectangle (window.toFloat(), windowCorner);
+    juce::DropShadow (frameDark.withAlpha (0.55f), 16, { 0, 5 }).drawForPath (g, outline);
+}
+
+void PluginEditor::paintOverChildren (juce::Graphics& g)
+{
+    // Round the window's corners by covering them with the desk, then frame it: a dark edge with a
+    // thin highlight just inside, brightest along the top.
+    const auto r = window.toFloat();
+    juce::Path corners;
+    corners.addRectangle (r.expanded (1.0f));
+    corners.addRoundedRectangle (r, windowCorner);
+    corners.setUsingNonZeroWinding (false);
+    g.setGradientFill (deskGradient (getLocalBounds().toFloat()));
+    g.fillPath (corners);
+
+    g.setColour (frameDark.withAlpha (0.9f));
+    g.drawRoundedRectangle (r.reduced (0.5f), windowCorner, 1.5f);
+    g.setGradientFill ({ juce::Colours::white.withAlpha (0.45f), 0.0f, r.getY(),
+                         juce::Colours::white.withAlpha (0.08f), 0.0f, r.getBottom(), false });
+    g.drawRoundedRectangle (r.reduced (2.0f), windowCorner - 1.5f, 1.0f);
+}
+
 void PluginEditor::resized()
 {
-    // No header, preset bar or panel: the spectrogram is the whole window, with the chord's notes and
-    // the knobs floating across the middle.
+    // The river runs in a window across the top, with the chord's notes floating low in it, and the
+    // knobs sit on the blue below.
     auto area = getLocalBounds();
-    visual.setBounds (area);
+    window = area.reduced (16).withHeight (236);
+    visual.setBounds (window);
     shadows.setBounds (area);
+    chordReadout.setBounds (window.withTop (window.getBottom() - 60).withHeight (48));
 
-    auto strip = area.reduced (22, 0).withSizeKeepingCentre (area.getWidth() - 44, 116);
-    chordReadout.setBounds (area.withTop (strip.getY() - 62).withHeight (48));
+    auto strip = area.withTop (window.getBottom() + 10).withHeight (116).reduced (22, 0);
 
     std::vector<juce::Rectangle<int>> knobBounds;
     const auto knobWidth = strip.getWidth() / 6;

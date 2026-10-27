@@ -11,6 +11,8 @@ public:
     explicit PluginEditor (PluginProcessor&);
     ~PluginEditor() override;
 
+    void paint (juce::Graphics&) override;
+    void paintOverChildren (juce::Graphics&) override;
     void resized() override;
 
 private:
@@ -26,6 +28,7 @@ private:
     at::Knob key, octave, chord, brightness, decay, mix;
 
     std::array<float, 6> glow {};
+    juce::Rectangle<int> window;   // the river's window, set in resized()
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };

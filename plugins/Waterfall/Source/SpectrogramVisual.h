@@ -7,7 +7,9 @@ class PluginProcessor;
 /** Scrolling spectrogram of the plugin's output, styled as a digital river. Sound shows as smooth
     rainbow trails coloured by pitch, carried left to right by a current of streaky, colour-varied noise
     with faint caustics. Notes shed faint particles into the current. Faint coloured blurs and a fine
-    film grain sit over everything. Rendered small and scaled up smoothly so everything stays soft. */
+    film grain sit over everything. Rendered small and scaled up smoothly so everything stays soft.
+    White water striders drift downstream on the surface, now and then hopping and sending out
+    rings of ripples that the current carries away. */
 class SpectrogramVisual final : public juce::Component
 {
 public:
@@ -31,11 +33,22 @@ private:
     void updateParticles (float dt);
     void drawParticles (juce::Graphics&) const;
     void spawnParticle (float x, float y, juce::Colour);
+    void updateStriders (float dt);
+    void drawStriders (juce::Graphics&) const;
+    void spawnStrider (float x);
+    void spawnRipple (float x, float y, float size, int crests);
 
     float historyAt (int column, int row) const noexcept;
 
     /** Light carried along by the current, in component pixels. */
     struct Particle { float x, y, vx, phase, size, age, life; juce::Colour colour; };
+
+    /** A water strider on the surface, in component pixels. Heading is in radians, 0 facing downstream.
+        hopAge is negative while it rests on the water. */
+    struct Strider { float x, y, size, heading, phase, untilHop, hopAge, hopHeight, lunge; };
+
+    /** Concentric rings spreading on the surface, their centre drifting with the current. */
+    struct Ripple { float x, y, size, age; int crests; };
 
     PluginProcessor& processor;
     juce::VBlankAttachment vblank;
@@ -61,6 +74,8 @@ private:
     juce::Image grain;   // full-resolution tile, re-positioned every frame
     juce::Random random;
     std::vector<Particle> particles;
+    std::vector<Strider> striders;
+    std::vector<Ripple> ripples;
 
     double startTime = -1.0;
     float time = 0.0f;
@@ -69,6 +84,8 @@ private:
 
     static constexpr int pixelSize = 4;
     static constexpr size_t maxParticles = 220;
+    static constexpr size_t numStriders = 3;
+    static constexpr size_t maxRipples = 40;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SpectrogramVisual)
 };
