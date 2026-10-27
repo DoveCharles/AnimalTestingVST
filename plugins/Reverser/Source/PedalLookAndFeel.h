@@ -12,7 +12,7 @@ public:
         static inline const juce::Colour enclosure     { 0xff2b2d30 };
         static inline const juce::Colour enclosureDark { 0xff141517 };
         static inline const juce::Colour silkscreen    { 0xffe4e4df };
-        static inline const juce::Colour accent        { 0xff3fb8c8 };
+        static inline const juce::Colour accent        { 0xffa98be8 };
         static inline const juce::Colour nameplate     { 0xff101113 };
         static inline const juce::Colour nameText      { 0xfff2f0ea };
         static inline const juce::Colour knob          { 0xff111111 };

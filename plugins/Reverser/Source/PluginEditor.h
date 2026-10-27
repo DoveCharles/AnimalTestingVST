@@ -23,13 +23,22 @@ public:
     void resized() override;
 
 private:
-    juce::String decayText (double decayPercent);
+    void styleSwitch (juce::TextButton&);
 
     PedalLookAndFeel lookAndFeel;
 
-    at::Knob level, liveliness, decay, type;
+    // Time and Division share a spot; Sync decides which one shows.
+    at::Knob time, division, repeats, tone, mix;
+
+    std::array<juce::TextButton, ReverseModes::numModes> modeButtons;
+    juce::ParameterAttachment modeAttachment;
+
+    juce::TextButton sync { "SYNC" };
+    juce::ParameterAttachment syncAttachment;
+
     juce::TextButton tails { "TAILS" };
     juce::AudioProcessorValueTreeState::ButtonAttachment tailsAttachment;
+
     Footswitch footswitch;
     juce::AudioProcessorValueTreeState::ButtonAttachment footswitchAttachment;
 
