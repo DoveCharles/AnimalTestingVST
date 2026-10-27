@@ -16,6 +16,7 @@ A monorepo of audio plugins by **Animal Testing**. Each plugin builds as VST3 (W
 | [AT Smooth Operator](plugins/SmoothOperator) | `Smop` | 0.1.0 | Dynamic resonance suppressor: an STFT that cuts whatever sticks up out of the sound's own (harmonic-smoothed) spectrum, with Depth, Sharpness, Selectivity, Attack/Release, five-band weighting, Stereo or Mid/Side, Delta listen and a live cut display; about 43 ms latency, reported to the host |
 | [AT Tapeworm](plugins/Tapeworm) | `Tpwm` | 0.1.0 | Lo-fi tape machine fitted to TapeCapture measurements: Drive (4x oversampled) with Boost, a morphing tape voicing (Tone) and a bipolar low/high-pass Filter, Wow, Flutter and Wear with an optional wide stereo transport, mono tape hiss and motor noise, Output, a tempo-synced Tape Stop (1/4 to 8 bars) with Instant or Fast-Forward catch-up, and Speed (0.25x to 1x) that slows everything down on up to 5 minutes of tape. A matte silver deck whose reels turn with the tape |
 | [AT Good Boy](plugins/GoodBoy) | `Gdby` | 0.1.0 | One-knob multiband maximizer: Amount drives a three-band compressor with makeup, light saturation, high-band width and a lookahead limiter (-0.3 dBFS), voiced four ways by Mode (A Warm, B Bright, C Loud, D Big), plus Output; Amount 0 leaves the sound untouched (crossover phase only); 1.5 ms latency, reported to the host |
+| [AT Big Mouth](plugins/BigMouth) | `Bmth` | 0.1.0 | Beatbox to MIDI drums: finds each hit in a mic signal and sends a drum note (GM numbers, so Addictive Drums 2 and most drum samplers play it). Five pads (Kick, Snare, Hi-Hat, Open Hat, Tom) with their own notes; untrained it sorts hits by brightness, or train each pad on eight of your own sounds (saved with the set). Threshold, Listen (window, about the note latency), Gap, Dynamics and Monitor. MIDI goes to the host and, on macOS, to a virtual port "AT Big Mouth" |
 
 ## Layout
 
@@ -149,6 +150,15 @@ That writes every test to `renders-mellofi/` (gitignored). A summary of the resu
 4. The plugins appear under **Plug-Ins → VST3 / Audio Units → Animal Testing**.
 
 If Live ignores the AU after a rebuild, run `killall -9 AudioComponentRegistrar` and check it with `auval -v aufx Satr AnTs`.
+
+## Beatboxing into Addictive Drums 2 (Big Mouth)
+
+1. Put **AT Big Mouth** on an audio track with your mic as its input and monitoring set to *In*.
+2. Put Addictive Drums 2 on a MIDI track and set its *MIDI From* to **AT Big Mouth** (the virtual port; on macOS it also shows up in Settings → Link, Tempo & MIDI, where *Track* must be on) with monitoring *In*. Hosts that route plug-in MIDI output can take it from the Big Mouth track instead.
+3. Click **Train** on a pad and make that sound eight times; do the same for the others. Untrained, low sounds play the kick, middle the snare and high the hat.
+4. Notes are GM (Kick C1 36, Snare D1 38, Hat F#1 42, Open Hat A#1 46, Tom A1 45); change a pad's note if your AD2 kit maps a piece elsewhere.
+
+Each note comes out one Listen window (16 ms by default) after the hit starts, so quantize recorded MIDI if it needs to be tight. `BigMouthRender test` scores the detector on a synthetic beatbox pattern, and `BigMouthRender render take.wav hits.mid` turns a recording into MIDI.
 
 ## Licensing note
 
