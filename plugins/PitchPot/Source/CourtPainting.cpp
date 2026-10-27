@@ -9,37 +9,55 @@ namespace
     const juce::Colour ink       { 0xff2b1d14 };
     const juce::Colour vermilion { 0xffb3402f };
     const juce::Colour lacquer   { 0xff7a2a1e };
-    const juce::Colour malachite { 0xff4f8a68 };
-    const juce::Colour azurite   { 0xff3d6391 };
-    const juce::Colour lilac     { 0xff857892 };
-    const juce::Colour skin      { 0xffeccfa6 };
+    const juce::Colour malachite { 0xff6a957a };
+    const juce::Colour azurite   { 0xff5a7c9c };
+    const juce::Colour lilac     { 0xff9d92a8 };
+    const juce::Colour skin      { 0xfff3e6d0 };
+    const juce::Colour faceInk   { 0xff8a4a32 };
+    const juce::Colour hair      { 0xff1d1714 };
+    const juce::Colour hatBlack  { 0xff241d1a };
+    const juce::Colour cane      { 0xffa08454 };
+    const juce::Colour sage      { 0xff8e9f86 };
+    const juce::Colour mist      { 0xffaebdc0 };
+    const juce::Colour blush     { 0xffdcb4a6 };
+    const juce::Colour ivory     { 0xffe8e0c8 };
+    const juce::Colour plum      { 0xffb4a4b6 };
+    const juce::Colour skirtRed  { 0xffc0533d };
     const juce::Colour gold      { 0xffc9a24a };
     const juce::Colour slate     { 0xff4b5552 };
     const juce::Colour marble    { 0xffd8cfb9 };
+    const juce::Colour bronze    { 0xff6f7050 };
     const juce::Colour pine      { 0xff2f5e45 };
     const juce::Colour bark      { 0xff6b4a32 };
-    const juce::Colour earth     { 0xff8a6a3e };
 
     //==============================================================================
-    void stroke (juce::Graphics& g, const juce::Path& path, float width = 0.9f, float alpha = 0.75f)
+    /** The fine, even "iron-wire" ink line that outlines everything in gongbi. */
+    void stroke (juce::Graphics& g, const juce::Path& path, float width = 0.7f, float alpha = 0.9f)
     {
         g.setColour (ink.withAlpha (alpha));
         g.strokePath (path, juce::PathStrokeType (width, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
     }
 
-    /** Flat colour, a little lighter at `from` than at `to`, then an ink outline (none if `outline` is 0). */
-    void fill (juce::Graphics& g, const juce::Path& path, juce::Colour colour, P from, P to, float outline = 0.9f)
+    /** Layered washes the gongbi way: a flat ground of colour, then the same colour deepened in a soft
+        band just inside the contour (fen ran) so forms turn without any light or cast shadow, then
+        the ink line (none if `outline` is 0). */
+    void fill (juce::Graphics& g, const juce::Path& path, juce::Colour colour, float outline = 0.7f)
     {
-        g.setGradientFill (juce::ColourGradient (colour.brighter (0.1f), from, colour.darker (0.18f), to, false));
+        g.setColour (colour);
         g.fillPath (path);
+        {
+            juce::Graphics::ScopedSaveState state (g);
+            g.reduceClipRegion (path);
+            const auto b = path.getBounds();
+            const auto band = juce::jmin (7.0f, juce::jmin (b.getWidth(), b.getHeight()) * 0.35f);
+            for (auto [width, alpha] : { std::pair { 2.0f, 0.04f }, { 1.2f, 0.05f }, { 0.6f, 0.07f } })
+            {
+                g.setColour (colour.darker (0.7f).withAlpha (alpha));
+                g.strokePath (path, juce::PathStrokeType (band * width, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+            }
+        }
         if (outline > 0.0f)
             stroke (g, path, outline);
-    }
-
-    void fill (juce::Graphics& g, const juce::Path& path, juce::Colour colour, float outline = 0.9f)
-    {
-        const auto b = path.getBounds();
-        fill (g, path, colour, { b.getCentreX(), b.getY() }, { b.getCentreX(), b.getBottom() + 0.01f }, outline);
     }
 
     juce::Path rect (juce::Rectangle<float> r)
@@ -62,8 +80,9 @@ namespace
         return path;
     }
 
-    /** A stroke that thins from `startWidth` to `endWidth` along `spine`, for branches. */
-    juce::Path taper (const juce::Path& spine, float startWidth, float endWidth)
+    /** A strip along `spine` whose width at each fraction t of its length is `widthAt (t)`. */
+    template <typename Width>
+    juce::Path sweep (const juce::Path& spine, Width widthAt)
     {
         constexpr int steps = 40;
         const auto length = spine.getLength();
@@ -75,7 +94,7 @@ namespace
             auto d = spine.getPointAlongPath (juce::jmin (length, length * t + 0.5f))
                    - spine.getPointAlongPath (juce::jmax (0.0f, length * t - 0.5f));
             d /= juce::jmax (0.001f, d.getDistanceFromOrigin());
-            const auto n = P (-d.y, d.x) * (juce::jmap (t, startWidth, endWidth) * 0.5f);
+            const auto n = P (-d.y, d.x) * (widthAt (t) * 0.5f);
             left.add (p + n);
             right.add (p - n);
         }
@@ -90,17 +109,18 @@ namespace
         return out;
     }
 
+    /** A stroke that thins from `startWidth` to `endWidth` along `spine`, for branches and ribbons. */
+    juce::Path taper (const juce::Path& spine, float startWidth, float endWidth)
+    {
+        return sweep (spine, [=] (float t) { return juce::jmap (t, startWidth, endWidth); });
+    }
+
     void softEllipse (juce::Graphics& g, P centre, float width, float height, juce::Colour colour)
     {
         juce::Graphics::ScopedSaveState state (g);
         g.addTransform (juce::AffineTransform::scale (1.0f, height / width, centre.x, centre.y));
         g.setGradientFill (juce::ColourGradient (colour, centre, colour.withAlpha (0.0f), centre.translated (width * 0.5f, 0.0f), true));
         g.fillEllipse (juce::Rectangle<float> (width, width).withCentre (centre));
-    }
-
-    void groundShadow (juce::Graphics& g, P feet, float width)
-    {
-        softEllipse (g, feet, width, width * 0.22f, juce::Colour (0xff5a4026).withAlpha (0.28f));
     }
 
     //==============================================================================
@@ -238,41 +258,70 @@ namespace
     void paintPine (juce::Graphics& g)
     {
         juce::Path limb;
-        limb.startNewSubPath (468.0f, 2.0f);
-        limb.cubicTo (436.0f, 30.0f, 404.0f, 22.0f, 376.0f, 42.0f);
-        limb.quadraticTo (362.0f, 52.0f, 344.0f, 50.0f);
+        limb.startNewSubPath (470.0f, 22.0f);
+        limb.cubicTo (440.0f, 44.0f, 406.0f, 30.0f, 378.0f, 46.0f);
+        limb.quadraticTo (362.0f, 56.0f, 342.0f, 54.0f);
 
         juce::Path twig;
-        twig.startNewSubPath (408.0f, 28.0f);
-        twig.quadraticTo (412.0f, 44.0f, 402.0f, 56.0f);
+        twig.startNewSubPath (414.0f, 36.0f);
+        twig.quadraticTo (418.0f, 52.0f, 408.0f, 62.0f);
 
-        for (const auto& [spine, w0, w1] : { std::tuple { limb, 11.0f, 2.5f }, std::tuple { twig, 4.0f, 1.5f } })
+        juce::Random random (0x9172);
+
+        // Needles in the wheel form: each cluster a fan of fine strokes radiating from the tip of
+        // a short twig on the branch, laid over a flat wash of pale green, the fan opening away
+        // from the twig so the needles read as growing out of it.
+        const auto cluster = [&] (P base, P tip, float radius)
         {
-            const auto body = taper (spine, w0, w1);
-            fill (g, body, bark, 0.9f);
+            g.fillPath (taper (curve (base, (base + tip) * 0.5f + P (0.0f, -1.5f), tip), 2.0f, 1.0f));
+
+            const auto heading = std::atan2 (tip.y - base.y, tip.x - base.x);
+            const auto spread = juce::degreesToRadians (95.0f);
+            juce::Path wash;
+            wash.startNewSubPath (tip);
+            for (int i = 0; i <= 16; ++i)
+            {
+                const auto angle = heading - spread + spread * 2.0f * (float) i / 16.0f;
+                wash.lineTo (tip + P (std::cos (angle), std::sin (angle)) * radius * 0.92f);
+            }
+            wash.closeSubPath();
+            g.setColour (pine.brighter (0.6f).withAlpha (0.45f));
+            g.fillPath (wash);
+
+            for (auto [count, colour, reach, offset] : { std::tuple { 19, pine.brighter (0.3f), 0.95f, 0.5f }, { 19, pine, 1.0f, 0.0f } })
+                for (int i = 0; i < count; ++i)
+                {
+                    const auto angle = heading - spread + spread * 2.0f * ((float) i + offset) / (float) (count - 1);
+                    const auto len = radius * reach * (0.82f + random.nextFloat() * 0.18f);
+                    g.setColour (colour);
+                    g.drawLine ({ tip, tip + P (std::cos (angle), std::sin (angle)) * len }, 0.45f);
+                }
+
+            g.setColour (bark.darker (0.3f));
+            g.fillEllipse (juce::Rectangle<float> (1.6f, 1.6f).withCentre (tip));
+            g.setColour (bark);
+        };
+
+        // Clusters first, mostly held up and out from the branch, so the limb crosses the foot of their twigs.
+        g.setColour (bark);
+        for (const auto& [t, dx, dy, radius] : { std::tuple { 0.18f, -2.0f, -11.0f, 10.0f }, { 0.36f, -6.0f, -12.0f, 11.0f },
+                                                 { 0.5f, 3.0f, 12.0f, 9.0f }, { 0.62f, -7.0f, -11.0f, 11.0f },
+                                                 { 0.8f, -4.0f, -12.0f, 10.0f }, { 1.0f, -10.0f, -3.0f, 10.0f } })
+        {
+            const auto base = limb.getPointAlongPath (limb.getLength() * t);
+            cluster (base, base + P (dx, dy), radius);
         }
+        cluster (twig.getPointAlongPath (twig.getLength() * 0.5f), twig.getPointAlongPath (twig.getLength() * 0.5f) + P (9.0f, 3.0f), 9.0f);
+        cluster (twig.getPointAlongPath (twig.getLength()), { 400.0f, 68.0f }, 10.0f);
+
+        fill (g, taper (twig, 4.0f, 1.5f), bark, 0.9f);
+        fill (g, taper (limb, 11.0f, 2.5f), bark, 0.9f);
 
         // Scaly bark.
-        juce::Random random (0x9172);
         for (int i = 0; i < 14; ++i)
         {
             const auto p = limb.getPointAlongPath (limb.getLength() * (0.05f + 0.6f * random.nextFloat()));
             stroke (g, curve (p.translated (-2.0f, -1.5f), p.translated (0.0f, 1.0f), p.translated (2.5f, -1.0f)), 0.7f, 0.45f);
-        }
-
-        // Needles in wheel-shaped clusters, each over a soft green wash.
-        for (const auto c : { P (446, 16), P (426, 30), P (406, 18), P (398, 44), P (372, 38), P (352, 52), P (420, 50), P (382, 60) })
-        {
-            softEllipse (g, c, 30.0f, 16.0f, pine.withAlpha (0.35f));
-            g.setColour (pine.withAlpha (0.9f));
-            for (int i = 0; i < 17; ++i)
-            {
-                const auto a = juce::degreesToRadians (-170.0f + (float) i * 10.0f);
-                const auto r = 9.0f + random.nextFloat() * 3.0f;
-                g.drawLine ({ c, c + P (std::cos (a), std::sin (a) * 0.7f) * r }, 0.75f);
-            }
-            g.setColour (bark.darker (0.4f));
-            g.fillEllipse (juce::Rectangle<float> (2.5f, 2.5f).withCentre (c));
         }
     }
 
@@ -336,7 +385,7 @@ namespace
         // Pillars, lit from the left.
         for (auto x : { left + 3.0f, right - 11.0f })
         {
-            fill (g, rect ({ x, 56.0f, 8.0f, 134.0f }), vermilion, { x, 120.0f }, { x + 8.0f, 120.0f });
+            fill (g, rect ({ x, 56.0f, 8.0f, 134.0f }), vermilion);
             fill (g, juce::Rectangle<float> (x - 1.0f, 56.0f, 10.0f, 4.0f), gold, 0.7f);
             fill (g, juce::Rectangle<float> (x - 1.5f, 185.0f, 11.0f, 5.0f), marble, 0.7f);
         }
@@ -415,7 +464,54 @@ namespace
 
     //==============================================================================
     // Figures. Each is drawn in its own unit frame: feet at the origin, the top of the head at
-    // y = -1, facing +x, so one set of shapes serves for either direction and any size.
+    // y = -1, facing +x, so one set of shapes serves for either direction and any size. Contours
+    // are smooth curves through hand-placed points, laid in flat colour and outlined in short,
+    // overlapping brush strokes that press in and lift off, the way the painters drew them.
+
+    /** A Catmull-Rom curve from `points[first]` across `segments` spans, wrapping round if closed. */
+    juce::Path smoothSpan (const std::vector<P>& points, int first, int segments, bool closed)
+    {
+        const auto n = (int) points.size();
+        const auto at = [&] (int i) { return points[(size_t) (closed ? (i % n + n) % n : juce::jlimit (0, n - 1, i))]; };
+
+        juce::Path path;
+        path.startNewSubPath (at (first));
+        for (int i = first; i < first + segments; ++i)
+        {
+            const auto p0 = at (i - 1), p1 = at (i), p2 = at (i + 1), p3 = at (i + 2);
+            path.cubicTo (p1 + (p2 - p0) / 6.0f, p2 - (p3 - p1) / 6.0f, p2);
+        }
+        return path;
+    }
+
+    juce::Path smooth (const std::vector<P>& points, bool closed)
+    {
+        auto path = smoothSpan (points, 0, (int) points.size() - (closed ? 0 : 1), closed);
+        if (closed)
+            path.closeSubPath();
+        return path;
+    }
+
+    /** One brush line along `spine`: pressed in at the start, even through the middle, lifted to a fine tail. */
+    void brush (juce::Graphics& g, const juce::Path& spine, float width = 0.42f, juce::Colour colour = ink)
+    {
+        g.setColour (colour);
+        g.fillPath (sweep (spine, [width] (float t)
+        {
+            const auto press = t < 0.12f ? 0.6f * std::sin (juce::MathConstants<float>::pi * t / 0.12f) : 0.0f;
+            const auto lift = t > 0.65f ? juce::jmap (t, 0.65f, 1.0f, 1.0f, 0.2f) : 1.0f;
+            return width * (1.0f + press) * lift;
+        }));
+    }
+
+    /** A flat-washed shape outlined in overlapping brush strokes, so the contour breaks and
+        swells as a hand-drawn one does. */
+    void drape (juce::Graphics& g, const std::vector<P>& points, juce::Colour colour, float line = 0.42f, juce::Colour lineColour = ink)
+    {
+        fill (g, smooth (points, true), colour, 0.0f);
+        for (int i = 0; i < (int) points.size(); i += 3)
+            brush (g, smoothSpan (points, i, 4, true), line, lineColour);
+    }
 
     struct Frame
     {
@@ -423,7 +519,18 @@ namespace
         float h, facing;
 
         P operator() (float x, float y) const { return { feet.x + x * h * facing, feet.y + y * h }; }
+        P operator() (P p) const { return (*this) (p.x, p.y); }
         float len (float v) const { return v * h; }
+
+        std::vector<P> map (const std::vector<P>& unit, P offset = {}) const
+        {
+            std::vector<P> out;
+            for (auto p : unit)
+                out.push_back ((*this) (p + offset));
+            return out;
+        }
+
+        juce::Path line (const std::vector<P>& unit) const { return smooth (map (unit), false); }
     };
 
     juce::Rectangle<float> around (P centre, float w, float h)
@@ -431,81 +538,63 @@ namespace
         return juce::Rectangle<float> (w, h).withCentre (centre);
     }
 
-    enum class Hat { futou, winged };
-
-    void paintHead (juce::Graphics& g, const Frame& f, float cx, float cy, Hat hat, bool beard)
+    /** A sash, ribbon or edging band: a narrowing strip of colour with a fine ink edge. */
+    void paintBand (juce::Graphics& g, const Frame& f, const std::vector<P>& unit, juce::Colour colour, float width = 0.022f)
     {
-        juce::Path face;
-        face.addEllipse (around (f (cx, cy), f.len (0.125f), f.len (0.15f)));
-        fill (g, face, skin, 0.8f);
-
-        juce::Path ear;
-        ear.addEllipse (around (f (cx - 0.035f, cy + 0.005f), f.len (0.03f), f.len (0.05f)));
-        fill (g, ear, skin.darker (0.05f), 0.6f);
-
-        g.setColour (ink);
-        g.drawLine ({ f (cx + 0.02f, cy - 0.008f), f (cx + 0.045f, cy - 0.01f) }, 1.0f);
-        g.setColour (ink.withAlpha (0.6f));
-        g.drawLine ({ f (cx + 0.012f, cy - 0.032f), f (cx + 0.05f, cy - 0.036f) }, 0.8f);
-        g.setColour (vermilion.withAlpha (0.7f));
-        g.drawLine ({ f (cx + 0.028f, cy + 0.04f), f (cx + 0.045f, cy + 0.039f) }, 0.9f);
-
-        if (beard)
-        {
-            stroke (g, curve (f (cx + 0.02f, cy + 0.03f), f (cx + 0.05f, cy + 0.035f), f (cx + 0.065f, cy + 0.05f)), 0.9f, 0.85f);
-            stroke (g, curve (f (cx + 0.035f, cy + 0.06f), f (cx + 0.045f, cy + 0.11f), f (cx + 0.02f, cy + 0.15f)), 1.6f, 0.85f);
-            stroke (g, curve (f (cx + 0.015f, cy + 0.06f), f (cx + 0.02f, cy + 0.1f), f (cx + 0.0f, cy + 0.13f)), 1.1f, 0.7f);
-        }
-
-        // Black gauze hat: a rounded crown with a raised back, and either the soft hanging tails
-        // of an attendant's futou or the stiff side wings of an official.
-        g.setColour (ink.brighter (0.1f));
-        g.fillEllipse (around (f (cx - 0.005f, cy - 0.058f), f.len (0.145f), f.len (0.075f)));
-        g.fillEllipse (around (f (cx - 0.02f, cy - 0.095f), f.len (0.1f), f.len (0.07f)));
-        g.setColour (juce::Colours::white.withAlpha (0.12f));
-        g.fillEllipse (around (f (cx + 0.01f, cy - 0.105f), f.len (0.04f), f.len (0.025f)));
-
-        if (hat == Hat::winged)
-        {
-            g.setColour (ink.brighter (0.1f));
-            for (auto side : { -1.0f, 1.0f })
-                g.fillRoundedRectangle (around (f (cx - 0.01f + side * 0.15f, cy - 0.07f), f.len (0.17f), f.len (0.032f)), f.len (0.014f));
-        }
-        else
-        {
-            stroke (g, curve (f (cx - 0.06f, cy - 0.06f), f (cx - 0.11f, cy - 0.02f), f (cx - 0.1f, cy + 0.08f)), 1.5f, 0.9f);
-            stroke (g, curve (f (cx - 0.065f, cy - 0.05f), f (cx - 0.125f, cy - 0.0f), f (cx - 0.12f, cy + 0.07f)), 1.2f, 0.8f);
-        }
+        const auto band = taper (f.line (unit), f.len (width), f.len (width * 0.45f));
+        fill (g, band, colour, 0.0f);
+        g.setColour (ink.withAlpha (0.75f));
+        g.strokePath (band, juce::PathStrokeType (0.3f));
     }
 
-    void paintBelt (juce::Graphics& g, const Frame& f, float y, float halfWidth)
+    void paintHand (juce::Graphics& g, const Frame& f, P centre)
     {
-        const auto belt = curve (f (-halfWidth, y - 0.01f), f (0.02f, y + 0.04f), f (halfWidth + 0.01f, y - 0.015f));
-        g.setColour (ink.brighter (0.15f));
-        g.strokePath (belt, juce::PathStrokeType (f.len (0.022f), juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
-        g.setColour (gold);
-        for (auto t : { 0.3f, 0.55f, 0.8f })
-            g.fillEllipse (around (belt.getPointAlongPath (belt.getLength() * t), f.len (0.03f), f.len (0.018f)));
+        drape (g, f.map ({ { -0.015f, -0.01f }, { 0.01f, -0.016f }, { 0.026f, -0.008f }, { 0.024f, 0.008f }, { 0.006f, 0.014f }, { -0.014f, 0.008f } }, centre),
+               skin, 0.4f, faceInk);
     }
 
-    void paintCollar (juce::Graphics& g, const Frame& f, float y, juce::Colour robe)
+    void paintFeatures (juce::Graphics& g, const Frame& f)
     {
-        juce::Path collar;
-        collar.addEllipse (around (f (0.01f, y), f.len (0.13f), f.len (0.05f)));
-        fill (g, collar, robe.darker (0.15f), 0.8f);
-        g.setColour (juce::Colours::white.withAlpha (0.85f));
-        g.fillEllipse (around (f (0.025f, y - 0.004f), f.len (0.06f), f.len (0.022f)));
+        softEllipse (g, f (0.026f, -0.847f), f.len (0.035f), f.len (0.02f), vermilion.withAlpha (0.14f));
+        brush (g, f.line ({ { -0.022f, -0.878f }, { -0.033f, -0.866f }, { -0.03f, -0.851f }, { -0.02f, -0.847f } }), 0.28f, faceInk);
+        brush (g, f.line ({ { 0.022f, -0.889f }, { 0.037f, -0.892f }, { 0.052f, -0.889f } }), 0.28f);
+        brush (g, f.line ({ { 0.029f, -0.875f }, { 0.04f, -0.877f }, { 0.051f, -0.873f } }), 0.35f);
+        g.setColour (vermilion.darker (0.2f));
+        g.fillEllipse (around (f (0.041f, -0.832f), f.len (0.013f), f.len (0.007f)));
     }
 
+    /** A court lady's head: a pale oval face turned three-quarters, hair swept up into a bun with a gold pin. */
+    void paintLadyHead (juce::Graphics& g, const Frame& f)
+    {
+        drape (g, f.map ({ { -0.05f, -0.93f }, { -0.075f, -0.885f }, { -0.065f, -0.835f }, { -0.035f, -0.84f }, { -0.025f, -0.9f } }), hair, 0.35f);
+        drape (g, f.map ({ { -0.035f, -0.915f }, { -0.04f, -0.87f }, { -0.02f, -0.826f }, { 0.012f, -0.808f }, { 0.035f, -0.815f },
+                           { 0.046f, -0.832f }, { 0.051f, -0.85f }, { 0.06f, -0.864f }, { 0.054f, -0.875f }, { 0.055f, -0.9f },
+                           { 0.045f, -0.918f }, { 0.0f, -0.925f } }), skin, 0.32f, faceInk);
+        paintFeatures (g, f);
+
+        drape (g, f.map ({ { 0.057f, -0.903f }, { 0.05f, -0.93f }, { 0.02f, -0.95f }, { -0.03f, -0.956f }, { -0.065f, -0.935f },
+                           { -0.072f, -0.9f }, { -0.055f, -0.865f }, { -0.035f, -0.872f }, { -0.027f, -0.9f }, { 0.01f, -0.915f },
+                           { 0.04f, -0.91f } }), hair, 0.35f);
+        drape (g, f.map ({ { 0.012f, -0.948f }, { 0.032f, -0.976f }, { 0.012f, -1.0f }, { -0.028f, -0.997f }, { -0.05f, -0.972f }, { -0.04f, -0.946f } }),
+               hair, 0.5f);
+        brush (g, f.line ({ { -0.065f, -0.986f }, { -0.01f, -0.976f }, { 0.04f, -0.963f } }), 0.49f, gold);
+        g.setColour (juce::Colours::white.withAlpha (0.15f));
+        g.strokePath (f.line ({ { 0.045f, -0.92f }, { 0.0f, -0.94f }, { -0.05f, -0.925f } }), juce::PathStrokeType (0.4f));
+    }
+
+    /** A pitch-pot arrow: a long bare cane with a small iron head and a tuft of feathers. */
     void paintArrow (juce::Graphics& g, P tail, P head)
     {
         const auto dir = (head - tail) / juce::jmax (0.001f, tail.getDistanceFrom (head));
         const P normal { -dir.y, dir.x };
 
-        g.setColour (juce::Colour (0xff7a5a34));
+        g.setColour (cane);
         g.drawLine ({ tail, head }, 1.1f);
+        g.setColour (ink.withAlpha (0.35f));
+        g.drawLine ({ tail + normal * 0.5f, head + normal * 0.5f }, 0.35f);
+
         juce::Path tip;
-        tip.addTriangle (head + dir * 3.5f, head + normal * 1.4f, head - normal * 1.4f);
+        tip.addTriangle (head + dir * 2.6f, head + normal * 1.0f, head - normal * 1.0f);
         g.setColour (ink);
         g.fillPath (tip);
 
@@ -513,183 +602,188 @@ namespace
         {
             juce::Path feather;
             feather.startNewSubPath (tail + dir * 0.5f);
-            feather.quadraticTo (tail + normal * (3.4f * side) + dir * 2.0f, tail + normal * (2.6f * side) + dir * 8.0f);
-            feather.lineTo (tail + dir * 10.0f);
+            feather.quadraticTo (tail + normal * (1.2f * side) + dir * 1.5f, tail + normal * (1.0f * side) + dir * 5.0f);
+            feather.lineTo (tail + dir * 6.0f);
             feather.closeSubPath();
-            g.setColour (vermilion);
+            g.setColour (vermilion.darker (0.35f).withAlpha (0.85f));
             g.fillPath (feather);
-            g.setColour (ink.withAlpha (0.5f));
-            g.strokePath (feather, juce::PathStrokeType (0.5f));
         }
     }
 
-    enum class Pose { clasped, tray, arrows };
+    enum class Pose { clasped, tray, arrow };
 
-    /** A standing attendant in a long round-collared robe with flared side pleats. */
-    void paintAttendant (juce::Graphics& g, P feet, float h, float facing, juce::Colour robe, Pose pose)
+    struct Dress
+    {
+        juce::Colour jacket, skirt, trim, sash;
+    };
+
+    /** A court lady in a short wide-sleeved jacket over a long skirt that pools on the ground,
+        sash ribbons trailing behind her. */
+    void paintLady (juce::Graphics& g, P feet, float h, float facing, Dress dress, Pose pose)
     {
         const Frame f { feet, h, facing };
-        groundShadow (g, feet.translated (0.0f, -1.0f), h * 0.6f);
 
-        g.setColour (ink);
-        g.fillEllipse (around (f (-0.04f, -0.012f), f.len (0.1f), f.len (0.04f)));
-        g.fillEllipse (around (f (0.11f, -0.008f), f.len (0.1f), f.len (0.04f)));
+        paintBand (g, f, { { -0.06f, -0.52f }, { -0.15f, -0.32f }, { -0.2f, -0.14f }, { -0.31f, 0.0f } }, dress.sash, 0.02f);
 
-        juce::Path pleat;
-        pleat.startNewSubPath (f (-0.12f, -0.47f));
-        pleat.quadraticTo (f (-0.2f, -0.3f), f (-0.25f, -0.03f));
-        pleat.lineTo (f (-0.15f, -0.03f));
-        pleat.closeSubPath();
-        fill (g, pleat, robe.darker (0.25f));
+        drape (g, f.map ({ { -0.09f, -0.52f }, { -0.12f, -0.36f }, { -0.15f, -0.2f }, { -0.19f, -0.06f }, { -0.25f, -0.006f },
+                           { -0.16f, 0.004f }, { -0.07f, -0.008f }, { 0.02f, 0.004f }, { 0.1f, -0.006f }, { 0.17f, -0.014f },
+                           { 0.14f, -0.16f }, { 0.12f, -0.34f }, { 0.1f, -0.52f } }), dress.skirt);
+        for (const auto& fold : std::vector<std::vector<P>> { { { 0.02f, -0.32f }, { 0.0f, -0.18f }, { -0.02f, -0.012f } },
+                                                              { { 0.08f, -0.32f }, { 0.09f, -0.16f }, { 0.11f, -0.01f } },
+                                                              { { -0.06f, -0.32f }, { -0.09f, -0.18f }, { -0.13f, -0.02f } },
+                                                              { { 0.02f, 0.0f }, { 0.05f, -0.028f }, { 0.08f, -0.032f } },
+                                                              { { -0.13f, -0.01f }, { -0.16f, -0.04f } } })
+            brush (g, f.line (fold), 0.35f);
 
-        juce::Path body;
-        body.startNewSubPath (f (-0.1f, -0.79f));
-        body.quadraticTo (f (-0.15f, -0.62f), f (-0.14f, -0.44f));
-        body.quadraticTo (f (-0.17f, -0.22f), f (-0.19f, -0.02f));
-        body.quadraticTo (f (0.0f, 0.012f), f (0.2f, -0.02f));
-        body.quadraticTo (f (0.17f, -0.25f), f (0.15f, -0.46f));
-        body.quadraticTo (f (0.15f, -0.64f), f (0.09f, -0.79f));
-        body.quadraticTo (f (0.0f, -0.83f), f (-0.1f, -0.79f));
-        body.closeSubPath();
-        fill (g, body, robe, f (0.0f, -0.8f), f (0.0f, 0.0f));
+        drape (g, f.map ({ { -0.04f, -0.805f }, { -0.09f, -0.775f }, { -0.11f, -0.69f }, { -0.11f, -0.57f }, { -0.13f, -0.44f },
+                           { -0.15f, -0.34f }, { -0.09f, -0.318f }, { -0.02f, -0.335f }, { 0.05f, -0.315f }, { 0.12f, -0.33f },
+                           { 0.11f, -0.45f }, { 0.09f, -0.58f }, { 0.08f, -0.7f }, { 0.05f, -0.78f }, { 0.02f, -0.805f } }), dress.jacket);
+        brush (g, f.line ({ { -0.07f, -0.7f }, { -0.09f, -0.56f }, { -0.1f, -0.42f } }), 0.35f);
+        brush (g, f.line ({ { 0.065f, -0.52f }, { 0.075f, -0.43f }, { 0.085f, -0.34f } }), 0.35f);
+        brush (g, f.line ({ { -0.06f, -0.4f }, { -0.07f, -0.36f }, { -0.1f, -0.33f } }), 0.35f);
 
-        stroke (g, curve (f (0.03f, -0.44f), f (0.0f, -0.22f), f (-0.03f, -0.03f)), 0.8f, 0.4f);
-        stroke (g, curve (f (0.1f, -0.44f), f (0.11f, -0.22f), f (0.14f, -0.03f)), 0.8f, 0.4f);
-        stroke (g, curve (f (-0.07f, -0.43f), f (-0.1f, -0.22f), f (-0.11f, -0.03f)), 0.8f, 0.4f);
-        stroke (g, curve (f (-0.06f, -0.74f), f (-0.1f, -0.6f), f (-0.08f, -0.5f)), 0.7f, 0.3f);
+        paintBand (g, f, { { -0.03f, -0.808f }, { 0.0f, -0.75f }, { 0.035f, -0.66f }, { 0.065f, -0.57f } }, dress.trim, 0.024f);
+        paintBand (g, f, { { 0.035f, -0.805f }, { 0.03f, -0.77f }, { 0.005f, -0.745f } }, dress.trim, 0.02f);
 
-        paintBelt (g, f, -0.47f, 0.15f);
-        paintCollar (g, f, -0.79f, robe);
+        paintBand (g, f, { { -0.11f, -0.555f }, { -0.02f, -0.535f }, { 0.1f, -0.555f } }, dress.sash, 0.035f);
+        paintBand (g, f, { { 0.04f, -0.54f }, { 0.065f, -0.36f }, { 0.045f, -0.19f }, { 0.08f, -0.04f } }, dress.sash, 0.02f);
+        paintBand (g, f, { { 0.05f, -0.54f }, { 0.095f, -0.39f }, { 0.105f, -0.23f }, { 0.15f, -0.1f } }, dress.trim, 0.016f);
 
-        if (pose == Pose::arrows)
-            for (int i = 0; i < 5; ++i)
-            {
-                const auto spread = (float) (i - 2);
-                paintArrow (g, f (0.19f + spread * 0.022f, -1.1f + std::abs (spread) * 0.02f), f (0.2f + spread * 0.006f, -0.2f));
-            }
-
-        juce::Path sleeve;
-        sleeve.startNewSubPath (f (0.0f, -0.77f));
+        std::vector<P> sleeve, cuff;
         P hand;
         switch (pose)
         {
             case Pose::clasped:
-                sleeve.quadraticTo (f (0.15f, -0.72f), f (0.2f, -0.58f));
-                sleeve.lineTo (f (0.22f, -0.46f));
-                sleeve.quadraticTo (f (0.16f, -0.34f), f (0.06f, -0.4f));
+                sleeve = { { 0.0f, -0.78f }, { 0.07f, -0.75f }, { 0.13f, -0.66f }, { 0.17f, -0.57f }, { 0.19f, -0.5f }, { 0.17f, -0.43f },
+                           { 0.12f, -0.38f }, { 0.06f, -0.4f }, { 0.01f, -0.47f }, { -0.03f, -0.58f }, { -0.05f, -0.7f } };
+                cuff = { { 0.165f, -0.58f }, { 0.195f, -0.51f }, { 0.175f, -0.43f } };
                 break;
             case Pose::tray:
-                sleeve.quadraticTo (f (0.14f, -0.72f), f (0.22f, -0.61f));
-                sleeve.lineTo (f (0.25f, -0.53f));
-                sleeve.quadraticTo (f (0.18f, -0.36f), f (0.06f, -0.42f));
-                hand = f (0.27f, -0.57f);
+                sleeve = { { 0.0f, -0.78f }, { 0.08f, -0.75f }, { 0.15f, -0.67f }, { 0.21f, -0.615f }, { 0.24f, -0.6f }, { 0.24f, -0.54f },
+                           { 0.18f, -0.5f }, { 0.11f, -0.44f }, { 0.04f, -0.45f }, { -0.01f, -0.54f }, { -0.04f, -0.66f } };
+                cuff = { { 0.228f, -0.615f }, { 0.25f, -0.575f }, { 0.236f, -0.53f } };
+                hand = { 0.265f, -0.578f };
                 break;
-            case Pose::arrows:
-                sleeve.quadraticTo (f (0.13f, -0.72f), f (0.17f, -0.61f));
-                sleeve.lineTo (f (0.2f, -0.52f));
-                sleeve.quadraticTo (f (0.14f, -0.36f), f (0.05f, -0.42f));
-                hand = f (0.2f, -0.57f);
+            case Pose::arrow:
+                sleeve = { { 0.0f, -0.78f }, { 0.07f, -0.74f }, { 0.12f, -0.67f }, { 0.16f, -0.625f }, { 0.18f, -0.6f }, { 0.17f, -0.54f },
+                           { 0.12f, -0.5f }, { 0.07f, -0.44f }, { 0.02f, -0.46f }, { -0.02f, -0.56f }, { -0.04f, -0.68f } };
+                cuff = { { 0.163f, -0.635f }, { 0.188f, -0.6f }, { 0.172f, -0.555f } };
+                hand = { 0.198f, -0.6f };
                 break;
         }
-        sleeve.quadraticTo (f (-0.01f, -0.56f), f (0.0f, -0.77f));
-        sleeve.closeSubPath();
-        fill (g, sleeve, robe.brighter (0.08f));
-        stroke (g, curve (f (0.04f, -0.7f), f (0.1f, -0.56f), f (0.1f, -0.45f)), 0.7f, 0.35f);
 
-        if (pose == Pose::clasped)
-        {
-            g.setColour (ink.withAlpha (0.55f));
-            g.fillEllipse (around (f (0.21f, -0.52f), f.len (0.03f), f.len (0.09f)));
-        }
-        else
-        {
-            juce::Path fist;
-            fist.addEllipse (around (hand, f.len (0.055f), f.len (0.05f)));
-            fill (g, fist, skin, 0.6f);
-        }
+        if (pose == Pose::arrow)
+            paintArrow (g, f (0.21f, -1.28f), f (0.19f, -0.06f));
+
+        drape (g, f.map (sleeve), dress.jacket.brighter (0.06f));
+        brush (g, f.line ({ { 0.03f, -0.74f }, { 0.08f, -0.64f }, { 0.11f, -0.55f } }), 0.35f);
+        brush (g, f.line ({ { 0.03f, -0.52f }, { 0.07f, -0.47f }, { 0.12f, -0.46f } }), 0.35f);
+        paintBand (g, f, cuff, dress.trim, 0.028f);
 
         if (pose == Pose::tray)
         {
-            // A red lacquer tray of gold wine cups.
-            for (auto x : { 0.22f, 0.3f, 0.38f })
-            {
-                juce::Path cup;
-                cup.addEllipse (around (f (x, -0.615f), f.len (0.055f), f.len (0.045f)));
-                fill (g, cup, gold, 0.6f);
-            }
-            juce::Path tray;
-            tray.addRoundedRectangle (around (f (0.3f, -0.585f), f.len (0.3f), f.len (0.035f)), f.len (0.01f));
-            fill (g, tray, lacquer, 0.7f);
+            for (auto x : { 0.24f, 0.31f, 0.38f })
+                drape (g, f.map ({ { -0.022f, -0.012f }, { 0.022f, -0.012f }, { 0.015f, 0.014f }, { -0.015f, 0.014f } }, { x, -0.61f }), gold, 0.28f);
+            fill (g, juce::Rectangle<float> (f (0.15f, -0.6f), f (0.46f, -0.575f)), lacquer, 0.6f);
             g.setColour (gold);
-            g.drawLine ({ f (0.16f, -0.598f), f (0.44f, -0.598f) }, 0.8f);
+            g.drawLine ({ f (0.16f, -0.59f), f (0.45f, -0.59f) }, 0.6f);
+        }
+        else if (pose == Pose::arrow)
+        {
+            paintHand (g, f, hand);
         }
 
-        paintHead (g, f, 0.03f, -0.875f, Hat::futou, false);
+        if (pose == Pose::tray)
+            paintHand (g, f, hand);
+
+        paintLadyHead (g, f);
     }
 
     /** The host, seated on a lacquer chair with his boots on a footstool, taking aim. */
     void paintHost (juce::Graphics& g, P feet, float h, float facing)
     {
         const Frame f { feet, h, facing };
-        groundShadow (g, f (0.06f, 0.0f), h * 0.8f);
 
-        g.setColour (lacquer);
-        g.strokePath (curve (f (-0.2f, 0.0f), f (-0.21f, -0.5f), f (-0.19f, -0.96f)), juce::PathStrokeType (f.len (0.035f)));
-        g.strokePath (curve (f (-0.29f, -0.93f), f (-0.21f, -1.02f), f (-0.1f, -0.96f)), juce::PathStrokeType (f.len (0.03f)));
-        g.strokePath (curve (f (0.18f, -0.38f), f (0.19f, -0.2f), f (0.17f, 0.0f)), juce::PathStrokeType (f.len (0.03f)));
+        brush (g, f.line ({ { -0.17f, 0.0f }, { -0.18f, -0.5f }, { -0.19f, -0.93f } }), f.len (0.026f), lacquer);
+        brush (g, f.line ({ { -0.31f, -0.97f }, { -0.25f, -0.935f }, { -0.15f, -0.94f }, { -0.09f, -0.975f } }), f.len (0.024f), lacquer);
+        brush (g, f.line ({ { 0.16f, -0.36f }, { 0.17f, -0.18f }, { 0.155f, 0.0f } }), f.len (0.022f), lacquer);
+        fill (g, juce::Rectangle<float> (f (0.06f, -0.055f), f (0.44f, 0.0f)), lacquer, 0.6f);
         g.setColour (gold.withAlpha (0.8f));
-        g.fillEllipse (around (f (-0.29f, -0.93f), f.len (0.035f), f.len (0.035f)));
-        fill (g, juce::Rectangle<float> (f (0.06f, -0.05f), f (0.42f, 0.0f)), lacquer, 0.7f);
+        g.drawLine ({ f (0.07f, -0.04f), f (0.43f, -0.04f) }, 0.5f);
 
-        g.setColour (ink);
-        g.fillEllipse (around (f (0.25f, -0.065f), f.len (0.11f), f.len (0.04f)));
-        g.fillEllipse (around (f (0.35f, -0.06f), f.len (0.11f), f.len (0.04f)));
+        for (auto x : { 0.0f, 0.075f })
+            drape (g, f.map ({ { 0.2f, -0.085f }, { 0.29f, -0.092f }, { 0.335f, -0.072f }, { 0.31f, -0.058f }, { 0.2f, -0.06f } }, { x, x * 0.1f }),
+                   hatBlack, 0.5f);
 
-        juce::Path body;
-        body.startNewSubPath (f (-0.12f, -0.8f));
-        body.quadraticTo (f (-0.19f, -0.62f), f (-0.18f, -0.42f));
-        body.quadraticTo (f (-0.24f, -0.2f), f (-0.27f, -0.03f));
-        body.quadraticTo (f (0.0f, 0.0f), f (0.32f, -0.075f));
-        body.quadraticTo (f (0.3f, -0.25f), f (0.32f, -0.4f));
-        body.quadraticTo (f (0.25f, -0.5f), f (0.12f, -0.48f));
-        body.quadraticTo (f (0.15f, -0.64f), f (0.1f, -0.8f));
-        body.quadraticTo (f (0.0f, -0.84f), f (-0.12f, -0.8f));
-        body.closeSubPath();
-        fill (g, body, lilac, f (0.0f, -0.8f), f (0.0f, 0.0f));
+        const std::vector<P> robe { { -0.06f, -0.805f }, { -0.11f, -0.78f }, { -0.14f, -0.68f }, { -0.145f, -0.55f }, { -0.15f, -0.45f },
+                                    { -0.18f, -0.32f }, { -0.21f, -0.18f }, { -0.245f, -0.06f }, { -0.2f, -0.042f }, { -0.12f, -0.05f },
+                                    { -0.04f, -0.04f }, { 0.05f, -0.055f }, { 0.13f, -0.05f }, { 0.22f, -0.07f }, { 0.25f, -0.16f },
+                                    { 0.27f, -0.28f }, { 0.28f, -0.38f }, { 0.25f, -0.44f }, { 0.17f, -0.46f }, { 0.11f, -0.5f },
+                                    { 0.11f, -0.6f }, { 0.09f, -0.72f }, { 0.04f, -0.8f } };
+        drape (g, f.map (robe), lilac);
+        {
+            // Woven roundels in a deeper shade of the silk.
+            juce::Graphics::ScopedSaveState state (g);
+            g.reduceClipRegion (smooth (f.map (robe), true));
+            g.setColour (lilac.darker (0.3f).withAlpha (0.7f));
+            for (int row = 0; row < 10; ++row)
+                for (int col = 0; col < 7; ++col)
+                {
+                    const auto c = f (-0.27f + (float) col * 0.09f + (float) (row % 2) * 0.045f, -0.8f + (float) row * 0.085f);
+                    const auto r = f.len (0.02f);
+                    g.drawEllipse (around (c, r * 2.0f, r * 2.0f), 0.45f);
+                    g.fillEllipse (around (c, r * 0.6f, r * 0.6f));
+                }
+        }
+        for (const auto& fold : std::vector<std::vector<P>> { { { -0.05f, -0.45f }, { 0.08f, -0.42f }, { 0.22f, -0.405f } },
+                                                              { { 0.0f, -0.4f }, { 0.12f, -0.36f }, { 0.24f, -0.35f } },
+                                                              { { 0.2f, -0.35f }, { 0.18f, -0.2f }, { 0.2f, -0.08f } },
+                                                              { { 0.1f, -0.38f }, { 0.07f, -0.22f }, { 0.1f, -0.06f } },
+                                                              { { -0.1f, -0.42f }, { -0.14f, -0.25f }, { -0.17f, -0.06f } },
+                                                              { { -0.03f, -0.38f }, { -0.06f, -0.2f }, { -0.05f, -0.05f } },
+                                                              { { -0.08f, -0.75f }, { -0.11f, -0.62f }, { -0.1f, -0.5f } } })
+            brush (g, f.line (fold), 0.39f);
 
-        stroke (g, curve (f (0.23f, -0.42f), f (0.2f, -0.22f), f (0.25f, -0.09f)), 0.8f, 0.4f);
-        stroke (g, curve (f (0.07f, -0.44f), f (0.02f, -0.22f), f (0.05f, -0.04f)), 0.8f, 0.4f);
-        stroke (g, curve (f (-0.1f, -0.42f), f (-0.16f, -0.22f), f (-0.17f, -0.04f)), 0.8f, 0.4f);
-        stroke (g, curve (f (-0.04f, -0.47f), f (0.12f, -0.43f), f (0.3f, -0.4f)), 0.8f, 0.4f);
+        // Rank badge and jade belt.
+        fill (g, around (f (-0.015f, -0.64f), f.len (0.09f), f.len (0.085f)), gold, 0.5f);
+        g.setColour (azurite);
+        g.fillEllipse (around (f (-0.015f, -0.64f), f.len (0.05f), f.len (0.05f)));
+        brush (g, f.line ({ { -0.035f, -0.63f }, { -0.01f, -0.655f }, { 0.01f, -0.65f } }), 0.35f, juce::Colours::white);
+        brush (g, f.line ({ { -0.14f, -0.52f }, { -0.03f, -0.49f }, { 0.1f, -0.505f } }), f.len (0.022f), hatBlack);
+        g.setColour (gold);
+        for (auto x : { -0.1f, -0.04f, 0.03f })
+            g.fillRoundedRectangle (around (f (x, -0.5f), f.len (0.03f), f.len (0.016f)), 0.6f);
 
-        // Rank badge: a gold square with a blue roundel.
-        const auto badge = around (f (0.03f, -0.64f), f.len (0.12f), f.len (0.11f));
-        fill (g, badge, gold, 0.7f);
-        g.setColour (azurite.withAlpha (0.85f));
-        g.fillEllipse (badge.reduced (badge.getWidth() * 0.2f));
-        g.setColour (gold.brighter (0.3f));
-        g.drawEllipse (badge.reduced (badge.getWidth() * 0.32f), 0.8f);
+        // The other arm rests along his lap.
+        drape (g, f.map ({ { 0.06f, -0.62f }, { 0.14f, -0.56f }, { 0.22f, -0.51f }, { 0.275f, -0.48f }, { 0.265f, -0.425f },
+                           { 0.18f, -0.415f }, { 0.1f, -0.44f }, { 0.04f, -0.5f } }), lilac.brighter (0.05f));
+        brush (g, f.line ({ { 0.1f, -0.52f }, { 0.17f, -0.47f }, { 0.23f, -0.46f } }), 0.35f);
+        paintHand (g, f, { 0.285f, -0.445f });
 
-        paintBelt (g, f, -0.5f, 0.17f);
-        paintCollar (g, f, -0.8f, lilac);
+        // The throwing arm, its wide sleeve hanging beneath.
+        drape (g, f.map ({ { 0.0f, -0.775f }, { 0.1f, -0.785f }, { 0.2f, -0.77f }, { 0.28f, -0.745f }, { 0.31f, -0.72f },
+                           { 0.3f, -0.68f }, { 0.25f, -0.66f }, { 0.2f, -0.6f }, { 0.13f, -0.56f }, { 0.07f, -0.6f },
+                           { 0.02f, -0.67f }, { -0.03f, -0.73f } }), lilac.brighter (0.05f));
+        brush (g, f.line ({ { 0.05f, -0.76f }, { 0.15f, -0.74f }, { 0.24f, -0.72f } }), 0.35f);
+        brush (g, f.line ({ { 0.08f, -0.66f }, { 0.15f, -0.62f }, { 0.2f, -0.625f } }), 0.35f);
+        drape (g, f.map ({ { 0.29f, -0.742f }, { 0.315f, -0.72f }, { 0.305f, -0.685f }, { 0.288f, -0.692f } }), lilac.darker (0.45f), 0.28f);
+        paintArrow (g, f (0.2f, -0.65f), f (0.7f, -0.86f));
+        paintHand (g, f, { 0.335f, -0.708f });
 
-        // The throwing arm, sleeve hanging loose beneath it.
-        juce::Path sleeve;
-        sleeve.startNewSubPath (f (0.04f, -0.78f));
-        sleeve.quadraticTo (f (0.2f, -0.79f), f (0.33f, -0.74f));
-        sleeve.lineTo (f (0.34f, -0.67f));
-        sleeve.quadraticTo (f (0.26f, -0.63f), f (0.22f, -0.52f));
-        sleeve.quadraticTo (f (0.12f, -0.48f), f (0.05f, -0.6f));
-        sleeve.closeSubPath();
-        fill (g, sleeve, lilac.brighter (0.08f));
-        stroke (g, curve (f (0.1f, -0.75f), f (0.2f, -0.67f), f (0.23f, -0.56f)), 0.7f, 0.35f);
-
-        paintArrow (g, f (0.2f, -0.65f), f (0.62f, -0.8f));
-        juce::Path fist;
-        fist.addEllipse (around (f (0.36f, -0.705f), f.len (0.055f), f.len (0.05f)));
-        fill (g, fist, skin, 0.6f);
-
-        paintHead (g, f, 0.03f, -0.885f, Hat::winged, true);
+        // Head: winged gauze hat over a bearded face.
+        drape (g, f.map ({ { -0.05f, -0.945f }, { -0.13f, -0.957f }, { -0.2f, -0.966f }, { -0.215f, -0.95f }, { -0.2f, -0.936f },
+                           { -0.13f, -0.937f }, { -0.05f, -0.928f } }), hatBlack, 0.28f);
+        drape (g, f.map ({ { 0.04f, -0.948f }, { 0.1f, -0.958f }, { 0.15f, -0.966f }, { 0.163f, -0.952f }, { 0.15f, -0.94f },
+                           { 0.1f, -0.94f }, { 0.04f, -0.935f } }), hatBlack, 0.28f);
+        drape (g, f.map ({ { -0.045f, -0.905f }, { -0.05f, -0.86f }, { -0.025f, -0.82f }, { 0.015f, -0.802f }, { 0.045f, -0.81f },
+                           { 0.056f, -0.83f }, { 0.06f, -0.845f }, { 0.074f, -0.862f }, { 0.066f, -0.874f }, { 0.068f, -0.9f },
+                           { 0.06f, -0.915f }, { 0.0f, -0.92f } }), skin, 0.32f, faceInk);
+        paintFeatures (g, f);
+        brush (g, f.line ({ { 0.045f, -0.842f }, { 0.062f, -0.836f }, { 0.077f, -0.825f } }), 0.35f);
+        for (auto dx : { 0.0f, 0.012f, 0.024f })
+            brush (g, f.line ({ { 0.028f + dx, -0.815f }, { 0.034f + dx, -0.77f }, { 0.026f + dx, -0.72f } }), 0.39f);
+        drape (g, f.map ({ { 0.068f, -0.905f }, { 0.074f, -0.935f }, { 0.058f, -0.955f }, { 0.03f, -0.96f }, { 0.022f, -0.982f },
+                           { -0.015f, -1.0f }, { -0.055f, -0.99f }, { -0.072f, -0.955f }, { -0.066f, -0.91f }, { 0.0f, -0.9f } }), hatBlack, 0.35f);
     }
 
     //==============================================================================
@@ -699,7 +793,6 @@ namespace
     {
         const auto x = base.x;
         const auto mouthY = base.y - h;
-        groundShadow (g, base.translated (0.0f, h * 0.09f), h * 0.9f);
 
         fill (g, juce::Rectangle<float> (x - h * 0.36f, base.y - h * 0.02f, h * 0.72f, h * 0.06f), lacquer, 0.8f);
         for (auto legX : { x - h * 0.33f, x + h * 0.27f })
@@ -730,9 +823,7 @@ namespace
         pot.lineTo (x + h * 0.14f, base.y - h * 0.02f);
         pot.closeSubPath();
 
-        g.setGradientFill (juce::ColourGradient (gold.brighter (0.5f), { x - h * 0.12f, base.y - h * 0.36f },
-                                                 gold.darker (0.75f), { x + h * 0.4f, base.y - h * 0.2f }, true));
-        g.fillPath (pot);
+        fill (g, pot, bronze, 0.0f);
         {
             // Decoration and patina, kept inside the bronze.
             juce::Graphics::ScopedSaveState state (g);
@@ -760,9 +851,8 @@ namespace
             juce::Random random (0x2b07);
             for (int i = 0; i < 9; ++i)
                 softEllipse (g, { x + (random.nextFloat() - 0.5f) * h * 0.6f, base.y - h * (0.1f + random.nextFloat() * 0.5f) },
-                             h * 0.12f, h * 0.08f, malachite.withAlpha (0.3f));
+                             h * 0.12f, h * 0.08f, malachite.darker (0.3f).withAlpha (0.45f));
 
-            softEllipse (g, { x - h * 0.17f, base.y - h * 0.3f }, h * 0.1f, h * 0.3f, juce::Colours::white.withAlpha (0.35f));
         }
         stroke (g, pot, 1.0f, 0.85f);
 
@@ -795,9 +885,6 @@ void CourtPainting::paint (juce::Graphics& g, juce::Rectangle<float> bounds)
 
         paintSilk (g, face);
         paintHills (g, face);
-        softEllipse (g, { 90.0f, 292.0f }, 200.0f, 40.0f, earth.withAlpha (0.12f));
-        softEllipse (g, { 390.0f, 298.0f }, 150.0f, 34.0f, earth.withAlpha (0.12f));
-        softEllipse (g, { 380.0f, 232.0f }, 140.0f, 28.0f, earth.withAlpha (0.1f));
 
         paintPavilion (g, face.getX());
         paintPine (g);
@@ -807,15 +894,17 @@ void CourtPainting::paint (juce::Graphics& g, juce::Rectangle<float> bounds)
                                          { 352.0f, 226.0f, 8.0f }, { 438.0f, 228.0f, 9.0f } })
             paintGrass (g, { x, y }, size);
 
-        paintAttendant (g, { 32.0f, 282.0f }, 52.0f, 1.0f, azurite, Pose::tray);
+        paintLady (g, { 34.0f, 284.0f }, 54.0f, 1.0f, { mist, skirtRed, sage, blush }, Pose::tray);
         paintHost (g, { 78.0f, 296.0f }, 76.0f, 1.0f);
 
         paintPot (g, { 396.0f, 222.0f }, 72.0f);
         paintArrow (g, { 334.0f, 66.0f }, { 356.0f, 78.0f });
-        paintArrow (g, { 330.0f, 234.0f }, { 354.0f, 226.0f });
+        for (const auto& [tail, head] : { std::pair { P (332, 230), P (378, 222) }, { P (444, 238), P (364, 232) },
+                                           { P (346, 240), P (402, 236) }, { P (440, 218), P (410, 240) } })
+            paintArrow (g, tail, head);
 
-        paintAttendant (g, { 372.0f, 300.0f }, 52.0f, -1.0f, malachite, Pose::arrows);
-        paintAttendant (g, { 418.0f, 296.0f }, 50.0f, -1.0f, azurite, Pose::clasped);
+        paintLady (g, { 372.0f, 302.0f }, 54.0f, -1.0f, { sage, ivory, skirtRed, plum }, Pose::arrow);
+        paintLady (g, { 420.0f, 298.0f }, 52.0f, -1.0f, { blush, mist, sage, skirtRed }, Pose::clasped);
 
         paintWear (g, face);
     }
