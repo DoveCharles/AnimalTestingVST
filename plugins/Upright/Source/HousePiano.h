@@ -4,14 +4,27 @@
 
 namespace piano
 {
-    /** A late-80s ROM piano made from the model: a handful of strikes recorded from the Studio
-        voicing when the plugin loads, each cut to its attack plus a short loop and stretched over
-        several keys. Velocity opens a lowpass rather than changing the strike, an octave-down copy
-        thickens it, and a chorus widens it. None of it is meant to sound like a real piano. */
+    /** A late-80s ROM piano.
+
+        - If `sampleFolder()` holds WAV files named for their root key (e.g. "Piano_C4.wav",
+          "Piano_F#0.wav", C4 = middle C), they are the multisample: read when the plugin
+          prepares, each stretched to the keys nearest it. A file's own loop is used if it has one;
+          otherwise it plays once through. None of these files ship with the plugin.
+        - Otherwise a handful of strikes are recorded from the Studio voicing, each cut to its
+          attack plus a short loop and stretched over several keys.
+
+        Velocity opens a lowpass rather than changing the strike, an octave-down copy thickens it,
+        and a chorus widens it. */
     class HousePiano
     {
     public:
         void prepare (double sampleRate);
+
+        /** Where the plugin looks for its samples; subfolders are searched too. */
+        static juce::File sampleFolder();
+
+        /** True when the samples came from `sampleFolder()` rather than the model. */
+        bool usingSampleFolder() const noexcept { return fromFolder; }
 
         void setControls (const Controls& c) noexcept { controls = c; }
         void noteOn (int midiNote, float velocity01);
@@ -27,7 +40,11 @@ namespace piano
         {
             int root = 60;
             int loopStart = 0, loopEnd = 0; // playback wraps from loopEnd back to loopStart
+            double sampleRate = 44100.0;
             std::vector<float> data;
+
+            /** A one-shot has its loop points at the end of its data. */
+            bool looped() const noexcept { return loopEnd > loopStart; }
         };
 
         struct Voice
@@ -45,6 +62,8 @@ namespace piano
             bool active() const noexcept { return sample != nullptr; }
         };
 
+        bool loadFolder (const juce::File&);
+        void recordFromModel();
         void startVoice (int playedNote, int pitchNote, float velocity01, float level);
         const Multisample& sampleFor (int midiNote) const;
 
@@ -55,7 +74,7 @@ namespace piano
         std::array<bool, 128> keyHeld {};
         Controls controls;
         double rate = 44100.0;
-        bool sustain = false;
+        bool sustain = false, fromFolder = false;
         unsigned voiceCounter = 0;
 
         // Stereo chorus: one delay line read at two modulated taps.
