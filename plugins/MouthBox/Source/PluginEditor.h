@@ -33,7 +33,7 @@ private:
 
     void timerCallback() override;
 
-    PluginProcessor& bigMouth;
+    PluginProcessor& mouthBox;
     juce::SharedResourcePointer<at::LookAndFeel> sharedLookAndFeel;
 
     at::PresetBar presetBar;

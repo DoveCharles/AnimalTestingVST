@@ -99,7 +99,7 @@ void PluginEditor::Pad::resized()
 //==============================================================================
 PluginEditor::PluginEditor (PluginProcessor& p)
     : juce::AudioProcessorEditor (p),
-      bigMouth (p),
+      mouthBox (p),
       presetBar (p.presets),
       threshold (p.apvts, ParamIDs::threshold, "Threshold"),
       listen    (p.apvts, ParamIDs::listen,    "Listen"),
@@ -130,16 +130,16 @@ PluginEditor::~PluginEditor()
 
 void PluginEditor::timerCallback()
 {
-    const auto hits = bigMouth.hitCount.load();
+    const auto hits = mouthBox.hitCount.load();
     const auto newHit = hits != seenHits;
     seenHits = hits;
 
     for (auto& pad : pads)
     {
-        if (newHit && pad->slot == bigMouth.lastSlot.load())
+        if (newHit && pad->slot == mouthBox.lastSlot.load())
         {
             pad->flash = 1.0f;
-            pad->velocity = bigMouth.lastVelocity.load();
+            pad->velocity = mouthBox.lastVelocity.load();
         }
         else
         {
@@ -148,7 +148,7 @@ void PluginEditor::timerCallback()
         pad->refresh();
     }
 
-    const auto level = juce::Decibels::gainToDecibels (bigMouth.inputLevel.load(), meterFloorDb);
+    const auto level = juce::Decibels::gainToDecibels (mouthBox.inputLevel.load(), meterFloorDb);
     if (std::abs (level - meter) > 0.25f)
     {
         meter = level;
@@ -159,7 +159,7 @@ void PluginEditor::timerCallback()
 
 void PluginEditor::paint (juce::Graphics& g)
 {
-    at::LookAndFeel::drawEditorChrome (g, getLocalBounds(), "Big Mouth", JucePlugin_VersionString);
+    at::LookAndFeel::drawEditorChrome (g, getLocalBounds(), "Mouth Box", JucePlugin_VersionString);
 
     drawSection (g, padsArea, "Pads");
     drawSection (g, knobsArea, "Detection");
@@ -170,18 +170,18 @@ void PluginEditor::paint (juce::Graphics& g)
     g.fillRoundedRectangle (bar, 4.0f);
     g.setColour (Palette::accent.withAlpha (0.75f));
     g.fillRoundedRectangle (bar.withWidth (bar.getWidth() * meterPosition (meter)), 4.0f);
-    const auto thresholdX = bar.getX() + bar.getWidth() * meterPosition (bigMouth.apvts.getRawParameterValue (ParamIDs::threshold)->load());
+    const auto thresholdX = bar.getX() + bar.getWidth() * meterPosition (mouthBox.apvts.getRawParameterValue (ParamIDs::threshold)->load());
     g.setColour (Palette::text);
     g.fillRect (juce::Rectangle<float> (thresholdX - 1.0f, bar.getY() - 2.0f, 2.0f, bar.getHeight() + 4.0f));
 
     auto status = statusArea;
     g.setFont (juce::FontOptions (12.0f));
     g.setColour (Palette::text);
-    g.drawText (bigMouth.isTrained() ? "Trained: each hit goes to the closest trained pad"
+    g.drawText (mouthBox.isTrained() ? "Trained: each hit goes to the closest trained pad"
                                      : "Untrained: low = Kick, mid = Snare, high = Hi-Hat. Train pads for your own sounds",
                 status.removeFromTop (status.getHeight() / 2), juce::Justification::centredLeft);
     g.setColour (Palette::textDim);
-    const auto port = bigMouth.getVirtualPortName();
+    const auto port = mouthBox.getVirtualPortName();
     g.drawText (port.isNotEmpty() ? "MIDI out: this track, and the virtual port \"" + port + "\" (channel 10)"
                                   : juce::String ("MIDI out: this track's MIDI output (channel 10)"),
                 status, juce::Justification::centredLeft);
