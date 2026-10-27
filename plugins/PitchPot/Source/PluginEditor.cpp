@@ -1,4 +1,5 @@
 #include "PluginEditor.h"
+#include "CourtPainting.h"
 
 namespace
 {
@@ -10,6 +11,7 @@ namespace
         jassert (param != nullptr);
         return *param;
     }
+
 }
 
 //==============================================================================
@@ -193,14 +195,19 @@ void PluginEditor::paint (juce::Graphics& g)
 {
     const auto bounds = getLocalBounds().toFloat();
 
-    // Oxblood enamel with a faint top-down sheen and a darker bevel.
-    g.fillAll (juce::Colour (0xff141011));
-    const auto box = bounds.reduced (6.0f);
-    g.setGradientFill (juce::ColourGradient (Palette::enclosure.brighter (0.15f), box.getTopLeft(),
-                                             Palette::enclosure.darker (0.25f), box.getBottomLeft(), false));
-    g.fillRoundedRectangle (box, 14.0f);
-    g.setColour (Palette::enclosureDark);
-    g.drawRoundedRectangle (box, 14.0f, 2.5f);
+    // The painting is drawn once per display scale and cached: it is a lot of paths, and the
+    // display and LED repaint whenever a control moves.
+    const auto scale = g.getInternalContext().getPhysicalPixelScaleFactor();
+    if (! painting.isValid() || ! juce::approximatelyEqual (paintingScale, scale))
+    {
+        painting = juce::Image (juce::Image::ARGB, juce::roundToInt (bounds.getWidth() * scale),
+                                juce::roundToInt (bounds.getHeight() * scale), true);
+        juce::Graphics pg (painting);
+        pg.addTransform (juce::AffineTransform::scale (scale));
+        CourtPainting::paint (pg, bounds);
+        paintingScale = scale;
+    }
+    g.drawImageTransformed (painting, juce::AffineTransform::scale (1.0f / scale));
 
     paintShiftLabels (g);
     paintDisplay (g);
@@ -222,9 +229,10 @@ void PluginEditor::paint (juce::Graphics& g)
 
     // Nameplate along the bottom, either side of the footswitch.
     auto name = nameArea.toFloat();
+    CourtPainting::paintSeal (g, juce::Rectangle<float> (34.0f, 34.0f).withPosition (name.getRight() - 40.0f, name.getY() + 6.0f));
     g.setColour (Palette::silkscreen);
     g.setFont (juce::FontOptions (40.0f, juce::Font::bold).withHorizontalScale (0.85f));
-    g.drawText ("FORKTAIL", name.removeFromTop (44.0f), juce::Justification::centredLeft);
+    g.drawText ("PITCH-POT", name.removeFromTop (44.0f), juce::Justification::centredLeft);
     g.setFont (juce::FontOptions (12.0f, juce::Font::bold));
     g.drawText ("POLYPHONIC PITCH SHIFTER", name.removeFromTop (16.0f), juce::Justification::centredLeft);
     g.setColour (Palette::silkscreen.withAlpha (0.7f));

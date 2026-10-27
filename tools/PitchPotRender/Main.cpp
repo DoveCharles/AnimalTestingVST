@@ -1,14 +1,14 @@
-// Offline checks for Forktail, without a DAW.
+// Offline checks for Pitch-Pot, without a DAW.
 //
-//   ForktailRender render <input audio> <output.wav> [--<param>=<value> ...]
+//   PitchPotRender render <input audio> <output.wav> [--<param>=<value> ...]
 //       Plays a file through the processor (all parameters by ID, values as the host shows them).
 //
-//   ForktailRender measure
+//   PitchPotRender measure
 //       Shifts a sine through every interval up and down and prints the measured pitch error, how
 //       much of the output is the wanted tone, the level ripple and the delay; then checks a chord,
 //       a glide and the CPU cost.
 //
-//   ForktailRender snapshot <output.png> [--<param>=<value> ...]
+//   PitchPotRender snapshot <output.png> [--<param>=<value> ...]
 //       Saves a picture of the editor.
 
 #include "PluginProcessor.h"
@@ -331,8 +331,8 @@ int main (int argc, char* argv[])
     if (command == "snapshot" && args.size() >= 2) return snapshot (args);
 
     std::cerr << "Usage:\n"
-                 "  ForktailRender render <input> <output.wav> [--<param>=<value> ...]\n"
-                 "  ForktailRender measure\n"
-                 "  ForktailRender snapshot <output.png> [--<param>=<value> ...]\n";
+                 "  PitchPotRender render <input> <output.wav> [--<param>=<value> ...]\n"
+                 "  PitchPotRender measure\n"
+                 "  PitchPotRender snapshot <output.png> [--<param>=<value> ...]\n";
     return 1;
 }

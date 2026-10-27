@@ -7,7 +7,7 @@ PedalLookAndFeel::PedalLookAndFeel()
     setColour (juce::Slider::textBoxOutlineColourId,    juce::Colours::transparentBlack);
     setColour (juce::Slider::textBoxBackgroundColourId, juce::Colours::transparentBlack);
     setColour (juce::Label::textColourId,               Palette::silkscreen);
-    setColour (juce::TextEditor::backgroundColourId,    Palette::enclosureDark);
+    setColour (juce::TextEditor::backgroundColourId,    Palette::enclosure.brighter (0.2f));
     setColour (juce::TextEditor::highlightColourId,     Palette::silkscreen.withAlpha (0.3f));
 }
 

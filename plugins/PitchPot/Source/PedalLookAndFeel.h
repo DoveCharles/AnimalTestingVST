@@ -2,16 +2,16 @@
 
 #include <at_shared/at_shared.h>
 
-/** The house style, re-skinned as an oxblood stompbox: black knurled knobs with a cream pointer,
-    cream silkscreen on dark red enamel. */
+/** The house style, re-skinned as a stompbox printed with a Ming court painting of pitch-pot:
+    black knurled knobs with a cream pointer, ink lettering on aged silk in a brocade mount. */
 class PedalLookAndFeel final : public at::LookAndFeel
 {
 public:
     struct Palette
     {
-        static inline const juce::Colour enclosure     { 0xff7c1f24 };
-        static inline const juce::Colour enclosureDark { 0xff4a1013 };
-        static inline const juce::Colour silkscreen    { 0xfff1e6cf };
+        static inline const juce::Colour enclosure     { 0xffe2cd9f };
+        static inline const juce::Colour enclosureDark { 0xff3b2a1c };
+        static inline const juce::Colour silkscreen    { 0xff2b1d14 };
         static inline const juce::Colour knob          { 0xff151515 };
         static inline const juce::Colour pointer       { 0xfff1e6cf };
         static inline const juce::Colour chrome        { 0xffc9ccd1 };
