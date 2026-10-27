@@ -23,9 +23,9 @@ private:
     SpectrogramVisual visual;
     KnobShadows shadows;
     ChordReadout chordReadout;
-    at::Knob key, chord, brightness, decay, mix;
+    at::Knob key, octave, chord, brightness, decay, mix;
 
-    std::array<float, 5> glow {};
+    std::array<float, 6> glow {};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };

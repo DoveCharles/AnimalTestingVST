@@ -1,8 +1,9 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 
-/** Chord voicings for the resonator bank, in semitones above the root (C3 + Key).
+/** Chord voicings for the resonator bank, in semitones above the root (Key in Octave).
     Every chord fills all voices, spreading tones over about two octaves. */
 namespace Chords
 {
@@ -39,5 +40,15 @@ namespace Chords
 
     inline const juce::StringArray keyNames { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
 
-    inline constexpr int rootMidiNote = 48;   // C3
+    // Octaves -1 to 9, as on the SP-404: the root runs from C-1 (MIDI 0) up to G9 (MIDI 127).
+    inline const juce::StringArray octaveNames { "-1", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+    inline constexpr int defaultOctaveIndex = 4;   // C3
+
+    inline constexpr int lowestRootMidiNote  = 0;     // C-1
+    inline constexpr int highestRootMidiNote = 127;   // G9
+
+    inline constexpr int rootMidiNote (int key, int octaveIndex)
+    {
+        return std::clamp (octaveIndex * 12 + key, lowestRootMidiNote, highestRootMidiNote);
+    }
 }

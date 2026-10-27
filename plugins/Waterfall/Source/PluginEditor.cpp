@@ -3,8 +3,9 @@
 namespace
 {
     // Each knob has its own colour from the trails' rainbow.
-    const std::array<juce::Colour, 5> knobColours {
+    const std::array<juce::Colour, 6> knobColours {
         juce::Colour::fromHSV (0.78f, 0.55f, 1.0f, 1.0f),   // Key: violet
+        juce::Colour::fromHSV (0.68f, 0.55f, 1.0f, 1.0f),   // Octave: indigo
         juce::Colour::fromHSV (0.58f, 0.60f, 1.0f, 1.0f),   // Chord: blue
         juce::Colour::fromHSV (0.13f, 0.60f, 1.0f, 1.0f),   // Brightness: gold
         juce::Colour::fromHSV (0.46f, 0.60f, 1.0f, 1.0f),   // Decay: aqua
@@ -23,6 +24,7 @@ PluginEditor::PluginEditor (PluginProcessor& p)
       waterfall (p),
       visual (p),
       key        (p.apvts, ParamIDs::key,        "Key"),
+      octave     (p.apvts, ParamIDs::octave,     "Octave"),
       chord      (p.apvts, ParamIDs::chord,      "Chord"),
       brightness (p.apvts, ParamIDs::brightness, "Brightness"),
       decay      (p.apvts, ParamIDs::decay,      "Decay"),
@@ -35,7 +37,7 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     addAndMakeVisible (chordReadout);
 
     size_t index = 0;
-    for (auto* knob : { &key, &chord, &brightness, &decay, &mix })
+    for (auto* knob : { &key, &octave, &chord, &brightness, &decay, &mix })
     {
         knob->getSlider().setColour (juce::Slider::rotarySliderFillColourId, knobColours[index++]);
         knob->getLabel().setFont (WaterfallLookAndFeel::captionFont (11.0f));
@@ -62,9 +64,10 @@ void PluginEditor::animate (float time)
     const auto high  = toUnit (levels.high * 4.0f);   // the high end is quieter; lift it to a similar range
     const auto wet   = (float) mix.getSlider().getValue() / 100.0f;
 
-    // Key and Chord glow with the ringing resonators, Brightness with their high end, Decay with the
+    // Key, Octave and Chord glow with the ringing resonators, Brightness with their high end, Decay with the
     // tail that rings on once the input drops, and Mix with whatever it lets through.
-    const std::array<float, 5> targets {
+    const std::array<float, 6> targets {
+        ring,
         ring,
         ring,
         high,
@@ -73,7 +76,7 @@ void PluginEditor::animate (float time)
     };
 
     size_t index = 0;
-    for (auto* knob : { &key, &chord, &brightness, &decay, &mix })
+    for (auto* knob : { &key, &octave, &chord, &brightness, &decay, &mix })
     {
         auto& g = glow[index];
         const auto target = targets[index++];
@@ -100,8 +103,8 @@ void PluginEditor::resized()
     chordReadout.setBounds (area.withTop (strip.getY() - 62).withHeight (48));
 
     std::vector<juce::Rectangle<int>> knobBounds;
-    const auto knobWidth = strip.getWidth() / 5;
-    for (auto* knob : { &key, &chord, &brightness, &decay, &mix })
+    const auto knobWidth = strip.getWidth() / 6;
+    for (auto* knob : { &key, &octave, &chord, &brightness, &decay, &mix })
     {
         knob->setBounds (strip.removeFromLeft (knobWidth));
         knobBounds.push_back (knob->getBounds());
