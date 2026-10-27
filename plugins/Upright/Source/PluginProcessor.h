@@ -4,6 +4,7 @@
 #include "PianoModel.h"
 #include "HousePiano.h"
 #include "RhodesPiano.h"
+#include "Vibraphone.h"
 
 namespace ParamIDs
 {
@@ -38,7 +39,7 @@ private:
     /** Every engine sees every message; only the selected voicing's engine strikes new notes. */
     static void handleMidi (const juce::MidiMessage&, piano::Engine&, bool strikes);
 
-    /** For the House and Rhodes voicings, which have no soft pedal or pedal noise. */
+    /** For the House, Rhodes and Vibraphone voicings, which have no soft pedal or pedal noise. */
     template <typename Instrument>
     static void handleMidi (const juce::MidiMessage&, Instrument&, bool strikes);
 
@@ -66,11 +67,14 @@ private:
     // The Rhodes is tines and pickups, not strings: it has no board either.
     piano::RhodesPiano rhodes;
 
+    // Nor do the vibraphone's bars: their tubes are their own resonators.
+    piano::Vibraphone vibraphone;
+
     // Per voicing, one board response per driving point.
     std::array<std::array<juce::dsp::Convolution, piano::numDrivingPoints>, 2> soundboards;
     std::array<std::array<juce::AudioBuffer<float>, piano::numDrivingPoints>, 2> boardBuffers;
 
-    juce::AudioBuffer<float> dry, mix, houseBuffer, rhodesBuffer;
+    juce::AudioBuffer<float> dry, mix, houseBuffer, rhodesBuffer, vibraphoneBuffer;
     std::array<juce::dsp::IIR::Filter<float>, 2> dryHighPass;
     juce::dsp::Convolution room;
     juce::AudioBuffer<float> roomBuffer;

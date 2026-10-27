@@ -9,6 +9,7 @@ target_sources(UprightRender PRIVATE
     "${upright_source}/PianoModel.cpp"
     "${upright_source}/HousePiano.cpp"
     "${upright_source}/RhodesPiano.cpp"
+    "${upright_source}/Vibraphone.cpp"
     "${upright_source}/PluginProcessor.cpp"
     "${upright_source}/PluginEditor.cpp")
 

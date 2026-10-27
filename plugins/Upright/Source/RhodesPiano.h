@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PianoModel.h"
+#include "ModalResonator.h"
 
 namespace piano
 {
@@ -39,26 +40,9 @@ namespace piano
     private:
         static constexpr int numModes = 4; // fundamental, tonebar, and two bell partials
 
-        /** A two-pole resonator: y = a1 y1 - a2 y2 + gain x, with a1 = 2 r cos theta, a2 = r^2. */
-        struct Mode
-        {
-            float cosTheta = 1.0f, sinTheta = 0.0f;
-            float heldRadius = 0.0f, dampedRadius = 0.0f; // per-sample decay while ringing and once damped
-            float a1 = 0.0f, a2 = 0.0f, gain = 0.0f;
-            float y1 = 0.0f, y2 = 0.0f;
-
-            void setRadius (float r) noexcept { a1 = 2.0f * r * cosTheta; a2 = r * r; }
-
-            /** The squared amplitude of the free oscillation. */
-            float energy() const noexcept
-            {
-                return (y1 * y1 + y2 * y2 - 2.0f * cosTheta * y1 * y2) / (sinTheta * sinTheta);
-            }
-        };
-
         struct Voice
         {
-            std::array<Mode, numModes> modes;
+            std::array<ModalResonator, numModes> modes;
             int numModes = 0;
 
             // The hammer pulse still to be delivered.

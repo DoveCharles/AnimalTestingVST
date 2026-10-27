@@ -8,5 +8,6 @@ at_add_plugin(${PROJECT_NAME}
         Source/PianoModel.cpp
         Source/HousePiano.cpp
         Source/RhodesPiano.cpp
+        Source/Vibraphone.cpp
         Source/PluginProcessor.cpp
         Source/PluginEditor.cpp)

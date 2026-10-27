@@ -11,10 +11,7 @@ namespace piano
         constexpr double speakerLowHz = 70.0, speakerHighHz = 6000.0;
         constexpr double tremoloHz = 4.2;
 
-        float radiusFor (double t60, double rate)
-        {
-            return (float) std::exp (-6.9 / (juce::jmax (0.001, t60) * rate));
-        }
+        float radiusFor (double t60, double rate) { return ModalResonator::radiusFor (t60, rate); }
 
         /** 0 at the bottom key, 1 at the top. */
         double place (int midiNote) { return (midiNote - lowestNote) / (double) (numKeys - 1); }
@@ -167,13 +164,7 @@ namespace piano
 
                     float displacement = 0.0f;
                     for (int m = 0; m < v.numModes; ++m)
-                    {
-                        auto& mode = v.modes[(size_t) m];
-                        const auto y = mode.a1 * mode.y1 - mode.a2 * mode.y2 + mode.gain * force;
-                        mode.y2 = mode.y1;
-                        mode.y1 = y;
-                        displacement += y;
-                    }
+                        displacement += v.modes[(size_t) m].process (force);
 
                     // The coil hears the change in flux.
                     const auto flux = fluxAt (v.offset + displacement);
