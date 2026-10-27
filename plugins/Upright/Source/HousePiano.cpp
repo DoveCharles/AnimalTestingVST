@@ -1,5 +1,7 @@
 #include "HousePiano.h"
 
+#include <regex>
+
 namespace piano
 {
     namespace
@@ -41,11 +43,119 @@ namespace piano
             const auto c3 = 0.5f * (y2 - ym1) + 1.5f * (y0 - y1);
             return ((c3 * t + c2) * t + c1) * t + y0;
         }
+
+        /** The key a file is named for, from the note name that ends its name: "Piano_F#0" is
+            18 and "Piano_C4" is 60. -1 if it has none. Files' own root keys are not trusted, as
+            sets resampled from old ROMs often have them an octave out. */
+        int rootFromName (const juce::String& name)
+        {
+            static const std::regex pattern ("([A-Ga-g])([#b]?)(-?[0-9])$");
+            std::smatch match;
+            const auto text = name.toStdString();
+            if (! std::regex_search (text, match, pattern))
+                return -1;
+
+            static constexpr int pitchClasses[] = { 9, 11, 0, 2, 4, 5, 7 }; // A to G
+            auto note = pitchClasses[std::toupper (match[1].str()[0]) - 'A'] + 12 * (std::stoi (match[3].str()) + 1);
+            if (match[2] == "#") ++note;
+            if (match[2] == "b") --note;
+            return juce::isPositiveAndBelow (note, 128) ? note : -1;
+        }
+
+        /** Scales a recording so its peak-to-peak swing is 2. */
+        void normalise (std::vector<float>& data)
+        {
+            const auto peak = juce::FloatVectorOperations::findMaximum (data.data(), (int) data.size())
+                              - juce::FloatVectorOperations::findMinimum (data.data(), (int) data.size());
+            if (peak > 0.0f)
+                juce::FloatVectorOperations::multiply (data.data(), 2.0f / peak, (int) data.size());
+        }
+    }
+
+    juce::File HousePiano::sampleFolder()
+    {
+       #if JUCE_MAC
+        return juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory).getChildFile ("Application Support/Animal Testing/Upright/House");
+       #else
+        return juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory).getChildFile ("Animal Testing/Upright/House");
+       #endif
     }
 
     void HousePiano::prepare (double sampleRate)
     {
         rate = sampleRate;
+
+        // Samples read from disk do not depend on the rate, so they are only read once.
+        if (! fromFolder)
+        {
+            fromFolder = loadFolder (sampleFolder());
+            if (! fromFolder)
+                recordFromModel();
+        }
+
+        chorusLine.assign ((size_t) (0.03 * sampleRate) + 4, 0.0f);
+        allNotesOff();
+    }
+
+    bool HousePiano::loadFolder (const juce::File& folder)
+    {
+        samples.clear();
+        if (! folder.isDirectory())
+            return false;
+
+        juce::AudioFormatManager formats;
+        formats.registerBasicFormats();
+
+        for (const auto& entry : juce::RangedDirectoryIterator (folder, true, "*.wav;*.aif;*.aiff", juce::File::findFiles))
+        {
+            const auto file = entry.getFile();
+            const auto root = rootFromName (file.getFileNameWithoutExtension());
+            if (root < 0)
+                continue;
+
+            std::unique_ptr<juce::AudioFormatReader> reader (formats.createReaderFor (file));
+            if (reader == nullptr || reader->lengthInSamples < 16 || reader->lengthInSamples > (1 << 24))
+                continue;
+
+            const auto length = (int) reader->lengthInSamples;
+            juce::AudioBuffer<float> buffer ((int) reader->numChannels, length);
+            if (! reader->read (&buffer, 0, length, 0, true, true))
+                continue;
+
+            Multisample s;
+            s.root = root;
+            s.sampleRate = reader->sampleRate;
+            s.data.assign ((size_t) length, 0.0f);
+            for (int c = 0; c < buffer.getNumChannels(); ++c)
+                juce::FloatVectorOperations::addWithMultiply (s.data.data(), buffer.getReadPointer (c),
+                                                              1.0f / (float) buffer.getNumChannels(), length);
+            normalise (s.data);
+
+            // The file's sustain loop if it has one (the WAV loop end is inclusive), else a one-shot.
+            const auto& meta = reader->metadataValues;
+            const auto loopStart = meta.getValue ("Loop0Start", "-1").getIntValue();
+            const auto loopEnd = meta.getValue ("Loop0End", "-1").getIntValue() + 1;
+            if (meta.getValue ("NumSampleLoops", "0").getIntValue() > 0
+                && loopStart >= 1 && loopEnd - loopStart >= 16 && loopEnd <= length)
+            {
+                s.loopStart = loopStart;
+                s.loopEnd = loopEnd;
+            }
+            else
+            {
+                s.loopStart = s.loopEnd = length;
+            }
+
+            samples.push_back (std::move (s));
+        }
+
+        std::sort (samples.begin(), samples.end(), [] (const auto& a, const auto& b) { return a.root < b.root; });
+        return ! samples.empty();
+    }
+
+    void HousePiano::recordFromModel()
+    {
+        const auto sampleRate = rate;
         samples.clear();
 
         // Record the strikes from the Studio voicing: bright, close unisons, no action noise.
@@ -62,6 +172,7 @@ namespace piano
         {
             Multisample s;
             s.root = root;
+            s.sampleRate = sampleRate;
 
             const auto period = sampleRate / (440.0 * std::pow (2.0, (root - 69) / 12.0));
             const auto periods = std::ceil (minLoopSeconds * sampleRate / period);
@@ -105,11 +216,7 @@ namespace piano
                 y = y * (1.0f - a) + s.data[(size_t) (s.loopStart - fade + i)] * a;
             }
 
-            const auto peak = juce::FloatVectorOperations::findMaximum (s.data.data(), s.loopEnd)
-                              - juce::FloatVectorOperations::findMinimum (s.data.data(), s.loopEnd);
-            if (peak > 0.0f)
-                juce::FloatVectorOperations::multiply (s.data.data(), 2.0f / peak, s.loopEnd);
-
+            normalise (s.data);
             samples.push_back (std::move (s));
 
             // The next recording starts from silence.
@@ -118,16 +225,16 @@ namespace piano
             for (int i = 0; i < 4; ++i)
                 engine->render (flush.data(), (int) flush.size());
         }
-
-        chorusLine.assign ((size_t) (0.03 * sampleRate) + 4, 0.0f);
-        allNotesOff();
     }
 
     const HousePiano::Multisample& HousePiano::sampleFor (int midiNote) const
     {
-        const auto index = juce::jlimit (0, (int) samples.size() - 1,
-                                         (int) std::round ((midiNote - firstRoot) / (double) rootSpacing));
-        return samples[(size_t) index];
+        // The nearest root, the lower of two equally near.
+        const auto* best = &samples.front();
+        for (const auto& s : samples)
+            if (std::abs (s.root - midiNote) < std::abs (best->root - midiNote))
+                best = &s;
+        return *best;
     }
 
     void HousePiano::startVoice (int playedNote, int pitchNote, float velocity01, float level)
@@ -144,10 +251,11 @@ namespace piano
         Voice v;
         v.sample = &sample;
         v.note = playedNote;
-        v.increment = std::pow (2.0, (pitchNote - sample.root) / 12.0);
+        v.increment = std::pow (2.0, (pitchNote - sample.root) / 12.0) * sample.sampleRate / rate;
         v.gain = level * (0.2f + 0.8f * std::pow (velocity01, 1.6f));
         v.envelope = 1.0f;
-        v.decay = multiplierFor (t60For (playedNote, controls.decay), rate);
+        // Recorded loops need an envelope to end; a one-shot has its own, shortened below 100%.
+        v.decay = sample.looped() || controls.decay < 1.0f ? multiplierFor (t60For (playedNote, controls.decay), rate) : 1.0f;
         v.release = multiplierFor (0.18, rate);
 
         // The filter, not the strike, follows velocity; hardness shifts it and it tracks the key.
@@ -222,11 +330,12 @@ namespace piano
 
                 const auto& s = *v.sample;
                 const auto loopLength = s.loopEnd - s.loopStart;
+                const auto size = (int) s.data.size();
                 auto at = [&] (int i)
                 {
-                    if (i >= s.loopEnd)
+                    if (i >= s.loopEnd && s.looped())
                         i = s.loopStart + (i - s.loopStart) % loopLength;
-                    return s.data[(size_t) juce::jmax (0, i)];
+                    return i < size ? s.data[(size_t) juce::jmax (0, i)] : 0.0f;
                 };
 
                 // Butterworth lowpass (TPT state variable), coefficients updated per chunk.
@@ -243,7 +352,7 @@ namespace piano
                     const auto x = hermite (at (index - 1), at (index), at (index + 1), at (index + 2),
                                             (float) (v.position - index));
                     v.position += v.increment;
-                    if (v.position >= s.loopEnd)
+                    if (v.position >= s.loopEnd && s.looped())
                         v.position -= loopLength;
 
                     const auto v3 = x - v.s2;
@@ -259,7 +368,7 @@ namespace piano
                 }
 
                 v.cutoff = juce::jmax (150.0f, v.cutoff * std::pow (v.cutoffFall, (float) n));
-                if (v.envelope < 1.0e-4f)
+                if (v.envelope < 1.0e-4f || v.position >= size + 2)
                     v = {};
             }
 
