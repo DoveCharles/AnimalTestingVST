@@ -2,7 +2,7 @@
 // PNG snapshots of it. Lets you check the spectrogram with real audio without a DAW. --wav also saves
 // the processed audio as waterfall.wav in the output folder.
 //
-//   WaterfallPreview <audio file> <output folder> [--every=5] [--length=60] [--wav] [--key=E] [--chord=Add9]
+//   WaterfallPreview <audio file> <output folder> [--every=5] [--length=60] [--wav] [--key=E] [--octave=5] [--chord=Add9]
 //                    [--brightness=86] [--decay=10] [--mix=100]
 
 #include "PluginProcessor.h"
@@ -71,7 +71,7 @@ int main (int argc, char* argv[])
     processor.setPlayConfigDetails (2, 2, sampleRate, blockSize);
     processor.prepareToPlay (sampleRate, blockSize);
 
-    for (auto* id : { ParamIDs::key, ParamIDs::chord, ParamIDs::brightness, ParamIDs::decay, ParamIDs::mix })
+    for (auto* id : { ParamIDs::key, ParamIDs::octave, ParamIDs::chord, ParamIDs::brightness, ParamIDs::decay, ParamIDs::mix })
         if (args.containsOption ("--" + juce::String (id)))
             applyParameter (processor, id, args.getValueForOption ("--" + juce::String (id)));
 

@@ -17,6 +17,7 @@ namespace
 PluginProcessor::PluginProcessor()
     : at::ProcessorBase (createParameterLayout()),
       keyParam        (at::params::raw (apvts, ParamIDs::key)),
+      octaveParam     (at::params::raw (apvts, ParamIDs::octave)),
       chordParam      (at::params::raw (apvts, ParamIDs::chord)),
       brightnessParam (at::params::raw (apvts, ParamIDs::brightness)),
       decayParam      (at::params::raw (apvts, ParamIDs::decay)),
@@ -28,6 +29,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
 {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
     layout.add (at::params::makeChoice  (ParamIDs::key,   "Key",   Chords::keyNames, 0));
+    layout.add (at::params::makeChoice  (ParamIDs::octave, "Octave", Chords::octaveNames, Chords::defaultOctaveIndex));
     layout.add (at::params::makeChoice  (ParamIDs::chord, "Chord", Chords::names(),  2));
     layout.add (at::params::makePercent (ParamIDs::brightness, "Brightness", 60.0f));
     layout.add (at::params::makeSeconds (ParamIDs::decay, "Decay", 0.05f, 10.0f, 1.5f));
@@ -39,8 +41,8 @@ void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     const auto numChannels = (juce::uint32) juce::jmax (getTotalNumInputChannels(), getTotalNumOutputChannels());
 
-    // Lowest possible voice is C3 detuned down; leave headroom below it.
-    const auto lowestHz = (float) juce::MidiMessage::getMidiNoteInHertz (Chords::rootMidiNote) * 0.9f;
+    // Lowest possible voice is C-1 detuned down; leave headroom below it.
+    const auto lowestHz = (float) juce::MidiMessage::getMidiNoteInHertz (Chords::lowestRootMidiNote) * 0.9f;
     for (auto& voice : voices)
         voice.prepare (sampleRate, lowestHz);
 
@@ -50,7 +52,7 @@ void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
         panRight[v].reset (sampleRate, 0.05);
     }
 
-    currentKey = currentChord = -1;
+    currentKey = currentOctave = currentChord = -1;
     updateTuning();
 
     for (size_t v = 0; v < voices.size(); ++v)
@@ -66,14 +68,22 @@ void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 
 void PluginProcessor::updateTuning()
 {
-    const auto key   = juce::jlimit (0, 11, (int) keyParam.load());
-    const auto chord = juce::jlimit (0, (int) Chords::all.size() - 1, (int) chordParam.load());
+    const auto key    = juce::jlimit (0, 11, (int) keyParam.load());
+    const auto octave = juce::jlimit (0, Chords::octaveNames.size() - 1, (int) octaveParam.load());
+    const auto chord  = juce::jlimit (0, (int) Chords::all.size() - 1, (int) chordParam.load());
 
-    if (key == currentKey && chord == currentChord)
+    if (key == currentKey && octave == currentOctave && chord == currentChord)
         return;
 
     currentKey = key;
+    currentOctave = octave;
     currentChord = chord;
+
+    const auto root = Chords::rootMidiNote (key, octave);
+
+    // The resonators can't ring much above a fifth of the sample rate (their loop gets too short), so
+    // in the top octaves fold the chord's upper tones down an octave at a time to keep them in tune.
+    const auto highestHz = (float) getSampleRate() * 0.2f;
 
     const auto& intervals = Chords::all[(size_t) chord].intervals;
     std::array<size_t, Chords::numVoices> order {};
@@ -83,8 +93,11 @@ void PluginProcessor::updateTuning()
     for (size_t rank = 0; rank < order.size(); ++rank)
     {
         const auto v = order[rank];
-        const auto note = (float) (Chords::rootMidiNote + key + intervals[v]) + rankDetune[rank] / 100.0f;
-        voices[v].setFrequency (440.0f * std::pow (2.0f, (note - 69.0f) / 12.0f));
+        const auto note = (float) (root + intervals[v]) + rankDetune[rank] / 100.0f;
+        auto hz = 440.0f * std::pow (2.0f, (note - 69.0f) / 12.0f);
+        while (highestHz > 0.0f && hz > highestHz)
+            hz *= 0.5f;
+        voices[v].setFrequency (hz);
 
         // Equal-power pan.
         const auto angle = (rankPan[rank] + 1.0f) * juce::MathConstants<float>::pi * 0.25f;

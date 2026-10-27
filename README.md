@@ -5,7 +5,7 @@ A monorepo of audio plugins by **Animal Testing**. Each plugin builds as VST3 (W
 | Plugin | Code | Version | Description |
 |---|---|---|---|
 | [AT Saturator](plugins/Saturator) | `Satr` | 1.0.0 | tanh saturator with Drive, Tone (low-pass) and Mix |
-| [AT Waterfall](plugins/Waterfall) | `Wtfl` | 1.0.0 | SP-404-style chord resonator: Key, Chord, Brightness, Decay, Mix, with a soft sky-blue spectrogram |
+| [AT Waterfall](plugins/Waterfall) | `Wtfl` | 1.0.0 | SP-404-style chord resonator: Key, Octave (C-1 to G9), Chord, Brightness, Decay, Mix, with a soft sky-blue spectrogram |
 | [AT Green Rooskie](plugins/GreenRooskie) | `Grsk` | 1.0.0 | Fuzz modelled on the 90s green Russian muff: Volume, Tone, Sustain and a footswitch, 4x oversampled |
 | [AT Shifty](plugins/Shifty) | `Shft` | 1.0.0 | Late-80s digital pitch shifter/delay: Balance, Feedback, Fine-Manual and a six-way Mode (125 ms / 500 ms / 2 s delay, manual / -1 oct / +1 oct pitch) |
 | [AT Sky Chorus](plugins/SkyChorus) | `Skyc` | 1.1.0 | Mid-80s analog BBD chorus after the Ibanez SC10, its 1024-stage bucket brigade run at its own swept clock (4x oversampled), dressed in the colours of Blue Smiley's *Return*: Speed, Width, Delay Time, Mix and a footswitch, with a Stereo switch: Bi-Phase (A = dry + wet, B = dry − wet, like the original), Dry/Wet Split or Mono-Safe |
@@ -110,7 +110,7 @@ cmake --build build --target WaterfallPreview
 build/tools/WaterfallPreview/WaterfallPreview_artefacts/Release/WaterfallPreview song.mp3 out --every=5 --chord=Add9 --decay=10
 ```
 
-Parameters take the same text the knobs show (`--key=E`, `--brightness=86`, `--mix=100`).
+Parameters take the same text the knobs show (`--key=E`, `--octave=5`, `--brightness=86`, `--mix=100`).
 
 ## Measuring a reference plugin
 

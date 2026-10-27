@@ -6,6 +6,7 @@
 namespace ParamIDs
 {
     inline constexpr auto key        = "key";
+    inline constexpr auto octave     = "octave";
     inline constexpr auto chord      = "chord";
     inline constexpr auto brightness = "brightness";
     inline constexpr auto decay      = "decay";
@@ -40,6 +41,7 @@ private:
     void updateTuning();
 
     std::atomic<float>& keyParam;
+    std::atomic<float>& octaveParam;
     std::atomic<float>& chordParam;
     std::atomic<float>& brightnessParam;
     std::atomic<float>& decayParam;
@@ -47,7 +49,7 @@ private:
 
     std::array<at::dsp::CombResonator, Chords::numVoices> voices;
     std::array<juce::SmoothedValue<float>, Chords::numVoices> panLeft, panRight;
-    int currentKey = -1, currentChord = -1;
+    int currentKey = -1, currentOctave = -1, currentChord = -1;
 
     juce::dsp::DryWetMixer<float> dryWet;
 
