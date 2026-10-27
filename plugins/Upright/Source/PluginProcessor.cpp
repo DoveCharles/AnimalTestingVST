@@ -28,7 +28,7 @@ PluginProcessor::PluginProcessor()
 juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParameterLayout()
 {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
-    layout.add (at::params::makeChoice (ParamIDs::voicing, "Voicing", { "Studio", "Mills", "House", "Rhodes" }, 1));
+    layout.add (at::params::makeChoice (ParamIDs::voicing, "Voicing", { "Studio", "Mills", "House", "Rhodes", "Vibraphone" }, 1));
     layout.add (at::params::makePercent (ParamIDs::hardness, "Hardness", 50.0f));
     layout.add (at::params::makePercent (ParamIDs::unison, "Unison", 30.0f));
     layout.add (at::params::makeFloat (ParamIDs::decay, "Decay", { 25.0f, 200.0f, 1.0f }, 100.0f, "%", 0));
@@ -65,6 +65,8 @@ void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     houseBuffer.setSize (2, samplesPerBlock);
     rhodes.prepare (sampleRate);
     rhodesBuffer.setSize (2, samplesPerBlock);
+    vibraphone.prepare (sampleRate);
+    vibraphoneBuffer.setSize (2, samplesPerBlock);
 
     room.loadImpulseResponse (piano::makeRoom (sampleRate), sampleRate,
                               juce::dsp::Convolution::Stereo::yes,
@@ -174,8 +176,9 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
         e.setControls (controls);
     house.setControls (controls);
     rhodes.setControls (controls);
+    vibraphone.setControls (controls);
 
-    const auto selected = (size_t) juce::jlimit (0, 3, (int) voicingParam.load());
+    const auto selected = (size_t) juce::jlimit (0, 4, (int) voicingParam.load());
 
     // Each engine drives its own boards; the strings as the close mics hear them are shared.
     dry.clear (0, 0, numSamples);
@@ -215,6 +218,7 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
 
     renderWithMidi (house, midi, houseBuffer, numSamples, selected == 2);
     renderWithMidi (rhodes, midi, rhodesBuffer, numSamples, selected == 3);
+    renderWithMidi (vibraphone, midi, vibraphoneBuffer, numSamples, selected == 4);
 
     body.setTargetValue (bodyParam.load() / 100.0f);
     roomLevel.setTargetValue (roomLevelFor (roomParam.load()));
@@ -237,7 +241,8 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
                 for (const auto& b : voicingBoards)
                     boardSample += b.getSample (ch, i);
             mix.setSample (ch, i, dry.getSample (ch, i) * (1.0f - wet) + wet * boardSample
-                                    + houseBuffer.getSample (ch, i) + rhodesBuffer.getSample (ch, i));
+                                    + houseBuffer.getSample (ch, i) + rhodesBuffer.getSample (ch, i)
+                                    + vibraphoneBuffer.getSample (ch, i));
         }
     }
 
