@@ -44,10 +44,10 @@ private:
     struct Particle { float x, y, vx, phase, size, age, life; juce::Colour colour; };
 
     /** A water strider on the surface, in component pixels. Heading is in radians, 0 facing downstream.
-        hopAge is negative while it rests on the water. */
-    struct Strider { float x, y, size, heading, phase, untilHop, hopAge, hopHeight, lunge; };
+        Once aimed, it has turned to face its next hop and jumps when untilHop runs out. */
+    struct Strider { float x, y, size, heading, untilHop; bool aimed; };
 
-    /** Concentric rings spreading on the surface, their centre drifting with the current. */
+    /** Concentric rings spreading on the surface, their centre drifting downstream with the striders. */
     struct Ripple { float x, y, size, age; int crests; };
 
     PluginProcessor& processor;

@@ -138,9 +138,15 @@ namespace
     }
 
     constexpr float striderSize = 42.0f;   // pixels from feet to feet, front to back
-    constexpr float hopDuration = 0.45f;   // seconds in the air
     constexpr float rippleLife = 1.8f;     // seconds for a ring to spread and fade
     constexpr float crestGap = 0.16f;      // seconds between the rings of one splash
+
+    /** How fast things on the surface drift: a little under the current, as if paddling against it.
+        Striders and their ripples share it, so the rings stay centred on a strider until it hops. */
+    float surfaceDrift (float normalisedY) noexcept
+    {
+        return 0.55f * currentSpeed (normalisedY);
+    }
 
     constexpr float flowCycle = 6.0f;      // seconds per flow-map cycle (two offset layers cross-fade)
 
@@ -346,8 +352,7 @@ void SpectrogramVisual::spawnStrider (float x)
 
     striders.push_back ({ x, (0.18f + 0.64f * random.nextFloat()) * (float) getHeight(),
                           striderSize, 0.3f * (random.nextFloat() - 0.5f),
-                          random.nextFloat() * juce::MathConstants<float>::twoPi,
-                          1.0f + 4.0f * random.nextFloat(), -1.0f, 0.0f, 0.0f });
+                          1.0f + 4.0f * random.nextFloat(), false });
 }
 
 void SpectrogramVisual::spawnRipple (float x, float y, float size, int crests)
@@ -366,38 +371,28 @@ void SpectrogramVisual::updateStriders (float dt)
 
     for (auto& s : striders)
     {
-        // Carried downstream at a little under the current's speed, as if paddling against it, and
-        // wandering gently across the stream.
-        s.x += currentSpeed (s.y / height) * 0.55f * dt;
-        s.y += std::sin (time * 0.6f + s.phase) * 5.0f * dt;
-        s.y = juce::jlimit (0.1f * height, 0.9f * height, s.y);
+        s.x += surfaceDrift (s.y / height) * dt;
 
-        if (s.hopAge < 0.0f)
+        s.untilHop -= dt;
+        if (s.untilHop > 0.0f)
+            continue;
+
+        // First turn to face the way it will hop, and pause a moment.
+        if (! s.aimed)
         {
-            s.untilHop -= dt;
-            if (s.untilHop <= 0.0f)
-            {
-                // Push off: a small ring where its feet leave the water, a turn and a lunge.
-                s.hopAge = 0.0f;
-                s.hopHeight = 7.0f + 7.0f * random.nextFloat();
-                s.lunge = 20.0f + 50.0f * random.nextFloat();
-                s.heading = juce::jlimit (-0.7f, 0.7f, s.heading + 0.8f * (random.nextFloat() - 0.5f));
-                spawnRipple (s.x, s.y, 0.5f, 1);
-            }
+            s.heading = juce::jlimit (-1.1f, 1.1f, s.heading + 1.4f * (random.nextFloat() - 0.5f));
+            s.aimed = true;
+            s.untilHop = 0.08f + 0.07f * random.nextFloat();
             continue;
         }
 
-        s.hopAge += dt;
-        s.x += std::cos (s.heading) * s.lunge * dt;
-        s.y += std::sin (s.heading) * s.lunge * dt;
-
-        if (s.hopAge >= hopDuration)
-        {
-            // Land with a splash of rings, one inside another.
-            s.hopAge = -1.0f;
-            s.untilHop = 1.5f + 5.0f * random.nextFloat();
-            spawnRipple (s.x, s.y, 1.0f, 3);
-        }
+        // Then jump straight there in one go, landing in a splash of rings centred on it.
+        s.aimed = false;
+        s.untilHop = 1.5f + 5.0f * random.nextFloat();
+        const auto distance = 45.0f + 35.0f * random.nextFloat();
+        s.x += std::cos (s.heading) * distance;
+        s.y = juce::jlimit (0.1f * height, 0.9f * height, s.y + std::sin (s.heading) * distance);
+        spawnRipple (s.x, s.y, 1.0f, 3);
     }
 
     striders.erase (std::remove_if (striders.begin(), striders.end(),
@@ -407,7 +402,7 @@ void SpectrogramVisual::updateStriders (float dt)
     for (auto& r : ripples)
     {
         r.age += dt;
-        r.x += currentSpeed (r.y / height) * dt;   // the rings ride the current
+        r.x += surfaceDrift (r.y / height) * dt;   // the rings ride the current with the striders
     }
 
     ripples.erase (std::remove_if (ripples.begin(), ripples.end(),
@@ -427,7 +422,7 @@ void SpectrogramVisual::drawStriders (juce::Graphics& g) const
 
             // Spreads quickly then slows, fading as it goes: a bright crest with a faint trough just inside.
             const auto t = age / rippleLife;
-            const auto radius = 3.0f + 32.0f * r.size * (1.0f - std::pow (1.0f - t, 2.5f));
+            const auto radius = 20.0f + 48.0f * r.size * (1.0f - std::pow (1.0f - t, 2.5f));
             const auto alpha = std::pow (1.0f - t, 1.5f) * juce::jmin (1.0f, age * 12.0f) * (0.5f + 0.5f * r.size)
                              * (1.0f - 0.25f * (float) i);
             const auto circle = juce::Rectangle<float> (radius * 2.0f, radius * 2.0f).withCentre ({ r.x, r.y });
@@ -444,42 +439,33 @@ void SpectrogramVisual::drawStriders (juce::Graphics& g) const
 
     for (const auto& s : striders)
     {
-        // 0 on the water, 1 at the top of a hop.
-        const auto t = s.hopAge < 0.0f ? 0.0f : s.hopAge / hopDuration;
-        const auto lift = 4.0f * t * (1.0f - t);
-        const auto angle = s.heading + juce::MathConstants<float>::halfPi
-                         + 0.04f * std::sin (time * 2.3f + s.phase);   // tiny twitches while it rests
+        const auto angle = s.heading + juce::MathConstants<float>::halfPi;
 
         auto place = [&] (float size, float x, float y)
         {
             return juce::AffineTransform::scale (size).rotated (angle).translated (x, y);
         };
 
-        // Its shadow on the water, falling further away as it rises, with the dimples under its feet.
-        const auto shadowAt = juce::Point<float> (s.x + 2.0f + 5.0f * lift, s.y + 3.0f + 7.0f * lift);
-        const auto shadowAlpha = 0.3f * (1.0f - 0.5f * lift);
-        g.setColour (waterShadow.withAlpha (shadowAlpha));
+        // Its shadow on the water, with the dimples under its feet.
+        const auto shadowAt = juce::Point<float> (s.x + 2.0f, s.y + 3.0f);
+        g.setColour (waterShadow.withAlpha (0.3f));
         g.strokePath (path, juce::PathStrokeType (1.8f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded),
                       place (s.size, shadowAt.x, shadowAt.y));
         g.fillPath (body, place (s.size, shadowAt.x, shadowAt.y));
 
-        // Each foot presses a soft dimple into the surface, fading as it lifts off.
+        // Each foot presses a soft dimple into the surface.
         for (auto mirrored : { false, true })
             for (auto foot : sketchFeet)
             {
                 const auto p = fromSketch (foot, mirrored).transformedBy (place (s.size, s.x, s.y));
-                const auto a = 0.35f * (1.0f - juce::jmin (1.0f, lift * 4.0f));
-                g.setGradientFill ({ waterShadow.withAlpha (a), p, waterShadow.withAlpha (0.0f), p.translated (4.0f, 0.0f), true });
+                g.setGradientFill ({ waterShadow.withAlpha (0.35f), p, waterShadow.withAlpha (0.0f), p.translated (4.0f, 0.0f), true });
                 g.fillEllipse (juce::Rectangle<float> (8.0f, 8.0f).withCentre (p));
             }
 
-        // The strider itself, lifted towards the viewer as it hops.
-        const auto size = s.size * (1.0f + 0.15f * lift);
-        const auto y = s.y - s.hopHeight * lift;
         g.setColour (juce::Colours::white.withAlpha (0.95f));
         g.strokePath (path, juce::PathStrokeType (1.3f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded),
-                      place (size, s.x, y));
-        g.fillPath (body, place (size, s.x, y));
+                      place (s.size, s.x, s.y));
+        g.fillPath (body, place (s.size, s.x, s.y));
     }
 }
 
