@@ -81,9 +81,9 @@ namespace
 
     const SketchLine striderSketch[] {
         { { { 177.4f, 82.3f }, { 179.4f, 105.7f }, { 216.9f, 120.4f }, { 225.6f, 164.1f }, { 215.3f, 234.8f } } },   // antenna, head, thorax
-        { { { 215.3f, 234.8f }, { 50.4f, 192.4f }, { 10.2f, 10.2f } } },                                            // front leg
         { { { 215.3f, 234.8f }, { 215.3f, 307.7f }, { 226.4f, 396.3f } } },                                         // abdomen
-        { { { 215.3f, 307.7f }, { 46.3f, 400.7f }, { 46.3f, 564.9f } } },                                           // hind leg
+        // Legs as a plain X: each front foot runs straight through the middle to the opposite hind foot.
+        { { { 10.2f, 10.2f }, { sketchMirrorX, 311.5f }, { 46.3f, 564.9f } } },
     };
 
     // The left edge of the head, thorax and abdomen, filled in so the body has some weight.
