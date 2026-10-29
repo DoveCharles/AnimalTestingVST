@@ -45,9 +45,9 @@ function(at_plugin name)
 endfunction()
 
 # Creates the plugin target. Called from plugins/<name>/CMakeLists.txt after project(<name> VERSION x.y.z).
-#   at_add_plugin(<target> PRODUCT_NAME "..." SOURCES ... [IS_SYNTH] [NEEDS_MIDI_OUTPUT])
+#   at_add_plugin(<target> PRODUCT_NAME "..." SOURCES ... [IS_SYNTH] [NEEDS_MIDI_OUTPUT] [WANTS_KEYBOARD_FOCUS])
 function(at_add_plugin target)
-    cmake_parse_arguments(ARG "IS_SYNTH;NEEDS_MIDI_OUTPUT" "PRODUCT_NAME" "SOURCES" ${ARGN})
+    cmake_parse_arguments(ARG "IS_SYNTH;NEEDS_MIDI_OUTPUT;WANTS_KEYBOARD_FOCUS" "PRODUCT_NAME" "SOURCES" ${ARGN})
 
     if(NOT DEFINED AT_PLUGIN_CODE)
         message(FATAL_ERROR "${target}: register it with at_plugin() in the top-level CMakeLists.txt")
@@ -73,6 +73,12 @@ function(at_add_plugin target)
         set(midi_output FALSE)
     endif()
 
+    if(ARG_WANTS_KEYBOARD_FOCUS)
+        set(keyboard_focus TRUE)
+    else()
+        set(keyboard_focus FALSE)
+    endif()
+
     juce_add_plugin(${target}
         PRODUCT_NAME             "${ARG_PRODUCT_NAME}"
         VERSION                  "${PROJECT_VERSION}"
@@ -85,7 +91,7 @@ function(at_add_plugin target)
         COPY_PLUGIN_AFTER_BUILD  ${AT_COPY_PLUGIN_AFTER_BUILD}
         NEEDS_MIDI_OUTPUT        ${midi_output}
         IS_MIDI_EFFECT           FALSE
-        EDITOR_WANTS_KEYBOARD_FOCUS FALSE
+        EDITOR_WANTS_KEYBOARD_FOCUS ${keyboard_focus}
         ${synth_args})
 
     target_sources(${target} PRIVATE ${ARG_SOURCES})
