@@ -43,7 +43,7 @@ void Treadle::paintButton (juce::Graphics& g, bool highlighted, bool down)
     stripe.reduce (18.0f, 0.0f);
     g.setColour (Palette::pink);
     g.setFont (juce::FontOptions (34.0f, juce::Font::bold).withHorizontalScale (0.9f));
-    g.drawText ("SKY CHORUS", stripe, juce::Justification::centredLeft);
+    g.drawText ("BIRD CHORUS", stripe, juce::Justification::centredLeft);
     auto caption = stripe.removeFromRight (150.0f);
     g.setColour (Palette::cream);
     g.setFont (juce::FontOptions (13.0f, juce::Font::bold));

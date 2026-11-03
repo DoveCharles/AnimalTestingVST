@@ -1,14 +1,14 @@
-// Offline checks for Sky Chorus, without a DAW.
+// Offline checks for Bird Chorus, without a DAW.
 //
-//   SkyChorusRender render <input audio> <output.wav> [--<param>=<value> ...]
+//   BirdChorusRender render <input audio> <output.wav> [--<param>=<value> ...]
 //       Plays a file through the processor (all parameters by ID, values as the host shows them).
 //
-//   SkyChorusRender measure [--tone=1000] [--<param>=<value> ...]
+//   BirdChorusRender measure [--tone=1000] [--<param>=<value> ...]
 //       Feeds a -12 dBFS sine through the wet path alone (Mix 100, Mono-Safe unless overridden) and
 //       prints the pitch sweep in cents, the strongest harmonics and spurs, the hiss floor and the
 //       CPU cost.
 //
-//   SkyChorusRender snapshot <output.png> [--<param>=<value> ...]
+//   BirdChorusRender snapshot <output.png> [--<param>=<value> ...]
 //       Saves a picture of the editor.
 
 #include "PluginProcessor.h"
@@ -222,8 +222,8 @@ int main (int argc, char* argv[])
     if (command == "snapshot" && args.size() >= 2) return snapshot (args);
 
     std::cerr << "Usage:\n"
-                 "  SkyChorusRender render <input> <output.wav> [--<param>=<value> ...]\n"
-                 "  SkyChorusRender measure [--tone=1000] [--<param>=<value> ...]\n"
-                 "  SkyChorusRender snapshot <output.png> [--<param>=<value> ...]\n";
+                 "  BirdChorusRender render <input> <output.wav> [--<param>=<value> ...]\n"
+                 "  BirdChorusRender measure [--tone=1000] [--<param>=<value> ...]\n"
+                 "  BirdChorusRender snapshot <output.png> [--<param>=<value> ...]\n";
     return 1;
 }
