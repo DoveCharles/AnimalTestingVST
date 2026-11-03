@@ -80,21 +80,33 @@ jobs:
         if: false && runner.os == 'macOS'
         run: echo "See TODO above"
 
+      # The full set in one versioned zip, and each plugin on its own in a zip named without the
+      # version, so releases/latest/download/AnimalTesting-<Plugin>-<OS>.zip always gets the newest.
       - name: Package
         shell: bash
         run: |
           version="${GITHUB_REF_NAME//\//-}"
           cmake --install build --prefix dist --component plugins
-          zip_name="AnimalTesting-${version}-${{ matrix.name }}.zip"
-          (cd dist && cmake -E tar cf "../${zip_name}" --format=zip .)
-          echo "ZIP_NAME=${zip_name}" >> "$GITHUB_ENV"
+          mkdir -p release
+          (cd dist && cmake -E tar cf "../release/AnimalTesting-${version}-${{ matrix.name }}.zip" --format=zip .)
+          for vst in dist/VST3/*.vst3; do
+            product="$(basename "$vst" .vst3)"          # "AT Woolly Bear"
+            short="${product#AT }"; short="${short//[^A-Za-z0-9]/}" # "WoollyBear"
+            stage="single/${short}"
+            for bundle in dist/*/"${product}".*; do
+              format="$(basename "$(dirname "$bundle")")"
+              mkdir -p "${stage}/${format}"
+              cp -R "$bundle" "${stage}/${format}/"
+            done
+            (cd "$stage" && cmake -E tar cf "../../release/AnimalTesting-${short}-${{ matrix.name }}.zip" --format=zip .)
+          done
+          ls release
 
-      # Uploaded as-is (no double zip); the artifact is named after the file.
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          path: ${{ env.ZIP_NAME }}
-          archive: false
+          name: AnimalTesting-${{ matrix.name }}
+          path: release/*.zip
           if-no-files-found: error
 
   release:
