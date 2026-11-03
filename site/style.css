@@ -12,12 +12,12 @@
   --tag-ink: #0d2233;
   --focus: #ffd84a;
 
-  /* Cards are white sign panels with dark lettering, so the blue frames them rather than shouting through them */
-  --night-card: #f5f8fb;
-  --night-well: #dbe4ec;
-  --night-ink: #0d2233;
-  --night-muted: #4b5d6e;
-  --night-line: #c3d0db;
+  /* Cards are outlined in white on the same blue, like the panels of a road sign */
+  --night-card: #0072bc;
+  --night-well: #0072bc;
+  --night-ink: #ffffff;
+  --night-muted: #d6e8f6;
+  --night-line: #ffffff;
 
   --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
   --body: "Archivo", "Helvetica Neue", Arial, sans-serif;
@@ -273,11 +273,11 @@ td code, .cmd code { font-family: var(--mono); font-size: 0.8125rem; word-break:
 .specimen, .plug-shot, .pager a, .cmd, .plug-panel {
   --card: var(--night-card); --well: var(--night-well); --ink: var(--night-ink);
   --muted: var(--night-muted); --line: var(--night-line); --paper: var(--night-card);
-  color: var(--ink); color-scheme: light;
+  color: var(--ink);
 }
 .plug-shot { background: var(--night-well); border-color: var(--night-line); }
 .plug-panel { background: var(--night-card); border: 1px solid var(--night-line); border-radius: 4px; padding: clamp(16px, 3vw, 32px); }
-.specimen:hover { border-color: #5f7486; }
+.specimen:hover { border-color: var(--tag); }
 
 
 /* Hero formats: one panel per platform, formats as chips */
