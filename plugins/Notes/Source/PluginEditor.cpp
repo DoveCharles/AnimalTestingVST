@@ -20,10 +20,10 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     page.setIndents (10, 10);
     page.setColour (juce::TextEditor::backgroundColourId, Palette::panel);
     page.setColour (juce::TextEditor::textColourId, Palette::text);
-    page.setColour (juce::TextEditor::highlightColourId, Palette::accent.withAlpha (0.35f));
-    page.setColour (juce::CaretComponent::caretColourId, Palette::accent);
+    page.setColour (juce::TextEditor::highlightColourId, Palette::brandBlue.withAlpha (0.35f));
+    page.setColour (juce::CaretComponent::caretColourId, Palette::brandBlue);
     page.setColour (juce::TextEditor::outlineColourId, Palette::track);
-    page.setColour (juce::TextEditor::focusedOutlineColourId, Palette::accent);
+    page.setColour (juce::TextEditor::focusedOutlineColourId, Palette::brandBlue);
     page.setTextToShowWhenEmpty ("Lyrics, notes, anything. Saved with the set.", Palette::textDim);
     page.setFont (juce::FontOptions (notes.fontSize.load()));
     page.setText (notes.getText(), false);
@@ -90,7 +90,8 @@ void PluginEditor::setFontSize (float size)
 
 void PluginEditor::paint (juce::Graphics& g)
 {
-    at::LookAndFeel::drawEditorChrome (g, getLocalBounds(), "Notes", JucePlugin_VersionString);
+    at::LookAndFeel::drawEditorChrome (g, getLocalBounds(), "Notes", JucePlugin_VersionString,
+                                       at::LookAndFeel::Palette::brandBlue);
 }
 
 void PluginEditor::resized()

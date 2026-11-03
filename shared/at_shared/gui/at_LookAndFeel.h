@@ -15,6 +15,7 @@ namespace at
             static inline const juce::Colour accent     { 0xffff7a3d };
             static inline const juce::Colour text       { 0xffe8e6e3 };
             static inline const juce::Colour textDim    { 0xff8a8f9c };
+            static inline const juce::Colour brandBlue  { 0xff0072bc };  // the website's road-sign blue
         };
 
         LookAndFeel();
@@ -29,9 +30,11 @@ namespace at
 
         juce::Font getLabelFont (juce::Label&) override;
 
-        /** Fills the editor background and draws the plugin title + version header. Returns the area below it. */
+        /** Fills the editor background and draws the plugin title + version header, underlined in
+            the given colour. Returns the area below it. */
         static juce::Rectangle<int> drawEditorChrome (juce::Graphics&, juce::Rectangle<int> bounds,
-                                                     const juce::String& title, const juce::String& version);
+                                                     const juce::String& title, const juce::String& version,
+                                                     juce::Colour underline = Palette::accent);
 
         static constexpr int headerHeight = 44;
     };

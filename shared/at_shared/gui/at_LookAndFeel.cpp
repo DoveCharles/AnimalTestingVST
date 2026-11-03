@@ -92,14 +92,15 @@ namespace at
     }
 
     juce::Rectangle<int> LookAndFeel::drawEditorChrome (juce::Graphics& g, juce::Rectangle<int> bounds,
-                                                       const juce::String& title, const juce::String& version)
+                                                       const juce::String& title, const juce::String& version,
+                                                       juce::Colour underline)
     {
         g.fillAll (Palette::background);
 
         auto header = bounds.removeFromTop (headerHeight);
         g.setColour (Palette::panel);
         g.fillRect (header);
-        g.setColour (Palette::accent);
+        g.setColour (underline);
         g.fillRect (header.removeFromBottom (2));
 
         header = header.reduced (14, 0);
