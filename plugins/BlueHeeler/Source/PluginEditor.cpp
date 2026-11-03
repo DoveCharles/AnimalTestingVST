@@ -1,4 +1,5 @@
 #include "PluginEditor.h"
+#include "HeelerPrint.h"
 
 namespace
 {
@@ -103,7 +104,7 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     footSwitch.onStateChange = [this] { repaint (ledArea.expanded (8)); };
     addAndMakeVisible (footSwitch);
 
-    setSize (460, 430);
+    setSize (460, 610);
 }
 
 PluginEditor::~PluginEditor()
@@ -132,6 +133,8 @@ void PluginEditor::paint (juce::Graphics& g)
     for (auto corner : { box.getTopLeft().translated (14.0f, 14.0f), box.getTopRight().translated (-14.0f, 14.0f),
                          box.getBottomLeft().translated (14.0f, -14.0f), box.getBottomRight().translated (-14.0f, -14.0f) })
         drawScrew (g, corner);
+
+    HeelerPrint::paint (g, printArea.toFloat(), Palette::pointer, Palette::enclosure);
 
     // Silkscreen: the name over a thin rule, the kind of pedal under it.
     auto title = titleArea.toFloat();
@@ -177,6 +180,9 @@ void PluginEditor::resized()
 
     modeSwitch.setBounds (juce::Rectangle<int> (84, 30).withCentre ({ area.getCentreX(), area.getY() + 18 }));
     area.removeFromTop (36);
+
+    printArea = area.removeFromTop (172).reduced (4, 2);
+    area.removeFromTop (8);
 
     titleArea = area.removeFromTop (76);
     area.removeFromTop (6);

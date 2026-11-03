@@ -26,7 +26,7 @@ juce_add_module(shared/at_shared ALIAS_NAMESPACE at)
 # ------------------------------------------------------------------------------
 at_plugin(Saturator CODE Satr)
 at_plugin(Waterfall CODE Wtfl)
-at_plugin(GreenRooskie CODE Grsk)
+at_plugin(WoollyBear CODE Grsk)
 at_plugin(Shifty CODE Shft)
 at_plugin(BirdChorus CODE Skyc)
 at_plugin(Cabinet CODE Cabn)

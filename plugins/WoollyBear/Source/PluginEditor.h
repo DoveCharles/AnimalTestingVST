@@ -29,6 +29,9 @@ private:
     juce::AudioProcessorValueTreeState::ButtonAttachment footSwitchAttachment;
 
     juce::Rectangle<int> ledArea, titleArea;
+    juce::Image fur;
+
+    void renderFur();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };

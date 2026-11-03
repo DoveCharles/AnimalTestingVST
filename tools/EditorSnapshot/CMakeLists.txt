@@ -40,7 +40,7 @@ endfunction()
 at_editor_snapshot(Saturator "AT Saturator" 1.0.0
     SOURCES PluginProcessor.cpp PluginEditor.cpp)
 
-at_editor_snapshot(GreenRooskie "AT Green Rooskie" 1.0.0
+at_editor_snapshot(WoollyBear "AT Woolly Bear" 1.0.0
     SOURCES PluginProcessor.cpp PluginEditor.cpp PedalLookAndFeel.cpp)
 
 at_editor_snapshot(Upright "AT Upright" 0.1.0 IS_SYNTH

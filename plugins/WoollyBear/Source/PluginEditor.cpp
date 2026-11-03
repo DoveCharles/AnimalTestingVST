@@ -3,16 +3,6 @@
 namespace
 {
     using Palette = PedalLookAndFeel::Palette;
-
-    void drawScrew (juce::Graphics& g, juce::Point<float> centre)
-    {
-        const auto head = juce::Rectangle<float> (12.0f, 12.0f).withCentre (centre);
-        g.setGradientFill (juce::ColourGradient (juce::Colour (0xffd8d8d4), head.getTopLeft(),
-                                                 juce::Colour (0xff7d7d78), head.getBottomRight(), false));
-        g.fillEllipse (head);
-        g.setColour (juce::Colour (0xff4a4a46));
-        g.drawLine (centre.x - 4.0f, centre.y - 2.0f, centre.x + 4.0f, centre.y + 2.0f, 1.6f);
-    }
 }
 
 void FootSwitch::paintButton (juce::Graphics& g, bool highlighted, bool down)
@@ -69,41 +59,78 @@ PluginEditor::~PluginEditor()
     setLookAndFeel (nullptr);
 }
 
-void PluginEditor::paint (juce::Graphics& g)
+void PluginEditor::renderFur()
 {
+    fur = juce::Image (juce::Image::ARGB, getWidth(), getHeight(), true);
+    juce::Graphics g (fur);
+
     const auto bounds = getLocalBounds().toFloat();
+    g.fillAll (juce::Colour (0xff0b0807));
 
-    // Army-green enclosure with a faint top-down sheen, and the base plate's shadow around it.
-    g.fillAll (juce::Colour (0xff1c1f17));
+    juce::Path body;
     const auto box = bounds.reduced (6.0f);
-    g.setGradientFill (juce::ColourGradient (Palette::enclosure.brighter (0.12f), box.getTopLeft(),
-                                             Palette::enclosure.darker (0.15f), box.getBottomLeft(), false));
-    g.fillRoundedRectangle (box, 10.0f);
-    g.setColour (Palette::enclosureDark);
-    g.drawRoundedRectangle (box, 10.0f, 2.0f);
+    body.addRoundedRectangle (box, 22.0f);
+    g.reduceClipRegion (body);
 
-    // Powder-coat speckle; seeded so it doesn't change between repaints.
-    juce::Random speckle (0x6e6e);
-    for (int i = 0; i < 1400; ++i)
+    // The rust band sits behind the title; black bristle runs to both ends.
+    const auto band = titleArea.toFloat().withTrimmedTop (6.0f).withTrimmedBottom (-12.0f);
+    g.setColour (Palette::furBlack);
+    g.fillPath (body);
+    g.setColour (Palette::furRust.darker (0.35f));
+    g.fillRect (band.withX (box.getX()).withWidth (box.getWidth()));
+
+    // Body segments, faint rings the bristle mostly covers.
+    g.setColour (juce::Colours::black.withAlpha (0.35f));
+    for (auto y = box.getY() + 26.0f; y < box.getBottom(); y += 30.0f)
+        g.drawLine (box.getX(), y, box.getRight(), y, 2.0f);
+
+    // Bristles splay out from the spine, each band blurring into the next. Seeded so the
+    // pattern is the same every time.
+    juce::Random rng (0x7a11);
+    const auto spineX = box.getCentreX();
+    const auto count = (int) (box.getWidth() * box.getHeight() / 5.0f);
+    for (int i = 0; i < count; ++i)
     {
-        const auto px = box.getX() + speckle.nextFloat() * box.getWidth();
-        const auto py = box.getY() + speckle.nextFloat() * box.getHeight();
-        g.setColour ((speckle.nextBool() ? juce::Colours::black : juce::Colours::white).withAlpha (0.05f));
-        g.fillRect (px, py, 1.0f, 1.0f);
+        const auto x = box.getX() + rng.nextFloat() * box.getWidth();
+        const auto y = box.getY() + rng.nextFloat() * box.getHeight();
+        const auto jitter = (rng.nextFloat() + rng.nextFloat() - 1.0f) * 10.0f;
+        const auto rust = y + jitter > band.getY() && y + jitter < band.getBottom();
+
+        auto colour = rust ? Palette::furRust.withMultipliedBrightness (0.65f + rng.nextFloat() * 0.6f)
+                                             .withRotatedHue ((rng.nextFloat() - 0.5f) * 0.03f)
+                           : Palette::furBlack.withMultipliedBrightness (0.6f + rng.nextFloat() * (rng.nextInt (14) == 0 ? 3.0f : 1.2f));
+
+        const auto side = (x - spineX) / (box.getWidth() * 0.5f);
+        const auto angle = side * 1.1f + (rng.nextFloat() - 0.5f) * 1.3f;
+        const auto length = 4.0f + rng.nextFloat() * 6.0f;
+        const juce::Point<float> start (x, y);
+        const auto end = start.getPointOnCircumference (length, angle);
+
+        g.setColour (colour.withAlpha (0.55f + rng.nextFloat() * 0.4f));
+        g.drawLine ({ start, end }, 0.8f + rng.nextFloat() * 0.6f);
+
+        if (rng.nextInt (4) == 0)
+        {
+            g.setColour (colour.brighter (0.6f).withAlpha (0.5f));
+            g.fillRect (end.x - 0.5f, end.y - 0.5f, 1.0f, 1.0f);
+        }
     }
 
-    for (auto corner : { box.getTopLeft().translated (14.0f, 14.0f), box.getTopRight().translated (-14.0f, 14.0f),
-                         box.getBottomLeft().translated (14.0f, -14.0f), box.getBottomRight().translated (-14.0f, -14.0f) })
-        drawScrew (g, corner);
+    g.setColour (juce::Colours::black.withAlpha (0.6f));
+    g.strokePath (body, juce::PathStrokeType (2.0f));
+}
 
-    // Silkscreen: big block title with the Cyrillic tagline under it.
+void PluginEditor::paint (juce::Graphics& g)
+{
+    g.drawImageAt (fur, 0, 0);
+
+    // Title printed over the rust band.
     auto title = titleArea.toFloat();
-    g.setColour (Palette::silkscreen);
-    g.setFont (juce::FontOptions (40.0f, juce::Font::bold).withHorizontalScale (0.92f));
-    g.drawText ("GREEN ROOSKIE", title.removeFromTop (44.0f), juce::Justification::centred);
+    g.setColour (Palette::ink);
+    g.setFont (juce::FontOptions (42.0f, juce::Font::bold).withHorizontalScale (0.92f));
+    g.drawText ("WOOLLY BEAR", title.removeFromTop (46.0f), juce::Justification::centred);
     g.setFont (juce::FontOptions (13.0f, juce::Font::bold));
-    g.drawText (juce::String (juce::CharPointer_UTF8 ("\xd0\x97\xd0\x95\xd0\x9b\xd0\x81\xd0\x9d\xd0\xab\xd0\x99"
-                                                      "  \xc2\xb7  FUZZ  \xc2\xb7  SUSTAINER")),
+    g.drawText (juce::String (juce::CharPointer_UTF8 ("FUZZ  \xc2\xb7  SUSTAINER")),
                 title, juce::Justification::centredTop);
 
     // Status LED: lit while the effect is engaged.
@@ -118,7 +145,7 @@ void PluginEditor::paint (juce::Graphics& g)
     g.fillEllipse (led);
     g.setColour (juce::Colours::white.withAlpha (engaged ? 0.6f : 0.15f));
     g.fillEllipse (led.reduced (led.getWidth() * 0.3f).translated (-1.5f, -1.5f));
-    g.setColour (juce::Colour (0xff9a9a95));
+    g.setColour (Palette::silkscreen.withAlpha (0.6f));
     g.drawEllipse (led.expanded (1.5f), 1.5f);
 
     // Maker's line at the foot.
@@ -143,4 +170,6 @@ void PluginEditor::resized()
     ledArea = juce::Rectangle<int> (14, 14).withCentre ({ area.getCentreX(), area.getY() + 8 });
     area.removeFromTop (24);
     footSwitch.setBounds (juce::Rectangle<int> (76, 76).withCentre ({ area.getCentreX(), area.getY() + 44 }));
+
+    renderFur();
 }

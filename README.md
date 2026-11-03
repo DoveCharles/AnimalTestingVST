@@ -6,7 +6,7 @@ A monorepo of audio plugins by **Animal Testing**. Each plugin builds as VST3 (W
 |---|---|---|---|
 | [AT Saturator](plugins/Saturator) | `Satr` | 1.0.0 | tanh saturator with Drive, Tone (low-pass) and Mix |
 | [AT Waterfall](plugins/Waterfall) | `Wtfl` | 1.0.0 | SP-404-style chord resonator: Key, Octave (C-1 to G9), Chord, Brightness, Decay, Mix, with a soft sky-blue spectrogram |
-| [AT Green Rooskie](plugins/GreenRooskie) | `Grsk` | 1.0.0 | Fuzz modelled on the 90s green Russian muff: Volume, Tone, Sustain and a footswitch, 4x oversampled |
+| [AT Woolly Bear](plugins/WoollyBear) | `Grsk` | 1.0.0 | Fuzz modelled on the 90s green Russian muff: Volume, Tone, Sustain and a footswitch, 4x oversampled |
 | [AT Shifty](plugins/Shifty) | `Shft` | 1.0.0 | Late-80s digital pitch shifter/delay: Balance, Feedback, Fine-Manual and a six-way Mode (125 ms / 500 ms / 2 s delay, manual / -1 oct / +1 oct pitch) |
 | [AT Bird Chorus](plugins/BirdChorus) | `Skyc` | 1.1.0 | Mid-80s analog BBD chorus after the Ibanez SC10, its 1024-stage bucket brigade run at its own swept clock (4x oversampled), dressed in the colours of Blue Smiley's *Return*: Speed, Width, Delay Time, Mix and a footswitch, with a Stereo switch: Bi-Phase (A = dry + wet, B = dry − wet, like the original), Dry/Wet Split or Mono-Safe |
 | [AT Cabinet](plugins/Cabinet) | `Cabn` | 1.0.0 | Cab simulator: six built-in cabs (4x12 Vintage and Modern, 2x12 Open Alnico, 1x12 Open Combo, 4x10 Tweed, 1x8 Practice) with Dynamic, Ribbon or Condenser mic, a speaker pad for mic Position and Distance, Room, Push (speaker drive), Low/High Cut and Output, or load your own IR (embedded in the session); zero latency |
@@ -166,7 +166,7 @@ Each note comes out one Listen window (16 ms by default) after the hit starts, s
 
 ## Website
 
-`site/` is a static page for the plugins (no build step): `python3 -m http.server --directory site` to preview it. The screenshots in `site/img/` come from each plugin's render tool (`<Name>Render snapshot out.png`), or from `<Name>Snapshot out.png` (`tools/EditorSnapshot`) for Saturator, Green Rooskie and Upright, scaled to 1100 px JPEGs with `sips -Z 1100 -s format jpeg`.
+`site/` is a static page for the plugins (no build step): `python3 -m http.server --directory site` to preview it. The screenshots in `site/img/` come from each plugin's render tool (`<Name>Render snapshot out.png`), or from `<Name>Snapshot out.png` (`tools/EditorSnapshot`) for Saturator, Woolly Bear and Upright, scaled to 1100 px JPEGs with `sips -Z 1100 -s format jpeg`.
 
 ## Licensing note
 
