@@ -1,5 +1,5 @@
-/* Layout: a specimen catalogue. Left-set masthead, a sticky filter rail, then a grid of tagged
-   specimen cards (the editor in a well, the plugin code on a punched tag), then install notes. */
+/* Layout: a specimen catalogue. Left-set masthead, a sticky filter rail, then a grid of
+   specimen cards (a name bar, then the editor in a well), then install notes. */
 :root {
   /* Road-sign blue with white lettering, after the band's sign. One scheme in light and dark. */
   --paper: #0072bc;
@@ -143,18 +143,6 @@ p { margin: 0; }
 .specimen h3 { font-family: var(--display); font-weight: 800; font-stretch: 110%; font-size: var(--step-1); line-height: 1.15; }
 .specimen h3 small { display: block; font-family: var(--mono); font-weight: 400; font-stretch: 100%; font-size: var(--step--1); color: var(--muted); letter-spacing: 0.04em; margin-top: 4px; text-transform: uppercase; }
 
-/* The punched specimen tag carrying the plugin's four-letter code */
-.tag {
-  flex: none; position: relative; background: var(--tag); color: var(--tag-ink);
-  font: 500 0.8125rem/1 var(--mono); letter-spacing: 0.04em;
-  padding: 6px 9px 6px 20px; border-radius: 2px 3px 3px 2px;
-  clip-path: polygon(7px 0, 100% 0, 100% 100%, 7px 100%, 0 50%);
-}
-.tag::before {
-  content: ""; position: absolute; left: 8px; top: 50%; width: 5px; height: 5px; margin-top: -2.5px;
-  border-radius: 50%; background: var(--card);
-}
-
 .specimen .what { color: var(--ink); }
 /* The whole card links to the plugin's page through its title */
 .specimen h3 a { text-decoration: none; }
@@ -225,7 +213,6 @@ td code, .cmd code { font-family: var(--mono); font-size: 0.8125rem; word-break:
   font-family: var(--display); font-size: clamp(2.5rem, 6vw, 4.25rem); line-height: 0.95;
   font-weight: 850; font-stretch: 120%; letter-spacing: -0.02em;
 }
-.plug-intro .tag::before { background: var(--paper); }
 .plug-intro .desc { font-size: var(--step-1); line-height: 1.35; font-weight: 600; max-width: 30em; margin-top: 20px; }
 .plug-intro .lede { margin-top: 12px; font-size: 1rem; line-height: 1.45; color: var(--muted); max-width: 32em; }
 .plug-intro .lede strong { color: var(--ink); font-weight: 600; }
@@ -317,8 +304,6 @@ td code, .cmd code { font-family: var(--mono); font-size: 0.8125rem; word-break:
 /* Card name bar is a white sign strip with blue lettering; the tag flips to blue */
 .specimen > header { background: #fff; color: var(--paper); padding: 14px 20px; align-items: center; border-bottom: 1px solid var(--line); }
 .specimen > header h3 small { color: var(--paper); opacity: 0.8; }
-.specimen > header .tag { background: var(--paper); color: #fff; }
-.specimen > header .tag::before { background: #fff; }
 .specimen > .body { padding-bottom: 16px; }
 .specimen > footer { margin: 0 20px; padding: 12px 0 18px; }
 
