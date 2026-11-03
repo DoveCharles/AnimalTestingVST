@@ -12,6 +12,13 @@
   --tag-ink: #0d2233;
   --focus: #ffd84a;
 
+  /* Cards and wells sit back in near-black so the blue frames them rather than shouting through them */
+  --night-card: #121a21;
+  --night-well: #0a0f14;
+  --night-ink: #e6ebef;
+  --night-muted: #9aa8b3;
+  --night-line: #26323d;
+
   --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
   --body: "Archivo", "Helvetica Neue", Arial, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
@@ -261,3 +268,14 @@ td code, .cmd code { font-family: var(--mono); font-size: 0.8125rem; word-break:
 .pager a:hover { border-color: var(--ink); }
 .pager a.next { text-align: right; grid-column: 2; }
 .pager strong { font-family: var(--display); font-weight: 800; font-stretch: 110%; font-size: var(--step-1); line-height: 1.15; }
+
+/* Dark surfaces: same tokens, night values, so everything inside them reads quietly */
+.specimen, .plug-shot, .pager a, .cmd, .plug-panel {
+  --card: var(--night-card); --well: var(--night-well); --ink: var(--night-ink);
+  --muted: var(--night-muted); --line: var(--night-line); --paper: var(--night-card);
+  color: var(--ink);
+}
+.plug-shot { background: var(--night-well); border-color: var(--night-line); }
+.plug-panel { background: var(--night-card); border: 1px solid var(--night-line); border-radius: 4px; padding: clamp(16px, 3vw, 32px); }
+.specimen:hover { border-color: #5f7486; }
+
