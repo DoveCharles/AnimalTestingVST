@@ -312,3 +312,11 @@ td code, .cmd code { font-family: var(--mono); font-size: 0.8125rem; word-break:
   .donors li { grid-template-columns: 3ch 2em 1fr; }
   .donors .animal { grid-column: 3; text-align: left; margin-top: -8px; font-size: var(--step--1); }
 }
+
+/* Card name bar is a white sign strip with blue lettering; the tag flips to blue */
+.specimen > header { background: #fff; color: var(--paper); padding: 14px 20px; align-items: center; border-bottom: 1px solid var(--line); }
+.specimen > header h3 small { color: var(--paper); opacity: 0.8; }
+.specimen > header .tag { background: var(--paper); color: #fff; }
+.specimen > header .tag::before { background: #fff; }
+.specimen > .body { padding-bottom: 16px; }
+.specimen > footer { margin: 0 20px; padding: 12px 0 18px; }
