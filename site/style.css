@@ -218,7 +218,8 @@ td code, .cmd code { font-family: var(--mono); font-size: 0.8125rem; word-break:
   font-weight: 850; font-stretch: 120%; letter-spacing: -0.02em;
 }
 .plug-intro .tag::before { background: var(--paper); }
-.plug-intro .lede { font-size: var(--step-1); line-height: 1.45; color: var(--muted); max-width: 32em; }
+.plug-intro .desc { font-size: var(--step-1); line-height: 1.35; font-weight: 600; max-width: 30em; margin-top: 20px; }
+.plug-intro .lede { margin-top: 12px; font-size: 1rem; line-height: 1.45; color: var(--muted); max-width: 32em; }
 .plug-intro .lede strong { color: var(--ink); font-weight: 600; }
 .plug-intro .actions { margin-top: 4px; }
 .plug-intro .ledger { padding-top: 18px; border-top: 1px dashed var(--line); }
