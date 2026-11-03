@@ -9,7 +9,7 @@ class PluginProcessor;
     with faint caustics. Notes shed faint particles into the current. Faint coloured blurs and a fine
     film grain sit over everything. Rendered small and scaled up smoothly so everything stays soft.
     White water striders drift downstream on the surface, now and then hopping and sending out
-    rings of ripples that the current carries away. */
+    small packets of ripples from their feet that bend the water and drift away on the current. */
 class SpectrogramVisual final : public juce::Component
 {
 public:
@@ -36,7 +36,7 @@ private:
     void updateStriders (float dt);
     void drawStriders (juce::Graphics&) const;
     void spawnStrider (float x);
-    void spawnRipple (float x, float y, float size, int crests);
+    void spawnRipple (float x, float y, float size, float heading, float bias, float distance, float sinceHop);
 
     float historyAt (int column, int row) const noexcept;
 
@@ -44,11 +44,14 @@ private:
     struct Particle { float x, y, vx, phase, size, age, life; juce::Colour colour; };
 
     /** A water strider on the surface, in component pixels. Heading is in radians, 0 facing downstream.
-        Once aimed, it has turned to face its next hop and jumps when untilHop runs out. */
-    struct Strider { float x, y, size, heading, untilHop; bool aimed; };
+        It hops when untilHop runs out: a burst of about `distance` pixels (on top of the drift) while
+        its legs stroke back and it turns from fromHeading to toHeading, then a slower coast. */
+    struct Strider { float x, y, size, heading, fromHeading, toHeading, untilHop, distance, sinceHop; };
 
-    /** Concentric rings spreading on the surface, their centre drifting downstream with the striders. */
-    struct Ripple { float x, y, size, age; int crests; };
+    /** A packet of fine rings spreading from where a foot struck the surface, drifting downstream with
+        the striders. Bias 0..1 dims the rings ahead of heading, so a push-off splashes mostly behind.
+        A landing's ripples also glide along heading with the strider's hop of `distance`, sinceHop in. */
+    struct Ripple { float x, y, size, age, heading, bias, distance, sinceHop; };
 
     PluginProcessor& processor;
     juce::VBlankAttachment vblank;
@@ -85,7 +88,7 @@ private:
     static constexpr int pixelSize = 4;
     static constexpr size_t maxParticles = 220;
     static constexpr size_t numStriders = 3;
-    static constexpr size_t maxRipples = 40;
+    static constexpr size_t maxRipples = 48;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SpectrogramVisual)
 };

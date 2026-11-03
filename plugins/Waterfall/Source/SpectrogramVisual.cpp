@@ -73,73 +73,87 @@ namespace
         return juce::Colour::fromHSV (0.8f * (1.0f - normalisedY) + 0.06f * normalisedX, 0.6f, 1.0f, 1.0f);
     }
 
-    /** Water strider, traced from a line sketch with its head up: the left half as polylines in sketch
-        units, mirrored about x = 237 for the right. Scaled to 1 unit = the sketch's full height. */
-    struct SketchLine { std::vector<juce::Point<float>> points; };
+    /** Water strider seen from above, head up, in units of its size. Short front legs held up by the
+        head; long middle legs reaching forward and out, which row it along; hind legs trailing back.
+        Each leg is listed for the left side, from where it joins the body out to its foot. */
+    struct Leg { juce::Point<float> base, knee, foot; };
 
-    constexpr float sketchMirrorX = 237.07f, sketchCentreY = 290.0f, sketchHeight = 575.0f;
+    constexpr Leg frontLeg  { { -0.02f,  -0.15f }, { -0.075f, -0.17f }, { -0.06f, -0.25f } };
+    constexpr Leg middleLeg { { -0.025f, -0.07f }, { -0.2f,   -0.08f }, { -0.46f, -0.38f } };
+    constexpr Leg hindLeg   { { -0.02f,  -0.02f }, { -0.13f,   0.12f }, { -0.27f,  0.50f } };
 
-    const SketchLine striderSketch[] {
-        { { { 177.4f, 82.3f }, { 179.4f, 105.7f }, { 216.9f, 120.4f }, { 225.6f, 164.1f }, { 215.3f, 234.8f } } },   // antenna, head, thorax
-        { { { 215.3f, 234.8f }, { 215.3f, 307.7f }, { 226.4f, 396.3f } } },                                         // abdomen
-        // Legs as a plain X: each front foot runs straight through the middle to the opposite hind foot.
-        { { { 10.2f, 10.2f }, { sketchMirrorX, 311.5f }, { 46.3f, 564.9f } } },
-    };
+    constexpr float strokeOut = 0.03f;       // seconds for the middle legs to sweep back on a hop
+    constexpr float strokeBack = 0.2f;       // seconds to reach forward again
+    constexpr float strokeAngle = 1.15f;     // radians the middle legs sweep through
+    constexpr float hopDamping = 9.0f;       // how quickly the push-off burst dies away, per second
+    constexpr float glideDamping = 2.2f;     // how slowly the coast after it eases to a stop, per second
+    constexpr float landAfter = 0.25f;       // seconds after pushing off that it touches down again
+    constexpr float glideShare = 0.6f;       // how far it coasts, as a share of the burst's distance
 
-    // The left edge of the head, thorax and abdomen, filled in so the body has some weight.
-    const std::vector<juce::Point<float>> sketchBody {
-        { 216.9f, 120.4f }, { 225.6f, 164.1f }, { 215.3f, 234.8f }, { 215.3f, 307.7f }, { 226.4f, 396.3f }
-    };
-
-    // Where the left feet touch the water, in sketch units.
-    constexpr juce::Point<float> sketchFeet[] { { 10.2f, 10.2f }, { 46.3f, 564.9f } };
-
-    juce::Point<float> fromSketch (juce::Point<float> p, bool mirrored)
+    /** Speed along its heading a given time into a hop of the given distance: a quick burst from the
+        push-off, then a long coast that eases out. */
+    float hopSpeed (float distance, float sinceHop) noexcept
     {
-        const auto x = mirrored ? 2.0f * sketchMirrorX - p.x : p.x;
-        return { (x - sketchMirrorX) / sketchHeight, (p.y - sketchCentreY) / sketchHeight };
+        return distance * (hopDamping * std::exp (-hopDamping * sinceHop)
+                           + glideShare * glideDamping * std::exp (-glideDamping * sinceHop));
     }
 
-    const juce::Path& striderPath()
+    /** How far back the middle legs have swept, 0..1, a given time after pushing off. */
+    float strokeAmount (float sinceHop) noexcept
     {
-        static const auto path = []
+        if (sinceHop < strokeOut)
+            return smoothstep (0.0f, 1.0f, sinceHop / strokeOut);
+        return 1.0f - smoothstep (0.0f, 1.0f, (sinceHop - strokeOut) / strokeBack);
+    }
+
+    /** The strider's legs and body for a stroke amount, in units of its size, with where each foot
+        dimples the water (the front legs are held clear of it). */
+    struct StriderPose { juce::Path legs, body; std::vector<juce::Point<float>> feet; };
+
+    StriderPose striderPose (float stroke)
+    {
+        StriderPose pose;
+
+        for (auto side : { 1.0f, -1.0f })
         {
-            juce::Path p;
-            for (auto mirrored : { false, true })
-                for (const auto& line : striderSketch)
-                {
-                    auto first = true;
-                    for (auto point : line.points)
-                    {
-                        const auto q = fromSketch (point, mirrored);
-                        if (std::exchange (first, false)) p.startNewSubPath (q);
-                        else                              p.lineTo (q);
-                    }
-                }
-            return p;
-        }();
-        return path;
+            auto flip = [side] (juce::Point<float> p) { return juce::Point<float> (p.x * side, p.y); };
+
+            auto addLeg = [&] (Leg leg, float sweep, bool onWater)
+            {
+                // Sweeping back turns the leg about its base, towards the tail.
+                const auto turn = juce::AffineTransform::rotation (-sweep, leg.base.x, leg.base.y);
+                pose.legs.startNewSubPath (flip (leg.base));
+                pose.legs.lineTo (flip (leg.knee.transformedBy (turn)));
+                pose.legs.lineTo (flip (leg.foot.transformedBy (turn)));
+                if (onWater)
+                    pose.feet.push_back (flip (leg.foot.transformedBy (turn)));
+            };
+
+            addLeg (frontLeg, 0.0f, false);
+            addLeg (middleLeg, strokeAngle * stroke, true);
+            addLeg (hindLeg, 0.0f, true);
+
+            pose.legs.startNewSubPath (flip ({ -0.012f, -0.23f }));   // antenna
+            pose.legs.lineTo (flip ({ -0.04f, -0.3f }));
+            pose.legs.lineTo (flip ({ -0.05f, -0.36f }));
+        }
+
+        pose.body.addEllipse (juce::Rectangle<float> (0.06f, 0.07f).withCentre ({ 0.0f, -0.2f }));    // head
+        pose.body.addEllipse (juce::Rectangle<float> (0.085f, 0.18f).withCentre ({ 0.0f, -0.08f }));  // thorax
+        pose.body.addEllipse (juce::Rectangle<float> (0.065f, 0.25f).withCentre ({ 0.0f, 0.1f }));    // abdomen
+        return pose;
     }
 
-    const juce::Path& striderBody()
+    constexpr float striderSize = 48.0f;   // pixels from middle feet to hind feet, front to back
+    /** Places a strider's pose (in units of its size, head up) on screen. */
+    juce::AffineTransform placeStrider (float x, float y, float size, float heading)
     {
-        static const auto path = []
-        {
-            juce::Path p;
-            p.startNewSubPath (fromSketch (sketchBody.front(), false));
-            for (auto point : sketchBody)
-                p.lineTo (fromSketch (point, false));
-            for (auto it = sketchBody.rbegin(); it != sketchBody.rend(); ++it)
-                p.lineTo (fromSketch (*it, true));
-            p.closeSubPath();
-            return p;
-        }();
-        return path;
+        return juce::AffineTransform::scale (size).rotated (heading + juce::MathConstants<float>::halfPi).translated (x, y);
     }
 
-    constexpr float striderSize = 42.0f;   // pixels from feet to feet, front to back
-    constexpr float rippleLife = 1.8f;     // seconds for a ring to spread and fade
-    constexpr float crestGap = 0.16f;      // seconds between the rings of one splash
+    constexpr float rippleLife = 0.8f;     // seconds for a packet of ripples to spread and fade
+    constexpr float rippleReach = 30.0f;   // pixels the leading crest of a full-size packet travels
+    constexpr int rippleCrests = 4;        // fine crests in each packet
 
     /** How fast things on the surface drift: a little under the current, as if paddling against it.
         Striders and their ripples share it, so the rings stay centred on a strider until it hops. */
@@ -352,13 +366,14 @@ void SpectrogramVisual::spawnStrider (float x)
 
     striders.push_back ({ x, (0.18f + 0.64f * random.nextFloat()) * (float) getHeight(),
                           striderSize, 0.3f * (random.nextFloat() - 0.5f),
-                          1.0f + 4.0f * random.nextFloat(), false });
+                          0.0f, 0.0f, 1.0f + 4.0f * random.nextFloat(), 0.0f, 10.0f });
+    striders.back().fromHeading = striders.back().toHeading = striders.back().heading;
 }
 
-void SpectrogramVisual::spawnRipple (float x, float y, float size, int crests)
+void SpectrogramVisual::spawnRipple (float x, float y, float size, float heading, float bias, float distance, float sinceHop)
 {
     if (ripples.size() < maxRipples)
-        ripples.push_back ({ x, y, size, 0.0f, crests });
+        ripples.push_back ({ x, y, size, 0.0f, heading, bias, distance, sinceHop });
 }
 
 void SpectrogramVisual::updateStriders (float dt)
@@ -371,28 +386,41 @@ void SpectrogramVisual::updateStriders (float dt)
 
     for (auto& s : striders)
     {
-        s.x += surfaceDrift (s.y / height) * dt;
+        // Turns towards the new heading during the burst, so the hop curves, then coasts on.
+        const auto landed = s.sinceHop < landAfter && s.sinceHop + dt >= landAfter;
+        s.sinceHop += dt;
+        s.heading = s.fromHeading + (s.toHeading - s.fromHeading) * (1.0f - std::exp (-hopDamping * s.sinceHop));
+        const auto speed = hopSpeed (s.distance, s.sinceHop);
+        s.x += (surfaceDrift (s.y / height) + std::cos (s.heading) * speed) * dt;
+        s.y = juce::jlimit (0.1f * height, 0.9f * height, s.y + std::sin (s.heading) * speed * dt);
+
+        // Touching down, each foot on the water sends out a small, even packet of ripples that slides
+        // along under it for the rest of the glide, so the rings stay centred on the feet.
+        if (landed)
+            for (auto foot : striderPose (strokeAmount (s.sinceHop)).feet)
+            {
+                const auto p = foot.transformedBy (placeStrider (s.x, s.y, s.size, s.heading));
+                spawnRipple (p.x, p.y, 0.55f, s.toHeading, 0.0f, s.distance, s.sinceHop);
+            }
 
         s.untilHop -= dt;
         if (s.untilHop > 0.0f)
             continue;
 
-        // First turn to face the way it will hop, and pause a moment.
-        if (! s.aimed)
-        {
-            s.heading = juce::jlimit (-1.1f, 1.1f, s.heading + 1.4f * (random.nextFloat() - 0.5f));
-            s.aimed = true;
-            s.untilHop = 0.08f + 0.07f * random.nextFloat();
-            continue;
-        }
-
-        // Then jump straight there in one go, landing in a splash of rings centred on it.
-        s.aimed = false;
+        // Push off with a quick stroke of the middle legs and glide away. Ripples spread from the middle
+        // feet, strongest behind it where the legs shoved the water.
         s.untilHop = 1.5f + 5.0f * random.nextFloat();
-        const auto distance = 45.0f + 35.0f * random.nextFloat();
-        s.x += std::cos (s.heading) * distance;
-        s.y = juce::jlimit (0.1f * height, 0.9f * height, s.y + std::sin (s.heading) * distance);
-        spawnRipple (s.x, s.y, 1.0f, 3);
+        s.fromHeading = s.heading;
+        s.toHeading = juce::jlimit (-1.1f, 1.1f, s.heading + 1.4f * (random.nextFloat() - 0.5f));
+        s.distance = 45.0f + 35.0f * random.nextFloat();
+        s.sinceHop = 0.0f;
+
+        const auto feet = striderPose (0.0f).feet;   // middle, hind for each side
+        for (auto i : { 0, 2 })
+        {
+            const auto p = feet[(size_t) i].transformedBy (placeStrider (s.x, s.y, s.size, s.heading));
+            spawnRipple (p.x, p.y, 1.0f, s.heading, 0.75f, 0.0f, 0.0f);
+        }
     }
 
     striders.erase (std::remove_if (striders.begin(), striders.end(),
@@ -402,70 +430,117 @@ void SpectrogramVisual::updateStriders (float dt)
     for (auto& r : ripples)
     {
         r.age += dt;
-        r.x += surfaceDrift (r.y / height) * dt;   // the rings ride the current with the striders
+        r.sinceHop += dt;
+        const auto speed = hopSpeed (r.distance, r.sinceHop);
+        r.x += (surfaceDrift (r.y / height) + std::cos (r.heading) * speed) * dt;   // the rings ride the current with the striders
+        r.y += std::sin (r.heading) * speed * dt;
     }
 
     ripples.erase (std::remove_if (ripples.begin(), ripples.end(),
-                                   [] (const Ripple& r) { return r.age >= rippleLife + crestGap * (float) (r.crests - 1); }),
+                                   [] (const Ripple& r) { return r.age >= rippleLife; }),
                    ripples.end());
 }
 
 void SpectrogramVisual::drawStriders (juce::Graphics& g) const
 {
+    const auto toScreen = juce::AffineTransform::scale ((float) getWidth()  / (float) frame.getWidth(),
+                                                         (float) getHeight() / (float) frame.getHeight());
+
     for (const auto& r : ripples)
     {
-        for (int i = 0; i < r.crests; ++i)
+        // A packet of fine crests that spreads quickly then slows, drawing apart as it goes, and fades.
+        const auto t = r.age / rippleLife;
+        const auto front = rippleReach * r.size * (1.0f - (1.0f - t) * (1.0f - t));
+        const auto spacing = 2.5f + 2.0f * t;
+        const auto fade = std::pow (1.0f - t, 1.5f) * juce::jmin (1.0f, r.age * 20.0f) * (0.6f + 0.4f * r.size);
+        const juce::Point<float> centre { r.x, r.y };
+
+        for (int i = 0; i < rippleCrests; ++i)
         {
-            const auto age = r.age - crestGap * (float) i;   // each inner ring follows a moment later
-            if (age <= 0.0f || age >= rippleLife)
+            const auto radius = front - spacing * (float) i;
+            if (radius <= 1.0f)
                 continue;
 
-            // Spreads quickly then slows, fading as it goes: a bright crest with a faint trough just inside.
-            const auto t = age / rippleLife;
-            const auto radius = 20.0f + 48.0f * r.size * (1.0f - std::pow (1.0f - t, 2.5f));
-            const auto alpha = std::pow (1.0f - t, 1.5f) * juce::jmin (1.0f, age * 12.0f) * (0.5f + 0.5f * r.size)
-                             * (1.0f - 0.25f * (float) i);
-            const auto circle = juce::Rectangle<float> (radius * 2.0f, radius * 2.0f).withCentre ({ r.x, r.y });
+            // Brightest mid-packet, fading to the leading and trailing crests, and to nothing while a crest
+            // is still tiny so a fresh packet doesn't look like a bullseye.
+            const auto alpha = fade * std::sin (juce::MathConstants<float>::pi * ((float) i + 0.5f) / (float) rippleCrests)
+                             * smoothstep (1.0f, 7.0f, radius);
 
-            g.setColour (waterShadow.withAlpha (0.18f * alpha));
-            g.drawEllipse (circle.reduced (1.6f), 1.6f);
-            g.setColour (juce::Colours::white.withAlpha (0.7f * alpha));
-            g.drawEllipse (circle, 1.2f);
+            // Each crest bends the water seen through it, alternately pushing the picture out and pulling it in.
+            {
+                juce::Graphics::ScopedSaveState state (g);
+                juce::Path band;
+                band.addEllipse (juce::Rectangle<float> (2.0f * radius + 3.0f, 2.0f * radius + 3.0f).withCentre (centre));
+                band.addEllipse (juce::Rectangle<float> (2.0f * radius - 3.0f, 2.0f * radius - 3.0f).withCentre (centre));
+                band.setUsingNonZeroWinding (false);
+                g.reduceClipRegion (band);
+                g.setOpacity (alpha);
+                const auto bend = 1.0f + (i % 2 == 0 ? 3.0f : -3.0f) / radius;
+                g.drawImageTransformed (frame, toScreen.scaled (bend, bend, centre.x, centre.y));
+            }
+
+            // Then the lit crest with its trough just inside, brighter on the side the water was shoved
+            // towards: behind the strider for a push-off, all round for a landing. JUCE arc angles run
+            // clockwise from 12 o'clock, a quarter turn on from the heading's.
+            constexpr int segments = 24;
+            for (int j = 0; j < segments; ++j)
+            {
+                const auto a0 = juce::MathConstants<float>::twoPi * (float) j / (float) segments;
+                const auto a1 = a0 + juce::MathConstants<float>::twoPi / (float) segments;
+                const auto towards = 0.5f * (a0 + a1) - juce::MathConstants<float>::halfPi;
+                const auto weight = 1.0f - r.bias * 0.5f * (1.0f + std::cos (towards - r.heading));
+
+                juce::Path crest, trough;
+                crest.addCentredArc (centre.x, centre.y, radius, radius, 0.0f, a0, a1, true);
+                trough.addCentredArc (centre.x, centre.y, radius - 1.4f, radius - 1.4f, 0.0f, a0, a1, true);
+                g.setColour (waterShadow.withAlpha (0.2f * alpha * weight));
+                g.strokePath (trough, juce::PathStrokeType (1.3f));
+                g.setColour (juce::Colours::white.withAlpha (0.65f * alpha * weight));
+                g.strokePath (crest, juce::PathStrokeType (1.1f));
+            }
         }
     }
 
-    const auto& path = striderPath();
-    const auto& body = striderBody();
-
     for (const auto& s : striders)
     {
-        const auto angle = s.heading + juce::MathConstants<float>::halfPi;
+        const auto pose = striderPose (strokeAmount (s.sinceHop));
+        auto place = [&] (float x, float y) { return placeStrider (x, y, s.size, s.heading); };
 
-        auto place = [&] (float size, float x, float y)
+        // Each foot on the water presses a dimple into the surface that bends the light like a small lens:
+        // the water under it looks shrunk, ringed by a faint glint where the surface flattens out.
+        for (auto foot : pose.feet)
         {
-            return juce::AffineTransform::scale (size).rotated (angle).translated (x, y);
-        };
+            const auto p = foot.transformedBy (place (s.x, s.y));
+            const auto r = s.size * 0.1f;
+            const auto dimple = juce::Rectangle<float> (r * 2.0f, r * 2.0f).withCentre (p);
 
-        // Its shadow on the water, with the dimples under its feet.
-        const auto shadowAt = juce::Point<float> (s.x + 2.0f, s.y + 3.0f);
-        g.setColour (waterShadow.withAlpha (0.3f));
-        g.strokePath (path, juce::PathStrokeType (1.8f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded),
-                      place (s.size, shadowAt.x, shadowAt.y));
-        g.fillPath (body, place (s.size, shadowAt.x, shadowAt.y));
-
-        // Each foot presses a soft dimple into the surface.
-        for (auto mirrored : { false, true })
-            for (auto foot : sketchFeet)
             {
-                const auto p = fromSketch (foot, mirrored).transformedBy (place (s.size, s.x, s.y));
-                g.setGradientFill ({ waterShadow.withAlpha (0.35f), p, waterShadow.withAlpha (0.0f), p.translated (4.0f, 0.0f), true });
-                g.fillEllipse (juce::Rectangle<float> (8.0f, 8.0f).withCentre (p));
+                juce::Graphics::ScopedSaveState state (g);
+                juce::Path clip;
+                clip.addEllipse (dimple);
+                g.reduceClipRegion (clip);
+                g.drawImageTransformed (frame, toScreen.scaled (0.55f, 0.55f, p.x, p.y));
             }
 
+            // A soft bright ring where the surface curves back up to flat.
+            const auto outer = r + 2.0f;
+            juce::ColourGradient rim (juce::Colours::white.withAlpha (0.0f), p, juce::Colours::white.withAlpha (0.0f), p.translated (outer, 0.0f), true);
+            rim.addColour (0.6f * r / outer, juce::Colours::white.withAlpha (0.0f));
+            rim.addColour (r / outer, juce::Colours::white.withAlpha (0.18f));
+            g.setGradientFill (rim);
+            g.fillEllipse (juce::Rectangle<float> (outer * 2.0f, outer * 2.0f).withCentre (p));
+        }
+
+        // Its shadow on the water.
+        g.setColour (waterShadow.withAlpha (0.3f));
+        g.strokePath (pose.legs, juce::PathStrokeType (1.8f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded),
+                      place (s.x + 2.0f, s.y + 3.0f));
+        g.fillPath (pose.body, place (s.x + 2.0f, s.y + 3.0f));
+
         g.setColour (juce::Colours::white.withAlpha (0.95f));
-        g.strokePath (path, juce::PathStrokeType (1.3f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded),
-                      place (s.size, s.x, s.y));
-        g.fillPath (body, place (s.size, s.x, s.y));
+        g.strokePath (pose.legs, juce::PathStrokeType (1.3f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded),
+                      place (s.x, s.y));
+        g.fillPath (pose.body, place (s.x, s.y));
     }
 }
 
