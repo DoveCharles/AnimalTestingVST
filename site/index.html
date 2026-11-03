@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Animal Testing Plugins</title>
-<meta name="description" content="Eighteen audio plugins by Animal Testing: pedals, tape, pianos, pitch tools and odd utilities. VST3, AU and Standalone for macOS and Windows.">
+<meta name="description" content="Seven audio plugins by Animal Testing: fuzz pedals, tape, chorus, reverse, a waterfall and a notepad. VST3, AU and Standalone for macOS and Windows.">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -223,17 +223,16 @@ td code, .cmd code { font-family: var(--mono); font-size: 0.8125rem; word-break:
 
 <header class="wrap hero">
   <div>
-    <h1>Animal Testing <span>audio plugins, specimens 01 to 18</span></h1>
-    <p class="lede">Pedals, tape, pianos, pitch tools and a few odd utilities. <strong>VST3, AU and Standalone</strong> for macOS and Windows, built for Ableton Live and anything else that loads a plugin.</p>
+    <h1>Animal Testing <span>audio plugins, seven specimens</span></h1>
+    <p class="lede">Fuzz pedals, tape, chorus, reverse, a waterfall and a notepad. <strong>VST3, AU and Standalone</strong> for macOS and Windows, built for Ableton Live and anything else that loads a plugin.</p>
     <div class="actions">
       <a class="btn primary" href="https://github.com/DoveCharles/AnimalTestingVST/releases/latest">Download the latest release</a>
       <a class="btn ghost" href="#plugins">Browse the plugins</a>
     </div>
   </div>
   <dl class="ledger" aria-label="At a glance">
-    <dt>Effects</dt><dd>14</dd>
-    <dt>Instruments</dt><dd>3</dd>
-    <dt>MIDI</dt><dd>1</dd>
+    <dt>Effects</dt><dd>6</dd>
+    <dt>Utility</dt><dd>1</dd>
     <dt>Formats</dt><dd>VST3 · AU · Standalone</dd>
     <dt>macOS</dt><dd>Universal (Apple silicon + Intel)</dd>
     <dt>Windows</dt><dd>VST3 · Standalone</dd>
@@ -242,28 +241,16 @@ td code, .cmd code { font-family: var(--mono); font-size: 0.8125rem; word-break:
 
 <div class="rail" id="plugins">
   <div class="wrap" role="toolbar" aria-label="Filter plugins">
-    <button class="chip" type="button" id="f-all" data-filter="all" aria-pressed="true">All<span class="n">18</span></button>
-    <button class="chip" type="button" id="f-drive" data-filter="drive" aria-pressed="false">Drive<span class="n">3</span></button>
-    <button class="chip" type="button" id="f-tone" data-filter="tone" aria-pressed="false">Tone &amp; dynamics<span class="n">4</span></button>
-    <button class="chip" type="button" id="f-pitch" data-filter="pitch" aria-pressed="false">Pitch &amp; voice<span class="n">3</span></button>
+    <button class="chip" type="button" id="f-all" data-filter="all" aria-pressed="true">All<span class="n">7</span></button>
+    <button class="chip" type="button" id="f-drive" data-filter="drive" aria-pressed="false">Drive<span class="n">2</span></button>
+    <button class="chip" type="button" id="f-tone" data-filter="tone" aria-pressed="false">Tone<span class="n">1</span></button>
     <button class="chip" type="button" id="f-space" data-filter="space" aria-pressed="false">Space &amp; time<span class="n">3</span></button>
-    <button class="chip" type="button" id="f-instrument" data-filter="instrument" aria-pressed="false">Instruments<span class="n">3</span></button>
-    <button class="chip" type="button" id="f-utility" data-filter="utility" aria-pressed="false">MIDI &amp; utility<span class="n">2</span></button>
+    <button class="chip" type="button" id="f-utility" data-filter="utility" aria-pressed="false">Utility<span class="n">1</span></button>
   </div>
 </div>
 
 <main class="wrap catalogue">
   <div class="grid" id="grid">
-
-    <article class="specimen" data-group="drive" id="saturator">
-      <div class="shot"><img src="img/saturator.jpg" alt="AT Saturator editor" loading="lazy"></div>
-      <div class="body">
-        <header><h3>Saturator<small>Effect · Drive</small></h3><span class="tag">Satr</span></header>
-        <p class="what">Smooth tanh saturation. Push it with Drive, darken it with Tone, blend it back with Mix.</p>
-        <ul><li>Drive, Tone (low-pass) and Mix</li><li>The simplest thing in the catalogue, and the first</li></ul>
-        <footer><span>v1.0.0</span><span>VST3 · AU · Standalone</span></footer>
-      </div>
-    </article>
 
     <article class="specimen" data-group="drive" id="green-rooskie">
       <div class="shot"><img src="img/greenrooskie.jpg" alt="AT Green Rooskie pedal" loading="lazy"></div>
@@ -285,26 +272,6 @@ td code, .cmd code { font-family: var(--mono); font-size: 0.8125rem; word-break:
       </div>
     </article>
 
-    <article class="specimen" data-group="tone" id="good-boy">
-      <div class="shot"><img src="img/goodboy.jpg" alt="AT Good Boy editor" loading="lazy"></div>
-      <div class="body">
-        <header><h3>Good Boy<small>Effect · Maximizer</small></h3><span class="tag">Gdby</span></header>
-        <p class="what">One-knob multiband maximizer. Turn up Amount and it gets louder, wider and denser. At zero it leaves the sound alone.</p>
-        <ul><li>Three-band compression, saturation, high-band width and a lookahead limiter at −0.3 dBFS</li><li>Four modes: Warm, Bright, Loud, Big</li></ul>
-        <footer><span>v0.1.0</span><span>1.5 ms latency, reported</span></footer>
-      </div>
-    </article>
-
-    <article class="specimen" data-group="tone" id="smooth-operator">
-      <div class="shot"><img src="img/smoothoperator.jpg" alt="AT Smooth Operator editor with its cut display" loading="lazy"></div>
-      <div class="body">
-        <header><h3>Smooth Operator<small>Effect · Resonance suppressor</small></h3><span class="tag">Smop</span></header>
-        <p class="what">Finds whatever pokes out of the sound's own spectrum and cuts it as it happens, with a live display of every cut.</p>
-        <ul><li>Depth, Sharpness, Selectivity, Attack and Release</li><li>Five-band weighting, Stereo or Mid/Side</li><li>Delta to hear only what it removes</li></ul>
-        <footer><span>v0.1.0</span><span>~43 ms latency, reported</span></footer>
-      </div>
-    </article>
-
     <article class="specimen" data-group="tone" id="tapeworm">
       <div class="shot"><img src="img/tapeworm.jpg" alt="AT Tapeworm tape deck" loading="lazy"></div>
       <div class="body">
@@ -312,46 +279,6 @@ td code, .cmd code { font-family: var(--mono); font-size: 0.8125rem; word-break:
         <p class="what">A worn tape machine on a matte silver deck, with reels that turn with the tape. Fitted to measurements of real tape processing.</p>
         <ul><li>Drive with Boost, a morphing tape Tone and a bipolar Filter</li><li>Wow, Flutter, Wear, hiss and motor noise</li><li>Tempo-synced Tape Stop and a Speed dial down to 0.25x</li></ul>
         <footer><span>v0.1.0</span><span>Up to 5 min of tape</span></footer>
-      </div>
-    </article>
-
-    <article class="specimen" data-group="tone" id="cabinet">
-      <div class="shot"><img src="img/cabinet.jpg" alt="AT Cabinet editor with speaker pad" loading="lazy"></div>
-      <div class="body">
-        <header><h3>Cabinet<small>Effect · Cab simulator</small></h3><span class="tag">Cabn</span></header>
-        <p class="what">Six built-in cabs and three mics, placed on a speaker pad. Or load your own impulse response, which is saved in the session.</p>
-        <ul><li>4x12 Vintage and Modern, 2x12 Open Alnico, 1x12 Combo, 4x10 Tweed, 1x8 Practice</li><li>Dynamic, Ribbon or Condenser at any Position and Distance</li><li>Room, Push, Low and High Cut</li></ul>
-        <footer><span>v1.0.0</span><span>No latency</span></footer>
-      </div>
-    </article>
-
-    <article class="specimen" data-group="pitch" id="shifty">
-      <div class="shot"><img src="img/shifty.jpg" alt="AT Shifty pedal" loading="lazy"></div>
-      <div class="body">
-        <header><h3>Shifty<small>Effect · Pitch shift and delay</small></h3><span class="tag">Shft</span></header>
-        <p class="what">A late-80s digital pitch shifter and delay, grit and all.</p>
-        <ul><li>Balance, Feedback and Fine-Manual</li><li>Six modes: 125 ms, 500 ms and 2 s delay, manual pitch, −1 and +1 octave</li></ul>
-        <footer><span>v1.0.0</span><span>VST3 · AU · Standalone</span></footer>
-      </div>
-    </article>
-
-    <article class="specimen" data-group="pitch" id="pitch-pot">
-      <div class="shot"><img src="img/pitchpot.jpg" alt="AT Pitch-Pot pedal with a court painting" loading="lazy"></div>
-      <div class="body">
-        <header><h3>Pitch-Pot<small>Effect · Polyphonic pitch pedal</small></h3><span class="tag">Ppot</span></header>
-        <p class="what">Polyphonic pitch shifter with an expression sweep and a footswitch that glides the pitch in and out.</p>
-        <ul><li>From a 12-cent detune through every interval to 3 octaves</li><li>Up, Dual or Down, with an equal-power Blend</li><li>Latch or Momentary footswitch with Glide</li></ul>
-        <footer><span>v0.1.0</span><span>8 to 50 ms wet path, like a pedal</span></footer>
-      </div>
-    </article>
-
-    <article class="specimen" data-group="pitch" id="voice-box">
-      <div class="shot"><img src="img/voicebox.jpg" alt="AT Voice Box editor" loading="lazy"></div>
-      <div class="body">
-        <header><h3>Voice Box<small>Effect · Pitch and formant</small></h3><span class="tag">Vbox</span></header>
-        <p class="what">Vocal pitch and formant shifter. The two move independently, so you can change the note without changing the person.</p>
-        <ul><li>Transpose, Quantize to a key or scale, and Robot modes</li><li>A Gender macro</li><li>Chest Cut, Air, Breath, Drive and delayed Vibrato</li></ul>
-        <footer><span>v0.1.0</span><span>~40 ms latency, reported</span></footer>
       </div>
     </article>
 
@@ -382,46 +309,6 @@ td code, .cmd code { font-family: var(--mono); font-size: 0.8125rem; word-break:
         <p class="what">Rings anything through a chord of tuned resonators. Water striders skate over the spectrogram while it plays.</p>
         <ul><li>Key, Octave from C-1 to G9, and Chord</li><li>Brightness, Decay and Mix</li></ul>
         <footer><span>v1.0.0</span><span>VST3 · AU · Standalone</span></footer>
-      </div>
-    </article>
-
-    <article class="specimen" data-group="instrument" id="upright">
-      <div class="shot"><img src="img/upright.jpg" alt="AT Upright editor" loading="lazy"></div>
-      <div class="body">
-        <header><h3>Upright<small>Instrument · Modelled piano</small></h3><span class="tag">Uprt</span></header>
-        <p class="what">A physically modelled upright piano with no samples: strings, soundboard, felt and room, all computed.</p>
-        <ul><li>Five voicings: Studio, Mills, House, Rhodes and Vibraphone</li><li>Hardness, Unison, Decay, Resonance, Noise, Body and Room</li><li>Sympathetic resonance and action noise</li></ul>
-        <footer><span>v0.1.0</span><span>No samples to install</span></footer>
-      </div>
-    </article>
-
-    <article class="specimen" data-group="instrument" id="chilltron">
-      <div class="shot"><img src="img/chilltron.jpg" alt="AT Chilltron editor with tape strips" loading="lazy"></div>
-      <div class="body">
-        <header><h3>Chilltron<small>Instrument · Tape replay keyboard</small></h3><span class="tag">Chtn</span></header>
-        <p class="what">Every key plays its own 8-second strip of tape, which rewinds when you let go.</p>
-        <ul><li>Two tape banks with a blend fader</li><li>Capstan wow and flutter, tape clicks, optional loop</li><li>Tone, Spread and Reverb</li></ul>
-        <footer><span>v0.1.0</span><span>Tapes in Application Support</span></footer>
-      </div>
-    </article>
-
-    <article class="specimen" data-group="instrument" id="magpie">
-      <div class="shot"><img src="img/magpie.jpg" alt="AT Magpie editor" loading="lazy"></div>
-      <div class="body">
-        <header><h3>Magpie<small>Instrument · SoundFont player</small></h3><span class="tag">Mgpi</span></header>
-        <p class="what">Drop an .sf2 file on the window and play any preset in it, with the font's own envelopes, filters, LFOs and loops.</p>
-        <ul><li>96 voices; Program Change and bank select</li><li>Mod wheel, pitch bend, sustain, volume, pan and expression</li><li>Volume, Transpose, Tune, Bend range, Velocity, Release and Reverb</li></ul>
-        <footer><span>v0.1.0</span><span>Loads .sf2 from disk</span></footer>
-      </div>
-    </article>
-
-    <article class="specimen" data-group="utility" id="mouth-box">
-      <div class="shot"><img src="img/mouthbox.jpg" alt="AT Mouth Box editor with five pads" loading="lazy"></div>
-      <div class="body">
-        <header><h3>Mouth Box<small>MIDI · Beatbox to drums</small></h3><span class="tag">Mbox</span></header>
-        <p class="what">Beatbox into a mic and get MIDI drums out, in General MIDI note numbers, so most drum samplers play it straight away.</p>
-        <ul><li>Five pads: Kick, Snare, Hi-Hat, Open Hat, Tom</li><li>Train each pad on eight of your own sounds</li><li>A virtual MIDI port on macOS</li></ul>
-        <footer><span>v0.1.0</span><span>~16 ms note latency</span></footer>
       </div>
     </article>
 
