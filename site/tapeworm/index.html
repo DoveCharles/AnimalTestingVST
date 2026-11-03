@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tapeworm · Animal Testing</title>
+<meta name="description" content="AT Tapeworm: Lo-fi tape with wow, flutter, wear, hiss and a tempo-synced tape stop. VST3 · AU · Standalone for macOS and Windows.">
+<meta name="theme-color" content="#0072bc">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="wrap top">
+  <a class="wordmark" href="../">
+    <span class="mark" aria-hidden="true"></span>
+    Animal Testing
+  </a>
+  <nav aria-label="Site">
+    <a href="../#plugins">Plugins</a>
+    <a href="../#install">Install</a>
+    <a href="https://github.com/DoveCharles/AnimalTestingVST">Source</a>
+  </nav>
+</div>
+
+<div class="wrap crumbs">
+  <a href="../#plugins">← All plugins</a>
+  <span class="label">02 / 07</span>
+</div>
+
+<main>
+<header class="wrap plug-hero">
+  <div class="plug-shot"><img src="../img/tapeworm.jpg" alt="AT Tapeworm tape deck"></div>
+  <div class="plug-intro">
+    <span class="label">Effect · Lo-fi tape</span>
+    <div class="title-row"><h1>Tapeworm</h1><span class="tag" title="Plugin code">Tpwm</span></div>
+    <p class="lede">A worn tape machine, fitted to measurements of real tape processing. Drive it, wobble it, wear it out, then <strong>stop the tape in time with the song</strong>. The reels are apples, and the tape is a worm.</p>
+    <div class="actions">
+      <a class="btn primary" href="https://github.com/DoveCharles/AnimalTestingVST/releases/latest">Download</a>
+      <a class="btn ghost" href="../#install">How to install</a>
+    </div>
+    <dl class="ledger" aria-label="At a glance">
+      <dt>Version</dt><dd>0.1.0</dd>
+      <dt>Drive</dt><dd>4x oversampled</dd>
+      <dt>Longest tape</dt><dd>5 minutes</dd>
+      <dt>Formats</dt><dd>VST3 · AU · Standalone</dd>
+    </dl>
+  </div>
+</header>
+
+<section class="wrap plug-section" aria-labelledby="controls-title">
+  <div class="section-head">
+    <h2 id="controls-title">Controls</h2>
+    <span class="label">16 parameters</span>
+  </div>
+  <div class="table-scroll">
+    <table class="controls">
+      <thead><tr><th>Control</th><th>Range</th><th>Default</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td>Drive</td><td class="val">0 to 100%</td><td class="val">0%</td><td>Pushes the tape's soft clipper harder while pulling the output back, so it saturates without getting much louder.</td></tr>
+        <tr><td>Boost</td><td class="val">On / Off</td><td class="val">Off</td><td>A hotter drive curve for more saturation.</td></tr>
+        <tr><td>Tone</td><td class="val">0 to 100%</td><td class="val">50%</td><td>The tape voicing: a band-pass with a low cut and a 2 to 3 kHz presence, morphed across five measured settings.</td></tr>
+        <tr><td>Tone Enable</td><td class="val">On / Off</td><td class="val">On</td><td>Off leaves only the gentle base path.</td></tr>
+        <tr><td>Filter</td><td class="val">-100 to +100%</td><td class="val">0%</td><td>Bipolar. Below zero a low-pass down to 63 Hz, above zero a high-pass up to 10 kHz.</td></tr>
+        <tr><td>Wow</td><td class="val">0 to 100%</td><td class="val">0%</td><td>Slow pitch drift, at 0.82 Hz.</td></tr>
+        <tr><td>Flutter</td><td class="val">0 to 100%</td><td class="val">0%</td><td>Faster pitch wobble at a few fixed rates.</td></tr>
+        <tr><td>Wear</td><td class="val">0 to 100%</td><td class="val">0%</td><td>Fast level flutter and random speed jitter.</td></tr>
+        <tr><td>Noise</td><td class="val">Off to 0 dB</td><td class="val">Off</td><td>Tape hiss, added before the Tone voicing so it takes its shape.</td></tr>
+        <tr><td>Mechanical Noise</td><td class="val">Off to 0 dB</td><td class="val">Off</td><td>Motor rumble with a 23 Hz rhythm.</td></tr>
+        <tr><td>Stereo Width</td><td class="val">On / Off</td><td class="val">Off</td><td>Gives each channel its own wow, flutter and wear.</td></tr>
+        <tr><td>Output</td><td class="val">Off to +10 dB</td><td class="val">0 dB</td><td>Output level.</td></tr>
+        <tr><td>Tape Stop</td><td class="val">On / Off</td><td class="val">Off</td><td>Slows the tape to a halt over the Stop Speed.</td></tr>
+        <tr><td>Stop Speed</td><td class="val">8 Bar to 1/4 Bar</td><td class="val">1 Bar</td><td>How long the stop takes, in time with the host.</td></tr>
+        <tr><td>Tape Catch-up</td><td class="val">Instant, Fast-Forward</td><td class="val">Instant</td><td>When the tape starts again: jump straight back to real time, or speed through what it missed.</td></tr>
+        <tr><td>Speed</td><td class="val">0.25x to 1x</td><td class="val">1x</td><td>Plays the tape slower than real time. The tape grows to five minutes; when that runs out, it holds there at normal speed.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="wrap plug-section" aria-labelledby="how-title">
+  <div class="inside">
+    <div>
+      <div class="section-head"><h2 id="how-title">How it works</h2></div>
+      <p>Wow, flutter, wear and the tape stop all move the read point of one delay line, the way a real transport moves tape past the head, so pitch and timing shift together.</p>
+      <p>The reels turn with the tape. They slow down with Speed and Tape Stop and follow the host's transport.</p>
+    </div>
+    <div>
+      <div class="section-head"><h2>Signal path</h2></div>
+      <ol class="chain">
+        <li><b>Drive</b><span>A symmetric two-stage soft clipper, 4x oversampled.</span></li>
+        <li><b>Noise</b><span>Mono hiss.</span></li>
+        <li><b>Tone</b><span>The tape voicing.</span></li>
+        <li><b>Wear</b><span>Level flutter and speed jitter.</span></li>
+        <li><b>Transport</b><span>Wow, flutter, Tape Stop and Speed.</span></li>
+        <li><b>Filter</b><span>Low-pass or high-pass.</span></li>
+        <li><b>Mechanical noise</b><span>Looped motor rumble, after the voicing.</span></li>
+      </ol>
+    </div>
+  </div>
+</section>
+</main>
+
+<nav class="wrap pager" aria-label="More plugins">
+  <a class="prev" href="../waterfall/"><span class="label">← Previous</span><strong>Waterfall</strong></a>
+  <a class="next" href="../sky-chorus/"><span class="label">Next →</span><strong>Sky Chorus</strong></a>
+</nav>
+
+<footer class="wrap page-foot">
+  <span>Animal Testing · built with JUCE</span>
+  <span>No animals were harmed. Some were mildly saturated.</span>
+</footer>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Blue Heeler · Animal Testing</title>
+<meta name="description" content="AT Blue Heeler: Low-gain blues overdrive with two cascaded clipping stages. VST3 · AU · Standalone for macOS and Windows.">
+<meta name="theme-color" content="#0072bc">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="wrap top">
+  <a class="wordmark" href="../">
+    <span class="mark" aria-hidden="true"></span>
+    Animal Testing
+  </a>
+  <nav aria-label="Site">
+    <a href="../#plugins">Plugins</a>
+    <a href="../#install">Install</a>
+    <a href="https://github.com/DoveCharles/AnimalTestingVST">Source</a>
+  </nav>
+</div>
+
+<div class="wrap crumbs">
+  <a href="../#plugins">← All plugins</a>
+  <span class="label">05 / 07</span>
+</div>
+
+<main>
+<header class="wrap plug-hero">
+  <div class="plug-shot"><img src="../img/blueheeler.jpg" alt="AT Blue Heeler pedal"></div>
+  <div class="plug-intro">
+    <span class="label">Effect · Overdrive</span>
+    <div class="title-row"><h1>Blue Heeler</h1><span class="tag" title="Plugin code">Bhlr</span></div>
+    <p class="lede">Low-gain blues overdrive with two cascaded clipping stages, made to <strong>sit at the end of the chain</strong>, after reverb and delay. Its bias sits slightly off centre, adding the even harmonics that make it sound like an amp rather than a pedal.</p>
+    <div class="actions">
+      <a class="btn primary" href="https://github.com/DoveCharles/AnimalTestingVST/releases/latest">Download</a>
+      <a class="btn ghost" href="../#install">How to install</a>
+    </div>
+    <dl class="ledger" aria-label="At a glance">
+      <dt>Version</dt><dd>0.1.0</dd>
+      <dt>Processing</dt><dd>4x oversampled</dd>
+      <dt>Channels</dt><dd>True stereo</dd>
+      <dt>Formats</dt><dd>VST3 · AU · Standalone</dd>
+    </dl>
+  </div>
+</header>
+
+<section class="wrap plug-section" aria-labelledby="controls-title">
+  <div class="section-head">
+    <h2 id="controls-title">Controls</h2>
+    <span class="label">5 parameters</span>
+  </div>
+  <div class="table-scroll">
+    <table class="controls">
+      <thead><tr><th>Control</th><th>Range</th><th>Default</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td>Level</td><td class="val">-24 to +12 dB</td><td class="val">0 dB</td><td>Output level. The output follows Gain, so it stays near unity as you turn Gain up.</td></tr>
+        <tr><td>Tone</td><td class="val">0 to 100%</td><td class="val">50%</td><td>A treble shelf above about 1 kHz: cuts below noon, boosts above it, flat at noon.</td></tr>
+        <tr><td>Gain</td><td class="val">0 to 100%</td><td class="val">30%</td><td>One dual-gang pot driving both stages, so they rise together.</td></tr>
+        <tr><td>Mode</td><td class="val">Standard, Custom</td><td class="val">Standard</td><td>The S / C switch. Standard trims the lows before they reach the clippers. Custom lets more bass in, rolls off a little lower and clips a little rounder, for a fuller, smoother tone with longer sustain.</td></tr>
+        <tr><td>Bypass</td><td class="val">On / Off</td><td class="val">Off</td><td>The footswitch.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="wrap plug-section" aria-labelledby="how-title">
+  <div class="inside">
+    <div>
+      <div class="section-head"><h2 id="how-title">How it works</h2></div>
+      <p>Stage one clips softly through diodes in its feedback loop. It's logarithmic with no hard ceiling, so picking dynamics survive.</p>
+      <p>Stage two runs into the rails of its discrete op-amp, which rounds off the peaks and gives the amp-like compression once the gain is up.</p>
+    </div>
+    <div>
+      <div class="section-head"><h2>Signal path</h2></div>
+      <ol class="chain">
+        <li><b>Input buffer</b></li>
+        <li><b>Gain stage 1</b><span>Soft diode clipping.</span></li>
+        <li><b>Gain stage 2</b><span>Op-amp into its rails.</span></li>
+        <li><b>Active treble control</b></li>
+        <li><b>Output buffer</b></li>
+      </ol>
+    </div>
+  </div>
+</section>
+</main>
+
+<nav class="wrap pager" aria-label="More plugins">
+  <a class="prev" href="../green-rooskie/"><span class="label">← Previous</span><strong>Green Rooskie</strong></a>
+  <a class="next" href="../reverser/"><span class="label">Next →</span><strong>Reverser</strong></a>
+</nav>
+
+<footer class="wrap page-foot">
+  <span>Animal Testing · built with JUCE</span>
+  <span>No animals were harmed. Some were mildly saturated.</span>
+</footer>
+</body>
+</html>

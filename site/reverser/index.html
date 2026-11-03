@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reverser · Animal Testing</title>
+<meta name="description" content="AT Reverser: Reverse reverb, reverse delay and a backwards wash. VST3 · AU · Standalone for macOS and Windows.">
+<meta name="theme-color" content="#0072bc">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="wrap top">
+  <a class="wordmark" href="../">
+    <span class="mark" aria-hidden="true"></span>
+    Animal Testing
+  </a>
+  <nav aria-label="Site">
+    <a href="../#plugins">Plugins</a>
+    <a href="../#install">Install</a>
+    <a href="https://github.com/DoveCharles/AnimalTestingVST">Source</a>
+  </nav>
+</div>
+
+<div class="wrap crumbs">
+  <a href="../#plugins">← All plugins</a>
+  <span class="label">06 / 07</span>
+</div>
+
+<main>
+<header class="wrap plug-hero">
+  <div class="plug-shot"><img src="../img/reverser.jpg" alt="AT Reverser editor"></div>
+  <div class="plug-intro">
+    <span class="label">Effect · Reverse reverb and delay</span>
+    <div class="title-row"><h1>Reverser</h1><span class="tag" title="Plugin code">Rvsr</span></div>
+    <p class="lede">Everything backwards. In Reverb mode <strong>each note swells up out of nothing and stops dead</strong>. In Delay every stretch of time plays back the other way round, and Wash sends that into a long, moving hall.</p>
+    <div class="actions">
+      <a class="btn primary" href="https://github.com/DoveCharles/AnimalTestingVST/releases/latest">Download</a>
+      <a class="btn ghost" href="../#install">How to install</a>
+    </div>
+    <dl class="ledger" aria-label="At a glance">
+      <dt>Version</dt><dd>0.1.0</dd>
+      <dt>Window</dt><dd>50 ms to 2 s</dd>
+      <dt>Tempo sync</dt><dd>1/32 to 1/1</dd>
+      <dt>Formats</dt><dd>VST3 · AU · Standalone</dd>
+    </dl>
+  </div>
+</header>
+
+<section class="wrap plug-section" aria-labelledby="controls-title">
+  <div class="section-head">
+    <h2 id="controls-title">Controls</h2>
+    <span class="label">9 parameters</span>
+  </div>
+  <div class="table-scroll">
+    <table class="controls">
+      <thead><tr><th>Control</th><th>Range</th><th>Default</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td>Mode</td><td class="val">Reverb, Delay, Wash</td><td class="val">Reverb</td><td>Reverb swells each note up and cuts it off one window later. Delay plays each window backwards. Wash sends the reversed sound into a long hall.</td></tr>
+        <tr><td>Time</td><td class="val">50 ms to 2 s</td><td class="val">500 ms</td><td>The length of each swell or reversed phrase.</td></tr>
+        <tr><td>Sync</td><td class="val">On / Off</td><td class="val">Off</td><td>Takes the length from the host tempo instead.</td></tr>
+        <tr><td>Division</td><td class="val">1/32 to 1/1</td><td class="val">1/4</td><td>The synced length, with triplet and dotted steps.</td></tr>
+        <tr><td>Repeats</td><td class="val">0 to 100%</td><td class="val">0%</td><td>Brings the sound round again, darker each time. In Reverb as echoes of each swell; in Delay and Wash the reversed sound is fed back in, so it alternates backwards and forwards.</td></tr>
+        <tr><td>Tone</td><td class="val">0 to 100%</td><td class="val">60%</td><td>A low-pass on the wet sound, from dark to open.</td></tr>
+        <tr><td>Mix</td><td class="val">0 to 100%</td><td class="val">50%</td><td>Dry against wet.</td></tr>
+        <tr><td>Tails</td><td class="val">On / Off</td><td class="val">Off</td><td>With Tails on, bypassing stops new sound going in but lets whatever is playing backwards finish.</td></tr>
+        <tr><td>Bypass</td><td class="val">On / Off</td><td class="val">Off</td><td>The footswitch.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="wrap plug-section" aria-labelledby="how-title">
+  <div class="inside">
+    <div>
+      <div class="section-head"><h2 id="how-title">How it works</h2></div>
+      <p>Delay is a true reverse delay. A read head sweeps back through the line at twice real time, so over one window it plays the window just recorded from its end to its start. A crossfade hides the jump between windows. Each head keeps the window length it started with, so turning Time mid-sweep never bends or jumps the sound.</p>
+      <p>Wash's hall is an eight-line feedback delay network whose lines are modulated so they never move in step. It sits outside the Repeats loop, so Repeats only ever recirculates the reversed sound.</p>
+    </div>
+    <div>
+      <div class="section-head"><h2>The three modes</h2></div>
+      <ol class="chain">
+        <li><b>Reverb</b><span>A burst of close echoes whose gains rise towards the end of the window, smeared by all-passes.</span></li>
+        <li><b>Delay</b><span>Each window of sound played backwards once.</span></li>
+        <li><b>Wash</b><span>The reverse delay into a long modulated hall.</span></li>
+      </ol>
+    </div>
+  </div>
+</section>
+</main>
+
+<nav class="wrap pager" aria-label="More plugins">
+  <a class="prev" href="../blue-heeler/"><span class="label">← Previous</span><strong>Blue Heeler</strong></a>
+  <a class="next" href="../notes/"><span class="label">Next →</span><strong>Notes</strong></a>
+</nav>
+
+<footer class="wrap page-foot">
+  <span>Animal Testing · built with JUCE</span>
+  <span>No animals were harmed. Some were mildly saturated.</span>
+</footer>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Notes · Animal Testing</title>
+<meta name="description" content="AT Notes: A notepad that saves with the set. VST3 · AU · Standalone for macOS and Windows.">
+<meta name="theme-color" content="#0072bc">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="wrap top">
+  <a class="wordmark" href="../">
+    <span class="mark" aria-hidden="true"></span>
+    Animal Testing
+  </a>
+  <nav aria-label="Site">
+    <a href="../#plugins">Plugins</a>
+    <a href="../#install">Install</a>
+    <a href="https://github.com/DoveCharles/AnimalTestingVST">Source</a>
+  </nav>
+</div>
+
+<div class="wrap crumbs">
+  <a href="../#plugins">← All plugins</a>
+  <span class="label">07 / 07</span>
+</div>
+
+<main>
+<header class="wrap plug-hero">
+  <div class="plug-shot"><img src="../img/notes.jpg" alt="AT Notes editor with text"></div>
+  <div class="plug-intro">
+    <span class="label">Utility · Notepad</span>
+    <div class="title-row"><h1>Notes</h1><span class="tag" title="Plugin code">Nots</span></div>
+    <p class="lede">A notepad that lives in the set. Lyrics, mix notes, anything, <strong>saved with the project</strong>. It passes audio straight through, so it can go on any track.</p>
+    <div class="actions">
+      <a class="btn primary" href="https://github.com/DoveCharles/AnimalTestingVST/releases/latest">Download</a>
+      <a class="btn ghost" href="../#install">How to install</a>
+    </div>
+    <dl class="ledger" aria-label="At a glance">
+      <dt>Version</dt><dd>0.1.0</dd>
+      <dt>Audio</dt><dd>Passes straight through</dd>
+      <dt>Window</dt><dd>Resizable</dd>
+      <dt>Formats</dt><dd>VST3 · AU · Standalone</dd>
+    </dl>
+  </div>
+</header>
+
+<section class="wrap plug-section" aria-labelledby="how-title">
+  <div class="inside">
+    <div>
+      <div class="section-head"><h2 id="how-title">How it works</h2></div>
+      <p>The text is held by the plugin, not its window, so it's saved with the set whether or not the editor is open.</p>
+      <p>Every edit marks the set as changed, so the host asks you to save before closing.</p>
+      <p>A moment after you stop typing, Notes writes a backup copy, in case the set never gets saved. On a Mac they go to <code>~/Library/Application Support/Animal Testing/AT Notes/Backups</code>.</p>
+    </div>
+    <div>
+      <div class="section-head"><h2>Features</h2></div>
+      <ol class="chain">
+        <li><b>Any track</b><span>Audio goes through untouched.</span></li>
+        <li><b>Copy and Paste buttons</b><span>For hosts that keep Cmd+C and Cmd+V for themselves.</span></li>
+        <li><b>Backups</b><span>Written a moment after typing stops.</span></li>
+        <li><b>Resizable</b><span>Drag the corner to make the page bigger.</span></li>
+      </ol>
+    </div>
+  </div>
+</section>
+</main>
+
+<nav class="wrap pager" aria-label="More plugins">
+  <a class="prev" href="../reverser/"><span class="label">← Previous</span><strong>Reverser</strong></a>
+</nav>
+
+<footer class="wrap page-foot">
+  <span>Animal Testing · built with JUCE</span>
+  <span>No animals were harmed. Some were mildly saturated.</span>
+</footer>
+</body>
+</html>

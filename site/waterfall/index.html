@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Waterfall · Animal Testing</title>
+<meta name="description" content="AT Waterfall: A chord resonator. Six tuned resonators turn drums, noise and voices into ringing chords. VST3 · AU · Standalone for macOS and Windows.">
+<meta name="theme-color" content="#0072bc">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="wrap top">
+  <a class="wordmark" href="../">
+    <span class="mark" aria-hidden="true"></span>
+    Animal Testing
+  </a>
+  <nav aria-label="Site">
+    <a href="../#plugins">Plugins</a>
+    <a href="../#install">Install</a>
+    <a href="https://github.com/DoveCharles/AnimalTestingVST">Source</a>
+  </nav>
+</div>
+
+<div class="wrap crumbs">
+  <a href="../#plugins">← All plugins</a>
+  <span class="label">01 / 07</span>
+</div>
+
+<main>
+<header class="wrap plug-hero">
+  <div class="plug-shot"><img src="../img/waterfall.jpg" alt="AT Waterfall editor with its river spectrogram"></div>
+  <div class="plug-intro">
+    <span class="label">Effect · Chord resonator</span>
+    <div class="title-row"><h1>Waterfall</h1><span class="tag" title="Plugin code">Wtfl</span></div>
+    <p class="lede">Rings whatever you feed it through a chord. Six tuned resonators, one per chord tone, turn drums, noise and voices into <strong>pitched, shimmering chords</strong>, while a river spectrogram runs down the editor.</p>
+    <div class="actions">
+      <a class="btn primary" href="https://github.com/DoveCharles/AnimalTestingVST/releases/latest">Download</a>
+      <a class="btn ghost" href="../#install">How to install</a>
+    </div>
+    <dl class="ledger" aria-label="At a glance">
+      <dt>Version</dt><dd>1.0.0</dd>
+      <dt>Chords</dt><dd>12 voicings</dd>
+      <dt>Root</dt><dd>C-1 to G9</dd>
+      <dt>Formats</dt><dd>VST3 · AU · Standalone</dd>
+    </dl>
+  </div>
+</header>
+
+<section class="wrap plug-section" aria-labelledby="controls-title">
+  <div class="section-head">
+    <h2 id="controls-title">Controls</h2>
+    <span class="label">6 parameters</span>
+  </div>
+  <div class="table-scroll">
+    <table class="controls">
+      <thead><tr><th>Control</th><th>Range</th><th>Default</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td>Key</td><td class="val">C to B</td><td class="val">C</td><td>The root note of the chord.</td></tr>
+        <tr><td>Octave</td><td class="val">-1 to 9</td><td class="val">3</td><td>The root's octave, so the chord can sit anywhere from C-1 up to G9.</td></tr>
+        <tr><td>Chord</td><td class="val">12 voicings</td><td class="val">Major</td><td>Unison, Fifth, Major, Minor, Sus2, Sus4, Maj7, Min7, Dom7, Add9, Min9 or Dim, each stacked as six tones above the root.</td></tr>
+        <tr><td>Brightness</td><td class="val">0 to 100%</td><td class="val">60%</td><td>The damping inside each resonator: low rings dark, high rings open.</td></tr>
+        <tr><td>Decay</td><td class="val">0.05 to 10 s</td><td class="val">1.5 s</td><td>How long the chord keeps ringing.</td></tr>
+        <tr><td>Mix</td><td class="val">0 to 100%</td><td class="val">70%</td><td>The dry sound against the ringing chord.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="wrap plug-section" aria-labelledby="how-title">
+  <div class="inside">
+    <div>
+      <div class="section-head"><h2 id="how-title">How it works</h2></div>
+      <p>Each chord tone is a tuned comb filter that the input sets ringing. Its loop is compensated for the damping filter inside it, so the chord stays in tune at any Brightness.</p>
+      <p>The six tones are panned and detuned in pairs by their place in the chord, which is where the width comes from. Each side gets an even share of low and high tones, so panning the track thins the chord rather than making one side brighter or sharper.</p>
+      <p>In the top octaves the upper tones fold down an octave at a time, so they stay in tune where a resonator can't ring that high. A soft limiter catches the build-up from long decays on loud, tonal input.</p>
+    </div>
+    <div>
+      <div class="section-head"><h2>In the editor</h2></div>
+      <ol class="chain">
+        <li><b>The river</b><span>A spectrogram of the output, flowing down the editor as it plays.</span></li>
+        <li><b>Water striders</b><span>They skate across the river while it plays. Right-click the river to turn them on or off; the choice is saved with the set.</span></li>
+      </ol>
+    </div>
+  </div>
+</section>
+</main>
+
+<nav class="wrap pager" aria-label="More plugins">
+  <a class="next" href="../tapeworm/"><span class="label">Next →</span><strong>Tapeworm</strong></a>
+</nav>
+
+<footer class="wrap page-foot">
+  <span>Animal Testing · built with JUCE</span>
+  <span>No animals were harmed. Some were mildly saturated.</span>
+</footer>
+</body>
+</html>

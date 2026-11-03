@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sky Chorus · Animal Testing</title>
+<meta name="description" content="AT Sky Chorus: A mid-80s bucket-brigade stereo chorus. VST3 · AU · Standalone for macOS and Windows.">
+<meta name="theme-color" content="#0072bc">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="wrap top">
+  <a class="wordmark" href="../">
+    <span class="mark" aria-hidden="true"></span>
+    Animal Testing
+  </a>
+  <nav aria-label="Site">
+    <a href="../#plugins">Plugins</a>
+    <a href="../#install">Install</a>
+    <a href="https://github.com/DoveCharles/AnimalTestingVST">Source</a>
+  </nav>
+</div>
+
+<div class="wrap crumbs">
+  <a href="../#plugins">← All plugins</a>
+  <span class="label">03 / 07</span>
+</div>
+
+<main>
+<header class="wrap plug-hero">
+  <div class="plug-shot"><img src="../img/skychorus.jpg" alt="AT Sky Chorus pedal"></div>
+  <div class="plug-intro">
+    <span class="label">Effect · Analog chorus</span>
+    <div class="title-row"><h1>Sky Chorus</h1><span class="tag" title="Plugin code">Skyc</span></div>
+    <p class="lede">A mid-80s analog stereo chorus. Its <strong>1024-stage bucket brigade is run the way the chip runs it</strong>, sampled at its own swept clock rather than read from a moving tap. That's where the slightly seasick wobble comes from.</p>
+    <div class="actions">
+      <a class="btn primary" href="https://github.com/DoveCharles/AnimalTestingVST/releases/latest">Download</a>
+      <a class="btn ghost" href="../#install">How to install</a>
+    </div>
+    <dl class="ledger" aria-label="At a glance">
+      <dt>Version</dt><dd>1.1.0</dd>
+      <dt>Processing</dt><dd>4x oversampled</dd>
+      <dt>Formats</dt><dd>VST3 · AU · Standalone</dd>
+    </dl>
+  </div>
+</header>
+
+<section class="wrap plug-section" aria-labelledby="controls-title">
+  <div class="section-head">
+    <h2 id="controls-title">Controls</h2>
+    <span class="label">6 parameters</span>
+  </div>
+  <div class="table-scroll">
+    <table class="controls">
+      <thead><tr><th>Control</th><th>Range</th><th>Default</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td>Speed</td><td class="val">0.1 to 10 Hz</td><td class="val">0.8 Hz</td><td>Rate of the triangle LFO that sweeps the clock.</td></tr>
+        <tr><td>Width</td><td class="val">0 to 100%</td><td class="val">50%</td><td>How far the sweep goes.</td></tr>
+        <tr><td>Delay Time</td><td class="val">2 to 15 ms</td><td class="val">6 ms</td><td>The centre delay through the bucket brigade.</td></tr>
+        <tr><td>Mix</td><td class="val">0 to 100%</td><td class="val">50%</td><td>Dry against wet. The original pedal didn't have one.</td></tr>
+        <tr><td>Stereo</td><td class="val">Bi-Phase, Dry/Wet Split, Mono-Safe</td><td class="val">Bi-Phase</td><td>Bi-Phase is the original's output: one side dry plus wet, the other dry with the wet inverted. Split puts dry on one side and wet on the other. Mono-Safe sends dry plus wet to both, so nothing cancels when summed to mono.</td></tr>
+        <tr><td>Bypass</td><td class="val">On / Off</td><td class="val">Off</td><td>The footswitch.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="wrap plug-section" aria-labelledby="how-title">
+  <div class="inside">
+    <div>
+      <div class="section-head"><h2 id="how-title">How it works</h2></div>
+      <p>Each clock tick samples the input into the first bucket and passes every charge one step along. A sample comes out 512 ticks later and is held until the next tick. The LFO sweeps the clock, so the pitch wobble falls out of the buckets being filled at one rate and emptied at another, as it does in the pedal.</p>
+      <p>The sweep is lopsided: the delay stretches further on the slow half of the clock swing than it shrinks on the fast half. At long delays the clock drops into the mid 20 kHz range, and what gets past the input filter folds back down as faint grit.</p>
+    </div>
+    <div>
+      <div class="section-head"><h2>Signal path</h2></div>
+      <ol class="chain">
+        <li><b>Input filter</b></li>
+        <li><b>Soft clip and hiss</b></li>
+        <li><b>Bucket brigade</b><span>1024 stages at its own clock.</span></li>
+        <li><b>Reconstruction filters</b></li>
+        <li><b>Coupling capacitor</b><span>The only stage not oversampled.</span></li>
+      </ol>
+    </div>
+  </div>
+</section>
+</main>
+
+<nav class="wrap pager" aria-label="More plugins">
+  <a class="prev" href="../tapeworm/"><span class="label">← Previous</span><strong>Tapeworm</strong></a>
+  <a class="next" href="../green-rooskie/"><span class="label">Next →</span><strong>Green Rooskie</strong></a>
+</nav>
+
+<footer class="wrap page-foot">
+  <span>Animal Testing · built with JUCE</span>
+  <span>No animals were harmed. Some were mildly saturated.</span>
+</footer>
+</body>
+</html>

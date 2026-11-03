@@ -6,212 +6,17 @@
 <title>Animal Testing Plugins</title>
 <meta name="description" content="Seven audio plugins by Animal Testing: fuzz pedals, tape, chorus, reverse, a waterfall and a notepad. VST3, AU and Standalone for macOS and Windows.">
 <meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#0072bc">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<style>
-/* Layout: a specimen catalogue. Left-set masthead, a sticky filter rail, then a grid of tagged
-   specimen cards (the editor in a well, the plugin code on a punched tag), then install notes. */
-:root {
-  --paper: #eceee8;
-  --card: #f7f8f4;
-  --well: #dfe3db;
-  --ink: #18201b;
-  --muted: #59635c;
-  --line: #cbd2c8;
-  --tag: #e8c63a;
-  --tag-ink: #18201b;
-  --focus: #2f6fd1;
-
-  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
-  --body: "Archivo", "Helvetica Neue", Arial, sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
-
-  --step--1: 0.8125rem;
-  --step-0: 1rem;
-  --step-1: 1.25rem;
-  --step-2: 1.75rem;
-  --step-3: clamp(2.5rem, 7vw, 5.5rem);
-
-  --max: 1240px;
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --paper: #111614; --card: #18201c; --well: #0c100e; --ink: #e3e8e1; --muted: #97a299;
-    --line: #2b3530; --tag: #e2c23a; --tag-ink: #141a16; --focus: #7aa7ff; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --paper: #111614; --card: #18201c; --well: #0c100e; --ink: #e3e8e1; --muted: #97a299;
-  --line: #2b3530; --tag: #e2c23a; --tag-ink: #141a16; --focus: #7aa7ff; color-scheme: dark;
-}
-
-*, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
-body {
-  margin: 0;
-  background: var(--paper);
-  color: var(--ink);
-  font: 400 var(--step-0)/1.55 var(--body);
-  -webkit-font-smoothing: antialiased;
-}
-body::before {
-  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
-  z-index: 10; background: var(--paper);
-}
-img { max-width: 100%; display: block; }
-a { color: inherit; }
-:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 2px; }
-h1, h2, h3 { text-wrap: balance; margin: 0; }
-p { margin: 0; }
-
-.wrap {
-  max-width: var(--max);
-  margin: 0 auto;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-}
-@media (min-width: 700px) {
-  .wrap { padding-left: max(32px, env(safe-area-inset-left, 0px)); padding-right: max(32px, env(safe-area-inset-right, 0px)); }
-}
-
-.mono { font-family: var(--mono); }
-.label {
-  font-family: var(--mono); font-size: var(--step--1); letter-spacing: 0.06em;
-  text-transform: uppercase; color: var(--muted);
-}
-
-/* Masthead */
-.top { padding-block: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-.wordmark {
-  font-family: var(--display); font-weight: 800; font-stretch: 112%;
-  letter-spacing: -0.01em; text-decoration: none; font-size: 1.05rem;
-  display: inline-flex; align-items: center; gap: 10px;
-}
-.wordmark svg { width: 22px; height: 22px; }
-.top nav { display: flex; gap: 20px; font-size: 0.95rem; }
-.top nav a { text-decoration: none; color: var(--muted); }
-.top nav a:hover { color: var(--ink); }
-
-.hero { padding-block: 48px 40px; display: grid; gap: 28px; border-bottom: 1px solid var(--line); }
-@media (min-width: 900px) { .hero { grid-template-columns: 1fr 340px; align-items: end; padding-block: 72px 48px; } }
-.hero h1 {
-  font-family: var(--display); font-size: var(--step-3); line-height: 0.92;
-  font-weight: 850; font-stretch: 125%; letter-spacing: -0.02em;
-}
-.hero h1 span { display: block; font-stretch: 62%; font-weight: 500; letter-spacing: 0; }
-.hero .lede { margin-top: 24px; max-width: 34em; font-size: var(--step-1); line-height: 1.45; color: var(--muted); }
-.hero .lede strong { color: var(--ink); font-weight: 600; }
-.actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
-.btn {
-  display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 3px;
-  font-weight: 600; text-decoration: none; border: 1px solid var(--ink); font-size: 0.95rem;
-}
-.btn.primary { background: var(--ink); color: var(--paper); }
-.btn.primary:hover { background: transparent; color: var(--ink); }
-.btn.ghost:hover { background: var(--ink); color: var(--paper); }
-
-.ledger { display: grid; grid-template-columns: auto 1fr; gap: 6px 18px; font-family: var(--mono); font-size: 0.85rem; align-self: end; }
-.ledger dt { color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-size: var(--step--1); padding-top: 1px; }
-.ledger dd { margin: 0; font-variant-numeric: tabular-nums; }
-
-/* Filter rail */
-.rail {
-  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
-  background: var(--paper); border-bottom: 1px solid var(--line);
-}
-.rail .wrap { display: flex; align-items: center; gap: 8px; padding-block: 12px; overflow-x: auto; scrollbar-width: none; }
-.rail .wrap::-webkit-scrollbar { display: none; }
-.chip {
-  flex: none; font: 500 0.875rem/1 var(--body); color: var(--ink); background: transparent;
-  border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; cursor: pointer;
-}
-.chip:hover { border-color: var(--ink); }
-.chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-.chip .n { font-family: var(--mono); font-size: 0.75rem; opacity: 0.6; margin-left: 4px; }
-
-/* Catalogue */
-.catalogue { padding-block: 40px 72px; }
-.grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
-
-.specimen {
-  background: var(--card); border: 1px solid var(--line); border-radius: 4px;
-  display: flex; flex-direction: column; min-width: 0; overflow: hidden;
-}
-.specimen .shot {
-  background: var(--well); aspect-ratio: 16 / 10; max-width: 100%;
-  display: flex; align-items: center; justify-content: center; padding: 18px; border-bottom: 1px solid var(--line);
-}
-.specimen .shot img {
-  max-width: 100%; max-height: 100%; width: auto; height: auto; min-height: 0; border-radius: 3px;
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.18), 0 8px 24px rgb(0 0 0 / 0.16);
-}
-.specimen .body { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
-.specimen header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.specimen h3 { font-family: var(--display); font-weight: 800; font-stretch: 110%; font-size: var(--step-1); line-height: 1.15; }
-.specimen h3 small { display: block; font-family: var(--mono); font-weight: 400; font-stretch: 100%; font-size: var(--step--1); color: var(--muted); letter-spacing: 0.04em; margin-top: 4px; text-transform: uppercase; }
-
-/* The punched specimen tag carrying the plugin's four-letter code */
-.tag {
-  flex: none; position: relative; background: var(--tag); color: var(--tag-ink);
-  font: 500 0.8125rem/1 var(--mono); letter-spacing: 0.04em;
-  padding: 6px 9px 6px 20px; border-radius: 2px 3px 3px 2px;
-  clip-path: polygon(7px 0, 100% 0, 100% 100%, 7px 100%, 0 50%);
-}
-.tag::before {
-  content: ""; position: absolute; left: 8px; top: 50%; width: 5px; height: 5px; margin-top: -2.5px;
-  border-radius: 50%; background: var(--card);
-}
-
-.specimen .what { color: var(--ink); }
-.specimen ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 0.9rem; color: var(--muted); }
-.specimen li { padding-left: 16px; position: relative; }
-.specimen li::before { content: ""; position: absolute; left: 0; top: 0.7em; width: 7px; height: 1px; background: var(--muted); }
-.specimen footer {
-  margin-top: auto; padding-top: 12px; border-top: 1px dashed var(--line);
-  display: flex; flex-wrap: wrap; gap: 4px 16px; font-family: var(--mono); font-size: 0.75rem; color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-.empty { color: var(--muted); padding-block: 40px; }
-
-/* Install */
-.section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
-.section-head h2 { font-family: var(--display); font-weight: 800; font-stretch: 115%; font-size: var(--step-2); line-height: 1.1; }
-.install { border-top: 1px solid var(--line); padding-block: 56px 72px; }
-.steps { display: grid; gap: 28px; }
-@media (min-width: 900px) { .steps { grid-template-columns: repeat(3, 1fr); gap: 32px; } }
-.step { display: grid; gap: 10px; align-content: start; min-width: 0; }
-.step h3 { font-size: 1.05rem; font-weight: 700; display: flex; gap: 10px; align-items: baseline; }
-.step h3 .mono { font-size: 0.8rem; color: var(--muted); font-weight: 400; }
-.step p { color: var(--muted); max-width: 38em; }
-.step p strong { color: var(--ink); font-weight: 600; }
-
-.table-scroll { overflow-x: auto; }
-table { border-collapse: collapse; width: 100%; font-size: 0.875rem; }
-th, td { text-align: left; padding: 8px 12px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { font-family: var(--mono); font-weight: 400; font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
-td code, .cmd code { font-family: var(--mono); font-size: 0.8125rem; word-break: break-all; }
-
-.cmd {
-  display: flex; align-items: stretch; border: 1px solid var(--line); border-radius: 3px; background: var(--card); min-width: 0;
-}
-.cmd code { flex: 1; padding: 10px 12px; overflow-x: auto; white-space: nowrap; word-break: normal; min-width: 0; }
-.cmd button {
-  flex: none; border: 0; border-left: 1px solid var(--line); background: transparent; color: var(--ink);
-  font: 500 0.8125rem var(--body); padding: 0 14px; cursor: pointer;
-}
-.cmd button:hover { background: var(--well); }
-
-.page-foot { border-top: 1px solid var(--line); padding-block: 28px 40px; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; color: var(--muted); font-size: 0.875rem; }
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="wrap top">
-  <a class="wordmark" href="#">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2h6v2h-1v5.2l5.6 9.7A2 2 0 0 1 17.9 22H6.1a2 2 0 0 1-1.7-3.1L10 9.2V4H9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M7.2 15h9.6" stroke="currentColor" stroke-width="1.8"/></svg>
+  <a class="wordmark" href="./">
+    <span class="mark" aria-hidden="true"></span>
     Animal Testing
   </a>
   <nav aria-label="Site">
@@ -255,70 +60,70 @@ td code, .cmd code { font-family: var(--mono); font-size: 0.8125rem; word-break:
     <article class="specimen" data-group="space" id="waterfall">
       <div class="shot"><img src="img/waterfall.jpg" alt="AT Waterfall editor with its river spectrogram" loading="lazy"></div>
       <div class="body">
-        <header><h3>Waterfall<small>Effect · Chord resonator</small></h3><span class="tag">Wtfl</span></header>
+        <header><h3><a href="waterfall/">Waterfall</a><small>Effect · Chord resonator</small></h3><span class="tag">Wtfl</span></header>
         <p class="what">Rings anything through a chord of tuned resonators. Water striders skate over the spectrogram while it plays.</p>
         <ul><li>Key, Octave from C-1 to G9, and Chord</li><li>Brightness, Decay and Mix</li></ul>
-        <footer><span>v1.0.0</span><span>VST3 · AU · Standalone</span></footer>
+        <footer><span>v1.0.0</span><span>VST3 · AU · Standalone</span><span class="more" aria-hidden="true">More →</span></footer>
       </div>
     </article>
 
     <article class="specimen" data-group="tone" id="tapeworm">
       <div class="shot"><img src="img/tapeworm.jpg" alt="AT Tapeworm tape deck" loading="lazy"></div>
       <div class="body">
-        <header><h3>Tapeworm<small>Effect · Lo-fi tape</small></h3><span class="tag">Tpwm</span></header>
+        <header><h3><a href="tapeworm/">Tapeworm</a><small>Effect · Lo-fi tape</small></h3><span class="tag">Tpwm</span></header>
         <p class="what">A worn tape machine on a matte silver deck, with reels that turn with the tape. Fitted to measurements of real tape processing.</p>
         <ul><li>Drive with Boost, a morphing tape Tone and a bipolar Filter</li><li>Wow, Flutter, Wear, hiss and motor noise</li><li>Tempo-synced Tape Stop and a Speed dial down to 0.25x</li></ul>
-        <footer><span>v0.1.0</span><span>Up to 5 min of tape</span></footer>
+        <footer><span>v0.1.0</span><span>Up to 5 min of tape</span><span class="more" aria-hidden="true">More →</span></footer>
       </div>
     </article>
 
     <article class="specimen" data-group="space" id="sky-chorus">
       <div class="shot"><img src="img/skychorus.jpg" alt="AT Sky Chorus pedal" loading="lazy"></div>
       <div class="body">
-        <header><h3>Sky Chorus<small>Effect · Analog chorus</small></h3><span class="tag">Skyc</span></header>
+        <header><h3><a href="sky-chorus/">Sky Chorus</a><small>Effect · Analog chorus</small></h3><span class="tag">Skyc</span></header>
         <p class="what">A mid-80s bucket-brigade chorus, all 1024 stages run at their own swept clock.</p>
         <ul><li>Speed, Width, Delay Time, Mix and a footswitch</li><li>Stereo as Bi-Phase, Dry/Wet Split or Mono-Safe</li><li>4x oversampled</li></ul>
-        <footer><span>v1.1.0</span><span>VST3 · AU · Standalone</span></footer>
+        <footer><span>v1.1.0</span><span>VST3 · AU · Standalone</span><span class="more" aria-hidden="true">More →</span></footer>
       </div>
     </article>
 
     <article class="specimen" data-group="drive" id="green-rooskie">
       <div class="shot"><img src="img/greenrooskie.jpg" alt="AT Green Rooskie pedal" loading="lazy"></div>
       <div class="body">
-        <header><h3>Green Rooskie<small>Effect · Fuzz</small></h3><span class="tag">Grsk</span></header>
+        <header><h3><a href="green-rooskie/">Green Rooskie</a><small>Effect · Fuzz</small></h3><span class="tag">Grsk</span></header>
         <p class="what">Fuzz modelled on the green Russian muff pedals of the 90s: thick, scooped and endless.</p>
         <ul><li>Volume, Tone, Sustain and a footswitch</li><li>4x oversampled</li></ul>
-        <footer><span>v1.0.0</span><span>VST3 · AU · Standalone</span></footer>
+        <footer><span>v1.0.0</span><span>VST3 · AU · Standalone</span><span class="more" aria-hidden="true">More →</span></footer>
       </div>
     </article>
 
     <article class="specimen" data-group="drive" id="blue-heeler">
       <div class="shot"><img src="img/blueheeler.jpg" alt="AT Blue Heeler pedal" loading="lazy"></div>
       <div class="body">
-        <header><h3>Blue Heeler<small>Effect · Overdrive</small></h3><span class="tag">Bhlr</span></header>
+        <header><h3><a href="blue-heeler/">Blue Heeler</a><small>Effect · Overdrive</small></h3><span class="tag">Bhlr</span></header>
         <p class="what">Low-gain blues overdrive with two cascaded clipping stages. Made to sit at the end of the chain, after reverb and delay.</p>
         <ul><li>Level, Tone, Gain and an S / C switch for Standard or Custom voicing</li><li>Output follows Gain, so it stays near unity</li><li>True stereo, 4x oversampled</li></ul>
-        <footer><span>v0.1.0</span><span>VST3 · AU · Standalone</span></footer>
+        <footer><span>v0.1.0</span><span>VST3 · AU · Standalone</span><span class="more" aria-hidden="true">More →</span></footer>
       </div>
     </article>
 
     <article class="specimen" data-group="space" id="reverser">
       <div class="shot"><img src="img/reverser.jpg" alt="AT Reverser editor" loading="lazy"></div>
       <div class="body">
-        <header><h3>Reverser<small>Effect · Reverse reverb and delay</small></h3><span class="tag">Rvsr</span></header>
+        <header><h3><a href="reverser/">Reverser</a><small>Effect · Reverse reverb and delay</small></h3><span class="tag">Rvsr</span></header>
         <p class="what">Everything backwards. Each note swells up in reverse and cuts off, or every stretch of time plays back the other way round.</p>
         <ul><li>Reverb, Delay and Wash modes</li><li>Time from 50 ms to 2 s, or synced from 1/32 to 1/1</li><li>Tails keep playing after bypass</li></ul>
-        <footer><span>v0.1.0</span><span>Tempo sync</span></footer>
+        <footer><span>v0.1.0</span><span>Tempo sync</span><span class="more" aria-hidden="true">More →</span></footer>
       </div>
     </article>
 
     <article class="specimen" data-group="utility" id="notes">
       <div class="shot"><img src="img/notes.jpg" alt="AT Notes editor with text" loading="lazy"></div>
       <div class="body">
-        <header><h3>Notes<small>Utility · Notepad</small></h3><span class="tag">Nots</span></header>
+        <header><h3><a href="notes/">Notes</a><small>Utility · Notepad</small></h3><span class="tag">Nots</span></header>
         <p class="what">A notepad that lives in the set. Lyrics, mix notes, anything, saved with the project.</p>
         <ul><li>Passes audio straight through, so it goes on any track</li><li>Copy and Paste buttons for hosts that keep Cmd+C/V</li><li>Writes a backup a moment after you stop typing</li></ul>
-        <footer><span>v0.1.0</span><span>Resizable</span></footer>
+        <footer><span>v0.1.0</span><span>Resizable</span><span class="more" aria-hidden="true">More →</span></footer>
       </div>
     </article>
 
