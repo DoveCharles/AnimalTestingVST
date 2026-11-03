@@ -164,6 +164,10 @@ If Live ignores the AU after a rebuild, run `killall -9 AudioComponentRegistrar`
 
 Each note comes out one Listen window (16 ms by default) after the hit starts, so quantize recorded MIDI if it needs to be tight. `MouthBoxRender test` scores the detector on a synthetic beatbox pattern, and `MouthBoxRender render take.wav hits.mid` turns a recording into MIDI.
 
+## Website
+
+`site/` is a static page for the plugins (no build step): `python3 -m http.server --directory site` to preview it. The screenshots in `site/img/` come from each plugin's render tool (`<Name>Render snapshot out.png`), or from `<Name>Snapshot out.png` (`tools/EditorSnapshot`) for Saturator, Green Rooskie and Upright, scaled to 1100 px JPEGs with `sips -Z 1100 -s format jpeg`.
+
 ## Licensing note
 
 JUCE is dual-licensed under AGPLv3 and a commercial JUCE licence. To distribute closed-source plugins you need a commercial JUCE licence (see `libs/JUCE/LICENSE.md`). VST3 uses the Steinberg VST3 SDK, which JUCE bundles under its own licence terms.

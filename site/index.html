@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Animal Testing Plugins</title>
+<meta name="description" content="Eighteen audio plugins by Animal Testing: pedals, tape, pianos, pitch tools and odd utilities. VST3, AU and Standalone for macOS and Windows.">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a specimen catalogue. Left-set masthead, a sticky filter rail, then a grid of tagged
+   specimen cards (the editor in a well, the plugin code on a punched tag), then install notes. */
+:root {
+  --paper: #eceee8;
+  --card: #f7f8f4;
+  --well: #dfe3db;
+  --ink: #18201b;
+  --muted: #59635c;
+  --line: #cbd2c8;
+  --tag: #e8c63a;
+  --tag-ink: #18201b;
+  --focus: #2f6fd1;
+
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --step--1: 0.8125rem;
+  --step-0: 1rem;
+  --step-1: 1.25rem;
+  --step-2: 1.75rem;
+  --step-3: clamp(2.5rem, 7vw, 5.5rem);
+
+  --max: 1240px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #111614; --card: #18201c; --well: #0c100e; --ink: #e3e8e1; --muted: #97a299;
+    --line: #2b3530; --tag: #e2c23a; --tag-ink: #141a16; --focus: #7aa7ff; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #111614; --card: #18201c; --well: #0c100e; --ink: #e3e8e1; --muted: #97a299;
+  --line: #2b3530; --tag: #e2c23a; --tag-ink: #141a16; --focus: #7aa7ff; color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 var(--step-0)/1.55 var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 10; background: var(--paper);
+}
+img { max-width: 100%; display: block; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 2px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+p { margin: 0; }
+
+.wrap {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+@media (min-width: 700px) {
+  .wrap { padding-left: max(32px, env(safe-area-inset-left, 0px)); padding-right: max(32px, env(safe-area-inset-right, 0px)); }
+}
+
+.mono { font-family: var(--mono); }
+.label {
+  font-family: var(--mono); font-size: var(--step--1); letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--muted);
+}
+
+/* Masthead */
+.top { padding-block: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.wordmark {
+  font-family: var(--display); font-weight: 800; font-stretch: 112%;
+  letter-spacing: -0.01em; text-decoration: none; font-size: 1.05rem;
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.wordmark svg { width: 22px; height: 22px; }
+.top nav { display: flex; gap: 20px; font-size: 0.95rem; }
+.top nav a { text-decoration: none; color: var(--muted); }
+.top nav a:hover { color: var(--ink); }
+
+.hero { padding-block: 48px 40px; display: grid; gap: 28px; border-bottom: 1px solid var(--line); }
+@media (min-width: 900px) { .hero { grid-template-columns: 1fr 340px; align-items: end; padding-block: 72px 48px; } }
+.hero h1 {
+  font-family: var(--display); font-size: var(--step-3); line-height: 0.92;
+  font-weight: 850; font-stretch: 125%; letter-spacing: -0.02em;
+}
+.hero h1 span { display: block; font-stretch: 62%; font-weight: 500; letter-spacing: 0; }
+.hero .lede { margin-top: 24px; max-width: 34em; font-size: var(--step-1); line-height: 1.45; color: var(--muted); }
+.hero .lede strong { color: var(--ink); font-weight: 600; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 3px;
+  font-weight: 600; text-decoration: none; border: 1px solid var(--ink); font-size: 0.95rem;
+}
+.btn.primary { background: var(--ink); color: var(--paper); }
+.btn.primary:hover { background: transparent; color: var(--ink); }
+.btn.ghost:hover { background: var(--ink); color: var(--paper); }
+
+.ledger { display: grid; grid-template-columns: auto 1fr; gap: 6px 18px; font-family: var(--mono); font-size: 0.85rem; align-self: end; }
+.ledger dt { color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-size: var(--step--1); padding-top: 1px; }
+.ledger dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+/* Filter rail */
+.rail {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: var(--paper); border-bottom: 1px solid var(--line);
+}
+.rail .wrap { display: flex; align-items: center; gap: 8px; padding-block: 12px; overflow-x: auto; scrollbar-width: none; }
+.rail .wrap::-webkit-scrollbar { display: none; }
+.chip {
+  flex: none; font: 500 0.875rem/1 var(--body); color: var(--ink); background: transparent;
+  border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; cursor: pointer;
+}
+.chip:hover { border-color: var(--ink); }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.chip .n { font-family: var(--mono); font-size: 0.75rem; opacity: 0.6; margin-left: 4px; }
+
+/* Catalogue */
+.catalogue { padding-block: 40px 72px; }
+.grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+
+.specimen {
+  background: var(--card); border: 1px solid var(--line); border-radius: 4px;
+  display: flex; flex-direction: column; min-width: 0; overflow: hidden;
+}
+.specimen .shot {
+  background: var(--well); aspect-ratio: 16 / 10; max-width: 100%;
+  display: flex; align-items: center; justify-content: center; padding: 18px; border-bottom: 1px solid var(--line);
+}
+.specimen .shot img {
+  max-width: 100%; max-height: 100%; width: auto; height: auto; min-height: 0; border-radius: 3px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.18), 0 8px 24px rgb(0 0 0 / 0.16);
+}
+.specimen .body { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+.specimen header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.specimen h3 { font-family: var(--display); font-weight: 800; font-stretch: 110%; font-size: var(--step-1); line-height: 1.15; }
+.specimen h3 small { display: block; font-family: var(--mono); font-weight: 400; font-stretch: 100%; font-size: var(--step--1); color: var(--muted); letter-spacing: 0.04em; margin-top: 4px; text-transform: uppercase; }
+
+/* The punched specimen tag carrying the plugin's four-letter code */
+.tag {
+  flex: none; position: relative; background: var(--tag); color: var(--tag-ink);
+  font: 500 0.8125rem/1 var(--mono); letter-spacing: 0.04em;
+  padding: 6px 9px 6px 20px; border-radius: 2px 3px 3px 2px;
+  clip-path: polygon(7px 0, 100% 0, 100% 100%, 7px 100%, 0 50%);
+}
+.tag::before {
+  content: ""; position: absolute; left: 8px; top: 50%; width: 5px; height: 5px; margin-top: -2.5px;
+  border-radius: 50%; background: var(--card);
+}
+
+.specimen .what { color: var(--ink); }
+.specimen ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 0.9rem; color: var(--muted); }
+.specimen li { padding-left: 16px; position: relative; }
+.specimen li::before { content: ""; position: absolute; left: 0; top: 0.7em; width: 7px; height: 1px; background: var(--muted); }
+.specimen footer {
+  margin-top: auto; padding-top: 12px; border-top: 1px dashed var(--line);
+  display: flex; flex-wrap: wrap; gap: 4px 16px; font-family: var(--mono); font-size: 0.75rem; color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.empty { color: var(--muted); padding-block: 40px; }
+
+/* Install */
+.section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+.section-head h2 { font-family: var(--display); font-weight: 800; font-stretch: 115%; font-size: var(--step-2); line-height: 1.1; }
+.install { border-top: 1px solid var(--line); padding-block: 56px 72px; }
+.steps { display: grid; gap: 28px; }
+@media (min-width: 900px) { .steps { grid-template-columns: repeat(3, 1fr); gap: 32px; } }
+.step { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.step h3 { font-size: 1.05rem; font-weight: 700; display: flex; gap: 10px; align-items: baseline; }
+.step h3 .mono { font-size: 0.8rem; color: var(--muted); font-weight: 400; }
+.step p { color: var(--muted); max-width: 38em; }
+.step p strong { color: var(--ink); font-weight: 600; }
+
+.table-scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.875rem; }
+th, td { text-align: left; padding: 8px 12px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--mono); font-weight: 400; font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+td code, .cmd code { font-family: var(--mono); font-size: 0.8125rem; word-break: break-all; }
+
+.cmd {
+  display: flex; align-items: stretch; border: 1px solid var(--line); border-radius: 3px; background: var(--card); min-width: 0;
+}
+.cmd code { flex: 1; padding: 10px 12px; overflow-x: auto; white-space: nowrap; word-break: normal; min-width: 0; }
+.cmd button {
+  flex: none; border: 0; border-left: 1px solid var(--line); background: transparent; color: var(--ink);
+  font: 500 0.8125rem var(--body); padding: 0 14px; cursor: pointer;
+}
+.cmd button:hover { background: var(--well); }
+
+.page-foot { border-top: 1px solid var(--line); padding-block: 28px 40px; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; color: var(--muted); font-size: 0.875rem; }
+</style>
+</head>
+<body>
+
+<div class="wrap top">
+  <a class="wordmark" href="#">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2h6v2h-1v5.2l5.6 9.7A2 2 0 0 1 17.9 22H6.1a2 2 0 0 1-1.7-3.1L10 9.2V4H9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M7.2 15h9.6" stroke="currentColor" stroke-width="1.8"/></svg>
+    Animal Testing
+  </a>
+  <nav aria-label="Site">
+    <a href="#plugins">Plugins</a>
+    <a href="#install">Install</a>
+    <a href="https://github.com/DoveCharles/AnimalTestingVST">Source</a>
+  </nav>
+</div>
+
+<header class="wrap hero">
+  <div>
+    <h1>Animal Testing <span>audio plugins, specimens 01 to 18</span></h1>
+    <p class="lede">Pedals, tape, pianos, pitch tools and a few odd utilities. <strong>VST3, AU and Standalone</strong> for macOS and Windows, built for Ableton Live and anything else that loads a plugin.</p>
+    <div class="actions">
+      <a class="btn primary" href="https://github.com/DoveCharles/AnimalTestingVST/releases/latest">Download the latest release</a>
+      <a class="btn ghost" href="#plugins">Browse the plugins</a>
+    </div>
+  </div>
+  <dl class="ledger" aria-label="At a glance">
+    <dt>Effects</dt><dd>14</dd>
+    <dt>Instruments</dt><dd>3</dd>
+    <dt>MIDI</dt><dd>1</dd>
+    <dt>Formats</dt><dd>VST3 · AU · Standalone</dd>
+    <dt>macOS</dt><dd>Universal (Apple silicon + Intel)</dd>
+    <dt>Windows</dt><dd>VST3 · Standalone</dd>
+  </dl>
+</header>
+
+<div class="rail" id="plugins">
+  <div class="wrap" role="toolbar" aria-label="Filter plugins">
+    <button class="chip" type="button" id="f-all" data-filter="all" aria-pressed="true">All<span class="n">18</span></button>
+    <button class="chip" type="button" id="f-drive" data-filter="drive" aria-pressed="false">Drive<span class="n">3</span></button>
+    <button class="chip" type="button" id="f-tone" data-filter="tone" aria-pressed="false">Tone &amp; dynamics<span class="n">4</span></button>
+    <button class="chip" type="button" id="f-pitch" data-filter="pitch" aria-pressed="false">Pitch &amp; voice<span class="n">3</span></button>
+    <button class="chip" type="button" id="f-space" data-filter="space" aria-pressed="false">Space &amp; time<span class="n">3</span></button>
+    <button class="chip" type="button" id="f-instrument" data-filter="instrument" aria-pressed="false">Instruments<span class="n">3</span></button>
+    <button class="chip" type="button" id="f-utility" data-filter="utility" aria-pressed="false">MIDI &amp; utility<span class="n">2</span></button>
+  </div>
+</div>
+
+<main class="wrap catalogue">
+  <div class="grid" id="grid">
+
+    <article class="specimen" data-group="drive" id="saturator">
+      <div class="shot"><img src="img/saturator.jpg" alt="AT Saturator editor" loading="lazy"></div>
+      <div class="body">
+        <header><h3>Saturator<small>Effect · Drive</small></h3><span class="tag">Satr</span></header>
+        <p class="what">Smooth tanh saturation. Push it with Drive, darken it with Tone, blend it back with Mix.</p>
+        <ul><li>Drive, Tone (low-pass) and Mix</li><li>The simplest thing in the catalogue, and the first</li></ul>
+        <footer><span>v1.0.0</span><span>VST3 · AU · Standalone</span></footer>
+      </div>
+    </article>
+
+    <article class="specimen" data-group="drive" id="green-rooskie">
+      <div class="shot"><img src="img/greenrooskie.jpg" alt="AT Green Rooskie pedal" loading="lazy"></div>
+      <div class="body">
+        <header><h3>Green Rooskie<small>Effect · Fuzz</small></h3><span class="tag">Grsk</span></header>
+        <p class="what">Fuzz modelled on the green Russian muff pedals of the 90s: thick, scooped and endless.</p>
+        <ul><li>Volume, Tone, Sustain and a footswitch</li><li>4x oversampled</li></ul>
+        <footer><span>v1.0.0</span><span>VST3 · AU · Standalone</span></footer>
+      </div>
+    </article>
+
+    <article class="specimen" data-group="drive" id="blue-heeler">
+      <div class="shot"><img src="img/blueheeler.jpg" alt="AT Blue Heeler pedal" loading="lazy"></div>
+      <div class="body">
+        <header><h3>Blue Heeler<small>Effect · Overdrive</small></h3><span class="tag">Bhlr</span></header>
+        <p class="what">Low-gain blues overdrive with two cascaded clipping stages. Made to sit at the end of the chain, after reverb and delay.</p>
+        <ul><li>Level, Tone, Gain and an S / C switch for Standard or Custom voicing</li><li>Output follows Gain, so it stays near unity</li><li>True stereo, 4x oversampled</li></ul>
+        <footer><span>v0.1.0</span><span>VST3 · AU · Standalone</span></footer>
+      </div>
+    </article>
+
+    <article class="specimen" data-group="tone" id="good-boy">
+      <div class="shot"><img src="img/goodboy.jpg" alt="AT Good Boy editor" loading="lazy"></div>
+      <div class="body">
+        <header><h3>Good Boy<small>Effect · Maximizer</small></h3><span class="tag">Gdby</span></header>
+        <p class="what">One-knob multiband maximizer. Turn up Amount and it gets louder, wider and denser. At zero it leaves the sound alone.</p>
+        <ul><li>Three-band compression, saturation, high-band width and a lookahead limiter at −0.3 dBFS</li><li>Four modes: Warm, Bright, Loud, Big</li></ul>
+        <footer><span>v0.1.0</span><span>1.5 ms latency, reported</span></footer>
+      </div>
+    </article>
+
+    <article class="specimen" data-group="tone" id="smooth-operator">
+      <div class="shot"><img src="img/smoothoperator.jpg" alt="AT Smooth Operator editor with its cut display" loading="lazy"></div>
+      <div class="body">
+        <header><h3>Smooth Operator<small>Effect · Resonance suppressor</small></h3><span class="tag">Smop</span></header>
+        <p class="what">Finds whatever pokes out of the sound's own spectrum and cuts it as it happens, with a live display of every cut.</p>
+        <ul><li>Depth, Sharpness, Selectivity, Attack and Release</li><li>Five-band weighting, Stereo or Mid/Side</li><li>Delta to hear only what it removes</li></ul>
+        <footer><span>v0.1.0</span><span>~43 ms latency, reported</span></footer>
+      </div>
+    </article>
+
+    <article class="specimen" data-group="tone" id="tapeworm">
+      <div class="shot"><img src="img/tapeworm.jpg" alt="AT Tapeworm tape deck" loading="lazy"></div>
+      <div class="body">
+        <header><h3>Tapeworm<small>Effect · Lo-fi tape</small></h3><span class="tag">Tpwm</span></header>
+        <p class="what">A worn tape machine on a matte silver deck, with reels that turn with the tape. Fitted to measurements of real tape processing.</p>
+        <ul><li>Drive with Boost, a morphing tape Tone and a bipolar Filter</li><li>Wow, Flutter, Wear, hiss and motor noise</li><li>Tempo-synced Tape Stop and a Speed dial down to 0.25x</li></ul>
+        <footer><span>v0.1.0</span><span>Up to 5 min of tape</span></footer>
+      </div>
+    </article>
+
+    <article class="specimen" data-group="tone" id="cabinet">
+      <div class="shot"><img src="img/cabinet.jpg" alt="AT Cabinet editor with speaker pad" loading="lazy"></div>
+      <div class="body">
+        <header><h3>Cabinet<small>Effect · Cab simulator</small></h3><span class="tag">Cabn</span></header>
+        <p class="what">Six built-in cabs and three mics, placed on a speaker pad. Or load your own impulse response, which is saved in the session.</p>
+        <ul><li>4x12 Vintage and Modern, 2x12 Open Alnico, 1x12 Combo, 4x10 Tweed, 1x8 Practice</li><li>Dynamic, Ribbon or Condenser at any Position and Distance</li><li>Room, Push, Low and High Cut</li></ul>
+        <footer><span>v1.0.0</span><span>No latency</span></footer>
+      </div>
+    </article>
+
+    <article class="specimen" data-group="pitch" id="shifty">
+      <div class="shot"><img src="img/shifty.jpg" alt="AT Shifty pedal" loading="lazy"></div>
+      <div class="body">
+        <header><h3>Shifty<small>Effect · Pitch shift and delay</small></h3><span class="tag">Shft</span></header>
+        <p class="what">A late-80s digital pitch shifter and delay, grit and all.</p>
+        <ul><li>Balance, Feedback and Fine-Manual</li><li>Six modes: 125 ms, 500 ms and 2 s delay, manual pitch, −1 and +1 octave</li></ul>
+        <footer><span>v1.0.0</span><span>VST3 · AU · Standalone</span></footer>
+      </div>
+    </article>
+
+    <article class="specimen" data-group="pitch" id="pitch-pot">
+      <div class="shot"><img src="img/pitchpot.jpg" alt="AT Pitch-Pot pedal with a court painting" loading="lazy"></div>
+      <div class="body">
+        <header><h3>Pitch-Pot<small>Effect · Polyphonic pitch pedal</small></h3><span class="tag">Ppot</span></header>
+        <p class="what">Polyphonic pitch shifter with an expression sweep and a footswitch that glides the pitch in and out.</p>
+        <ul><li>From a 12-cent detune through every interval to 3 octaves</li><li>Up, Dual or Down, with an equal-power Blend</li><li>Latch or Momentary footswitch with Glide</li></ul>
+        <footer><span>v0.1.0</span><span>8 to 50 ms wet path, like a pedal</span></footer>
+      </div>
+    </article>
+
+    <article class="specimen" data-group="pitch" id="voice-box">
+      <div class="shot"><img src="img/voicebox.jpg" alt="AT Voice Box editor" loading="lazy"></div>
+      <div class="body">
+        <header><h3>Voice Box<small>Effect · Pitch and formant</small></h3><span class="tag">Vbox</span></header>
+        <p class="what">Vocal pitch and formant shifter. The two move independently, so you can change the note without changing the person.</p>
+        <ul><li>Transpose, Quantize to a key or scale, and Robot modes</li><li>A Gender macro</li><li>Chest Cut, Air, Breath, Drive and delayed Vibrato</li></ul>
+        <footer><span>v0.1.0</span><span>~40 ms latency, reported</span></footer>
+      </div>
+    </article>
+
+    <article class="specimen" data-group="space" id="sky-chorus">
+      <div class="shot"><img src="img/skychorus.jpg" alt="AT Sky Chorus pedal" loading="lazy"></div>
+      <div class="body">
+        <header><h3>Sky Chorus<small>Effect · Analog chorus</small></h3><span class="tag">Skyc</span></header>
+        <p class="what">A mid-80s bucket-brigade chorus, all 1024 stages run at their own swept clock.</p>
+        <ul><li>Speed, Width, Delay Time, Mix and a footswitch</li><li>Stereo as Bi-Phase, Dry/Wet Split or Mono-Safe</li><li>4x oversampled</li></ul>
+        <footer><span>v1.1.0</span><span>VST3 · AU · Standalone</span></footer>
+      </div>
+    </article>
+
+    <article class="specimen" data-group="space" id="reverser">
+      <div class="shot"><img src="img/reverser.jpg" alt="AT Reverser editor" loading="lazy"></div>
+      <div class="body">
+        <header><h3>Reverser<small>Effect · Reverse reverb and delay</small></h3><span class="tag">Rvsr</span></header>
+        <p class="what">Everything backwards. Each note swells up in reverse and cuts off, or every stretch of time plays back the other way round.</p>
+        <ul><li>Reverb, Delay and Wash modes</li><li>Time from 50 ms to 2 s, or synced from 1/32 to 1/1</li><li>Tails keep playing after bypass</li></ul>
+        <footer><span>v0.1.0</span><span>Tempo sync</span></footer>
+      </div>
+    </article>
+
+    <article class="specimen" data-group="space" id="waterfall">
+      <div class="shot"><img src="img/waterfall.jpg" alt="AT Waterfall editor with its river spectrogram" loading="lazy"></div>
+      <div class="body">
+        <header><h3>Waterfall<small>Effect · Chord resonator</small></h3><span class="tag">Wtfl</span></header>
+        <p class="what">Rings anything through a chord of tuned resonators. Water striders skate over the spectrogram while it plays.</p>
+        <ul><li>Key, Octave from C-1 to G9, and Chord</li><li>Brightness, Decay and Mix</li></ul>
+        <footer><span>v1.0.0</span><span>VST3 · AU · Standalone</span></footer>
+      </div>
+    </article>
+
+    <article class="specimen" data-group="instrument" id="upright">
+      <div class="shot"><img src="img/upright.jpg" alt="AT Upright editor" loading="lazy"></div>
+      <div class="body">
+        <header><h3>Upright<small>Instrument · Modelled piano</small></h3><span class="tag">Uprt</span></header>
+        <p class="what">A physically modelled upright piano with no samples: strings, soundboard, felt and room, all computed.</p>
+        <ul><li>Five voicings: Studio, Mills, House, Rhodes and Vibraphone</li><li>Hardness, Unison, Decay, Resonance, Noise, Body and Room</li><li>Sympathetic resonance and action noise</li></ul>
+        <footer><span>v0.1.0</span><span>No samples to install</span></footer>
+      </div>
+    </article>
+
+    <article class="specimen" data-group="instrument" id="chilltron">
+      <div class="shot"><img src="img/chilltron.jpg" alt="AT Chilltron editor with tape strips" loading="lazy"></div>
+      <div class="body">
+        <header><h3>Chilltron<small>Instrument · Tape replay keyboard</small></h3><span class="tag">Chtn</span></header>
+        <p class="what">Every key plays its own 8-second strip of tape, which rewinds when you let go.</p>
+        <ul><li>Two tape banks with a blend fader</li><li>Capstan wow and flutter, tape clicks, optional loop</li><li>Tone, Spread and Reverb</li></ul>
+        <footer><span>v0.1.0</span><span>Tapes in Application Support</span></footer>
+      </div>
+    </article>
+
+    <article class="specimen" data-group="instrument" id="magpie">
+      <div class="shot"><img src="img/magpie.jpg" alt="AT Magpie editor" loading="lazy"></div>
+      <div class="body">
+        <header><h3>Magpie<small>Instrument · SoundFont player</small></h3><span class="tag">Mgpi</span></header>
+        <p class="what">Drop an .sf2 file on the window and play any preset in it, with the font's own envelopes, filters, LFOs and loops.</p>
+        <ul><li>96 voices; Program Change and bank select</li><li>Mod wheel, pitch bend, sustain, volume, pan and expression</li><li>Volume, Transpose, Tune, Bend range, Velocity, Release and Reverb</li></ul>
+        <footer><span>v0.1.0</span><span>Loads .sf2 from disk</span></footer>
+      </div>
+    </article>
+
+    <article class="specimen" data-group="utility" id="mouth-box">
+      <div class="shot"><img src="img/mouthbox.jpg" alt="AT Mouth Box editor with five pads" loading="lazy"></div>
+      <div class="body">
+        <header><h3>Mouth Box<small>MIDI · Beatbox to drums</small></h3><span class="tag">Mbox</span></header>
+        <p class="what">Beatbox into a mic and get MIDI drums out, in General MIDI note numbers, so most drum samplers play it straight away.</p>
+        <ul><li>Five pads: Kick, Snare, Hi-Hat, Open Hat, Tom</li><li>Train each pad on eight of your own sounds</li><li>A virtual MIDI port on macOS</li></ul>
+        <footer><span>v0.1.0</span><span>~16 ms note latency</span></footer>
+      </div>
+    </article>
+
+    <article class="specimen" data-group="utility" id="notes">
+      <div class="shot"><img src="img/notes.jpg" alt="AT Notes editor with text" loading="lazy"></div>
+      <div class="body">
+        <header><h3>Notes<small>Utility · Notepad</small></h3><span class="tag">Nots</span></header>
+        <p class="what">A notepad that lives in the set. Lyrics, mix notes, anything, saved with the project.</p>
+        <ul><li>Passes audio straight through, so it goes on any track</li><li>Copy and Paste buttons for hosts that keep Cmd+C/V</li><li>Writes a backup a moment after you stop typing</li></ul>
+        <footer><span>v0.1.0</span><span>Resizable</span></footer>
+      </div>
+    </article>
+
+  </div>
+  <p class="empty" id="empty" hidden>Nothing in this group.</p>
+</main>
+
+<section class="install" id="install" aria-labelledby="install-title">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="install-title">Install</h2>
+      <span class="label">macOS · Windows</span>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <h3><span class="mono">1</span>Download</h3>
+        <p>Get the zip for your system from the <a href="https://github.com/DoveCharles/AnimalTestingVST/releases/latest">latest release</a>. Each zip holds every plugin as <strong>VST3</strong>, <strong>AU</strong> (macOS) and a <strong>Standalone</strong> app.</p>
+      </div>
+      <div class="step">
+        <h3><span class="mono">2</span>Copy the plugins</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Format</th><th>macOS</th><th>Windows</th></tr></thead>
+            <tbody>
+              <tr><td>VST3</td><td><code>~/Library/Audio/Plug-Ins/VST3/</code></td><td><code>C:\Program Files\Common Files\VST3\</code></td></tr>
+              <tr><td>AU</td><td><code>~/Library/Audio/Plug-Ins/Components/</code></td><td>n/a</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="step">
+        <h3><span class="mono">3</span>Rescan</h3>
+        <p>In Ableton Live, open <strong>Settings → Plug-Ins</strong>, turn on the VST3 system folders (and Audio Units on a Mac), then click <strong>Rescan</strong>. They show up under <strong>Plug-Ins → Animal Testing</strong>.</p>
+        <p>The Mac builds aren't notarized yet. If macOS says a plugin is damaged, clear the download flag in Terminal:</p>
+        <div class="cmd"><code id="xattr">xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/VST3/AT* ~/Library/Audio/Plug-Ins/Components/AT*</code><button type="button" id="copy-xattr">Copy</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="wrap page-foot">
+  <span>Animal Testing · built with JUCE</span>
+  <span>No animals were harmed. Some were mildly saturated.</span>
+</footer>
+
+<script>
+(function () {
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.specimen'));
+  var empty = document.getElementById('empty');
+
+  function apply(filter) {
+    var shown = 0;
+    chips.forEach(function (c) { c.setAttribute('aria-pressed', String(c.dataset.filter === filter)); });
+    cards.forEach(function (card) {
+      var on = filter === 'all' || card.dataset.group === filter;
+      card.hidden = !on;
+      if (on) shown++;
+    });
+    empty.hidden = shown > 0;
+  }
+
+  chips.forEach(function (c) { c.addEventListener('click', function () { apply(c.dataset.filter); }); });
+
+  var copy = document.getElementById('copy-xattr');
+  copy.addEventListener('click', function () {
+    var text = document.getElementById('xattr').textContent;
+    function selectIt() {
+      var range = document.createRange();
+      range.selectNodeContents(document.getElementById('xattr'));
+      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+      copy.textContent = 'Selected';
+    }
+    try {
+      navigator.clipboard.writeText(text).then(function () { copy.textContent = 'Copied'; }, selectIt);
+    } catch (e) { selectIt(); }
+    setTimeout(function () { copy.textContent = 'Copy'; }, 1800);
+  });
+})();
+</script>
+</body>
+</html>
