@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Animal Testing Plugins</title>
-<meta name="description" content="Free VSTs we built, inspired by the gear we use: fuzz pedals, tape, chorus, reverse, a waterfall and a notepad. VST3, AU and Standalone for macOS and Windows.">
+<meta name="description" content="Free VSTs we built, inspired by the gear we use: fuzz pedals, tape, chorus, reverse, a maximizer, a waterfall and a notepad. VST3, AU and Standalone for macOS and Windows.">
 <meta name="theme-color" content="#0072bc">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -50,10 +50,11 @@
 
 <div class="rail" id="plugins">
   <div class="wrap" role="toolbar" aria-label="Filter plugins">
-    <button class="chip" type="button" id="f-all" data-filter="all" aria-pressed="true">All<span class="n">7</span></button>
+    <button class="chip" type="button" id="f-all" data-filter="all" aria-pressed="true">All<span class="n">8</span></button>
     <button class="chip" type="button" id="f-drive" data-filter="drive" aria-pressed="false">Drive<span class="n">2</span></button>
     <button class="chip" type="button" id="f-tone" data-filter="tone" aria-pressed="false">Tone<span class="n">1</span></button>
     <button class="chip" type="button" id="f-space" data-filter="space" aria-pressed="false">Space &amp; time<span class="n">3</span></button>
+    <button class="chip" type="button" id="f-dynamics" data-filter="dynamics" aria-pressed="false">Dynamics<span class="n">1</span></button>
     <button class="chip" type="button" id="f-utility" data-filter="utility" aria-pressed="false">Utility<span class="n">1</span></button>
   </div>
 </div>
@@ -119,6 +120,16 @@
         <ul><li>Reverb, Delay and Wash modes</li><li>Time from 50 ms to 2 s, or synced from 1/32 to 1/1</li><li>Tails keep playing after bypass</li></ul>
       </div>
       <footer><span>v0.1.0</span><span>Tempo sync</span><span class="more" aria-hidden="true">More →</span></footer>
+    </article>
+
+    <article class="specimen" data-group="dynamics" id="good-boy">
+      <header><h3><a href="good-boy/">Good Boy</a><small>Effect · Maximizer</small></h3></header>
+      <div class="shot"><img src="img/goodboy.jpg" alt="AT Good Boy editor" loading="lazy"></div>
+      <div class="body">
+        <p class="what">One-knob multiband maximizer. Based on a certain DAW’s signature effect.</p>
+        <ul><li>Amount, Output, and four voicings: Warm, Bright, Loud and Big</li><li>Three bands into a lookahead limiter at -0.3 dBFS</li><li>Amount 0 leaves the sound untouched</li></ul>
+      </div>
+      <footer><span>v0.1.0</span><span>VST3 · AU · Standalone</span><span class="more" aria-hidden="true">More →</span></footer>
     </article>
 
     <article class="specimen" data-group="utility" id="notes">

@@ -21,10 +21,10 @@ namespace
     }
 
     void scribble (juce::Graphics& g, const juce::String& text, juce::Rectangle<int> area, float size,
-                   juce::Justification justification)
+                   juce::Justification justification, juce::Colour colour = Palette::ink)
     {
         g.setFont (DeckLookAndFeel::hand (size));
-        g.setColour (Palette::ink);
+        g.setColour (colour);
         g.drawText (text, area, justification);
     }
 }
@@ -116,9 +116,9 @@ void PluginEditor::paint (juce::Graphics& g)
 
     auto maker = header.withX (header.getX() + 252).withWidth (200);
     scribble (g, "Animal Testing", maker.removeFromTop (maker.getHeight() / 2).withTrimmedTop (2), 16.0f,
-              juce::Justification::bottomLeft);
+              juce::Justification::bottomLeft, Palette::paper);
     scribble (g, "tape machine  v" JucePlugin_VersionString, maker.withTrimmedBottom (2), 13.0f,
-              juce::Justification::topLeft);
+              juce::Justification::topLeft, Palette::paper);
 
     drawSection (g, transportArea, "Transport");
     drawSection (g, driveArea, "Drive");

@@ -62,14 +62,14 @@ juce::Image DeckLookAndFeel::gingham (int width, int height)
 
     // Stripes both ways; where they cross the check is twice as strong.
     constexpr int band = 26, stripe = 13;
-    g.setColour (Palette::check.withAlpha (0.26f));
+    g.setColour (Palette::check.withAlpha (0.42f));
     for (int x = 0; x < image.getWidth(); x += band)
         g.fillRect (x, 0, stripe, image.getHeight());
     for (int y = 0; y < image.getHeight(); y += band)
         g.fillRect (0, y, image.getWidth(), stripe);
 
     // The weave: faint threads along each stripe.
-    g.setColour (Palette::check.withAlpha (0.07f));
+    g.setColour (Palette::check.withAlpha (0.12f));
     for (int x = 0; x < image.getWidth(); x += 3)
         g.drawVerticalLine (x, 0.0f, (float) image.getHeight());
     for (int y = 0; y < image.getHeight(); y += 3)

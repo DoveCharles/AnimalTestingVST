@@ -6,5 +6,4 @@ at_add_plugin(${PROJECT_NAME}
     SOURCES
         Source/PluginProcessor.cpp
         Source/PluginEditor.cpp
-        Source/HeelerPrint.cpp
         Source/PedalLookAndFeel.cpp)

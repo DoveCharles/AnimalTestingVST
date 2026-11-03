@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Good Boy · Animal Testing</title>
+<meta name="description" content="AT Good Boy: One-knob multiband maximizer. Based on a certain DAW’s signature effect. VST3 · AU · Standalone for macOS and Windows.">
+<meta name="theme-color" content="#0072bc">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="wrap top">
+  <a class="wordmark" href="../">
+    <span class="mark" aria-hidden="true"></span>
+    Animal Testing
+  </a>
+  <nav aria-label="Site">
+    <a href="../#plugins">Plugins</a>
+    <a href="../#install">Install</a>
+    <a href="../support/">Support</a>
+  </nav>
+</div>
+
+<div class="wrap crumbs">
+  <a href="../#plugins">← All plugins</a>
+  <span class="label">07 / 08</span>
+</div>
+
+<main>
+<header class="wrap plug-hero">
+  <div class="plug-shot"><img src="../img/goodboy.jpg" alt="AT Good Boy editor"></div>
+  <div class="plug-intro">
+    <span class="label">Effect · Maximizer</span>
+    <div class="title-row"><h1>Good Boy</h1></div>
+    <p class="desc">One-knob multiband maximizer. Based on a certain DAW’s signature effect.</p>
+    <p class="lede">Turn up <strong>Amount</strong> and it gets louder and denser. At zero it leaves the sound alone. Mode picks how it gets there: warm, bright, loud or big.</p>
+    <div class="actions">
+      <a class="btn primary" href="https://github.com/DoveCharles/AnimalTestingVST/releases/latest">Download</a>
+      <a class="btn ghost" href="../#install">How to install</a>
+    </div>
+    <dl class="ledger" aria-label="At a glance">
+      <dt>Version</dt><dd>0.1.0</dd>
+      <dt>Ceiling</dt><dd>-0.3 dBFS</dd>
+      <dt>Latency</dt><dd>1.5 ms, reported to the host</dd>
+      <dt>Formats</dt><dd>VST3 · AU · Standalone</dd>
+    </dl>
+  </div>
+</header>
+
+<section class="wrap plug-section" aria-labelledby="controls-title">
+  <div class="section-head">
+    <h2 id="controls-title">Controls</h2>
+    <span class="label">3 parameters</span>
+  </div>
+  <div class="table-scroll plug-panel">
+    <table class="controls">
+      <thead><tr><th>Control</th><th>Range</th><th>Default</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td>Amount</td><td class="val">0 to 100%</td><td class="val">50%</td><td>Scales everything at once: compression, makeup, saturation and width. At 0% the sound passes through untouched.</td></tr>
+        <tr><td>Mode</td><td class="val">A, B, C, D</td><td class="val">A</td><td>A Warm leans on the lows. B Bright lifts the top. C Loud squeezes all three bands evenly. D Big goes hardest, with the most saturation and width.</td></tr>
+        <tr><td>Output</td><td class="val">-12 to +6 dB</td><td class="val">0 dB</td><td>Level after the limiter.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="wrap plug-section" aria-labelledby="how-title">
+  <div class="inside plug-panel">
+    <div>
+      <div class="section-head"><h2 id="how-title">How it works</h2></div>
+      <p>Linkwitz-Riley crossovers split the sound into low, mid and high bands that add back up flat. Each mode moves the split points and sets each band's compressor.</p>
+      <p>Each band has a stereo-linked compressor with its own makeup gain. The bands are summed, lightly saturated, and passed to a lookahead limiter that holds peaks at -0.3 dBFS. The meters show each band's gain reduction and the limiter's.</p>
+    </div>
+    <div>
+      <div class="section-head"><h2>Signal path</h2></div>
+      <ol class="chain">
+        <li><b>Three-band split</b><span>Linkwitz-Riley crossovers.</span></li>
+        <li><b>Band compressors</b><span>Stereo-linked, with makeup.</span></li>
+        <li><b>Width</b><span>Extra side signal on the high band.</span></li>
+        <li><b>Saturation</b><span>Soft, on the sum.</span></li>
+        <li><b>Limiter</b><span>1.5 ms lookahead, -0.3 dBFS.</span></li>
+      </ol>
+    </div>
+  </div>
+</section>
+</main>
+
+<nav class="wrap pager" aria-label="More plugins">
+  <a class="prev" href="../reverser/"><span class="label">← Previous</span><strong>Reverser</strong></a>
+  <a class="next" href="../notes/"><span class="label">Next →</span><strong>Notes</strong></a>
+</nav>
+
+<footer class="wrap page-foot">
+  <span>Animal Testing · built with JUCE</span>
+  <span>No animals were harmed. Some were compressed tho</span>
+  <span>Product names are trademarks of their owners, used only to describe the sound.</span>
+</footer>
+</body>
+</html>

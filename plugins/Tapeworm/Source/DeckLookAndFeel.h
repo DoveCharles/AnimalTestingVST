@@ -11,8 +11,8 @@ public:
     struct Palette
     {
         static inline const juce::Colour ink       { 0xff2b1a1e };
-        static inline const juce::Colour cloth     { 0xffd9c3a3 };
-        static inline const juce::Colour check     { 0xffa8322c };
+        static inline const juce::Colour cloth     { 0xff85675d };
+        static inline const juce::Colour check     { 0xff5c2b2a };
         static inline const juce::Colour paper     { 0xffecd9b0 };
         static inline const juce::Colour rule      { 0xffc9776a };
         static inline const juce::Colour tape      { 0xb8f7e7a6 };
@@ -28,7 +28,7 @@ public:
     /** A rounded, hand-lettered font, the closest the system has. */
     static juce::Font hand (float size);
 
-    /** A red gingham tablecloth over the given size, washed out so it stays behind the cards. */
+    /** A dark red gingham tablecloth over the given size, for the cards to sit on. */
     static juce::Image gingham (int width, int height);
 
     /** A paper card with a soft shadow, a strip of tape over one corner and a ruled line under

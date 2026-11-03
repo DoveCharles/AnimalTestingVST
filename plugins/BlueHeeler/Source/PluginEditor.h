@@ -38,7 +38,7 @@ private:
     FootSwitch footSwitch;
     juce::AudioProcessorValueTreeState::ButtonAttachment modeAttachment, footSwitchAttachment;
 
-    juce::Rectangle<int> ledArea, printArea, titleArea;
+    juce::Rectangle<int> ledArea, titleArea;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };

@@ -9,7 +9,6 @@ target_sources(BlueHeelerRender PRIVATE
     Main.cpp
     "${blueheeler_source}/PluginProcessor.cpp"
     "${blueheeler_source}/PluginEditor.cpp"
-    "${blueheeler_source}/HeelerPrint.cpp"
     "${blueheeler_source}/PedalLookAndFeel.cpp")
 
 target_include_directories(BlueHeelerRender PRIVATE "${blueheeler_source}")
