@@ -13,6 +13,12 @@ namespace ParamIDs
     inline constexpr auto mix        = "mix";
 }
 
+/** Editor settings kept on the state tree, so they're saved with the set but aren't host parameters. */
+namespace StateIDs
+{
+    inline constexpr auto showStriders = "showStriders";   // bool, the water striders on the river (default on)
+}
+
 /** Chord resonator in the spirit of the SP-404 / SP-404MKII Resonator: a bank of tuned comb
     filters, one per chord tone, that the input "rings". */
 class PluginProcessor final : public at::ProcessorBase

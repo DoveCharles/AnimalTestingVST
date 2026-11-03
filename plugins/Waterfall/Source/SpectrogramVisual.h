@@ -26,6 +26,11 @@ public:
         its controls in step with the visual (also when rendered offline). */
     std::function<void (float)> onTick;
 
+    /** Shows or hides the water striders and their ripples. Showing them again starts a fresh few
+        spread along the river. */
+    void setStridersShown (bool);
+    bool areStridersShown() const noexcept { return stridersShown; }
+
 private:
     void readAudio();
     void pushColumn();
@@ -36,6 +41,7 @@ private:
     void updateStriders (float dt);
     void drawStriders (juce::Graphics&) const;
     void spawnStrider (float x);
+    void spreadStriders();
     void spawnRipple (float x, float y, float size, float heading, float bias, float distance, float sinceHop);
 
     float historyAt (int column, int row) const noexcept;
@@ -79,6 +85,7 @@ private:
     std::vector<Particle> particles;
     std::vector<Strider> striders;
     std::vector<Ripple> ripples;
+    bool stridersShown = true;
 
     double startTime = -1.0;
     float time = 0.0f;

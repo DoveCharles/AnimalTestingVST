@@ -59,6 +59,7 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     }
 
     visual.onTick = [this] (float time) { animate (time); };
+    visual.setStridersShown (waterfall.apvts.state.getProperty (StateIDs::showStriders, true));
 
     setSize (600, 400);
 }
@@ -66,6 +67,25 @@ PluginEditor::PluginEditor (PluginProcessor& p)
 PluginEditor::~PluginEditor()
 {
     setLookAndFeel (nullptr);
+}
+
+void PluginEditor::mouseDown (const juce::MouseEvent& e)
+{
+    // The river and its overlays let clicks through, so a right-click on the window lands here.
+    if (! e.mods.isPopupMenu() || ! window.contains (e.getPosition()))
+        return;
+
+    juce::PopupMenu menu;
+    menu.addItem ("Water striders", true, visual.areStridersShown(), [safe = juce::Component::SafePointer<PluginEditor> (this)]
+    {
+        if (safe == nullptr)
+            return;
+
+        const auto shown = ! safe->visual.areStridersShown();
+        safe->visual.setStridersShown (shown);
+        safe->waterfall.apvts.state.setProperty (StateIDs::showStriders, shown, nullptr);
+    });
+    menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (this).withMousePosition());
 }
 
 void PluginEditor::animate (float time)

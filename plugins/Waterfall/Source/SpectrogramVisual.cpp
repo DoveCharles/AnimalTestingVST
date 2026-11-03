@@ -188,11 +188,7 @@ void SpectrogramVisual::resized()
     columnValues.assign ((size_t) h, 0.0f);
     head = 0;
 
-    // Start with the striders already spread along the river, so it's never empty.
-    striders.clear();
-    ripples.clear();
-    for (size_t i = 0; i < numStriders; ++i)
-        spawnStrider (((float) i + 0.3f + 0.4f * random.nextFloat()) / (float) numStriders * (float) getWidth());
+    spreadStriders();
 
     if (! grain.isValid())
     {
@@ -240,7 +236,8 @@ void SpectrogramVisual::tick (double timestampSec)
     }
 
     updateParticles (dt);
-    updateStriders (dt);
+    if (stridersShown)
+        updateStriders (dt);
     repaint();
 
     if (onTick)
@@ -357,6 +354,24 @@ void SpectrogramVisual::updateParticles (float dt)
     particles.erase (std::remove_if (particles.begin(), particles.end(),
                                      [this] (const Particle& p) { return p.age >= p.life || p.x > (float) getWidth() + 8.0f; }),
                      particles.end());
+}
+
+void SpectrogramVisual::setStridersShown (bool shown)
+{
+    if (shown && ! stridersShown)
+        spreadStriders();
+
+    stridersShown = shown;
+    repaint();
+}
+
+void SpectrogramVisual::spreadStriders()
+{
+    // Start with the striders already spread along the river, so it's never empty.
+    striders.clear();
+    ripples.clear();
+    for (size_t i = 0; i < numStriders; ++i)
+        spawnStrider (((float) i + 0.3f + 0.4f * random.nextFloat()) / (float) numStriders * (float) getWidth());
 }
 
 void SpectrogramVisual::spawnStrider (float x)
@@ -555,7 +570,8 @@ void SpectrogramVisual::paint (juce::Graphics& g)
     g.drawImage (frame, getLocalBounds().toFloat());
 
     drawParticles (g);
-    drawStriders (g);
+    if (stridersShown)
+        drawStriders (g);
 
     // Fine film grain at full resolution, shifted every frame so it lives rather than sits.
     g.setTiledImageFill (grain, -random.nextInt (256), -random.nextInt (256), 0.07f);

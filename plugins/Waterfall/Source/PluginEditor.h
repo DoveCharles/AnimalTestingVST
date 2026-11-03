@@ -14,6 +14,7 @@ public:
     void paint (juce::Graphics&) override;
     void paintOverChildren (juce::Graphics&) override;
     void resized() override;
+    void mouseDown (const juce::MouseEvent&) override;
 
 private:
     /** Moves the chord read-out and lets each knob glow with its part of the sound. */
