@@ -11,6 +11,7 @@
   --tag: #f4cf3a;
   --tag-ink: #0d2233;
   --focus: #ffd84a;
+  --deep: #00598f;   /* the board the cards are mounted on, below the header */
 
   /* Cards are outlined in white on the same blue, like the panels of a road sign */
   --night-card: #0072bc;
@@ -37,7 +38,7 @@ html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
 body {
   margin: 0;
-  background: var(--paper);
+  background: var(--deep);
   color: var(--ink);
   font: 400 var(--step-0)/1.55 var(--body);
   -webkit-font-smoothing: antialiased;
@@ -109,7 +110,7 @@ p { margin: 0; }
 /* Filter rail */
 .rail {
   position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
-  background: var(--paper); border-bottom: 1px solid var(--line);
+  background: var(--deep); border-bottom: 1px solid var(--line);
 }
 .rail .wrap { display: flex; align-items: center; gap: 8px; padding-block: 12px; overflow-x: auto; scrollbar-width: none; }
 .rail .wrap::-webkit-scrollbar { display: none; }
@@ -320,3 +321,6 @@ td code, .cmd code { font-family: var(--mono); font-size: 0.8125rem; word-break:
 .specimen > header .tag::before { background: #fff; }
 .specimen > .body { padding-bottom: 16px; }
 .specimen > footer { margin: 0 20px; padding: 12px 0 18px; }
+
+/* The header keeps road-sign blue edge to edge; everything below sits on the deeper blue */
+.top, .hero, .plug-hero { background: var(--paper); box-shadow: 0 0 0 100vmax var(--paper); clip-path: inset(0 -100vmax); }
