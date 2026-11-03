@@ -187,7 +187,7 @@ namespace magpie
                 if (type == "INFO" || type == "pdta")
                 {
                     juce::MemoryBlock body;
-                    in.readIntoMemoryBlock (body, (ssize_t) bodySize);
+                    in.readIntoMemoryBlock (body, (juce::pointer_sized_int) bodySize);
                     if (type == "pdta")
                         pdta = std::move (body);
                     else

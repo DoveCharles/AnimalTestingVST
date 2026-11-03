@@ -2,6 +2,8 @@
 
 #include "SoundFont.h"
 
+#include <bitset>
+
 namespace magpie
 {
     /** What the plugin's own knobs add on top of the SoundFont. */
