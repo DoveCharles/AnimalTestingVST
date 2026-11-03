@@ -4,7 +4,7 @@ namespace
 {
     using Palette = DeckLookAndFeel::Palette;
 
-    constexpr int sectionTitleHeight = 22;
+    constexpr int sectionTitleHeight = 26;
     constexpr int switchHeight = 32;
 
     /** The attachment only fills the box from items that are already there. */
@@ -20,12 +20,10 @@ namespace
         return button;
     }
 
-    void engrave (juce::Graphics& g, const juce::String& text, juce::Rectangle<int> area, float size,
-                  juce::Justification justification)
+    void scribble (juce::Graphics& g, const juce::String& text, juce::Rectangle<int> area, float size,
+                   juce::Justification justification)
     {
-        g.setFont (juce::FontOptions (size, juce::Font::bold).withKerningFactor (0.08f));
-        g.setColour (juce::Colours::white.withAlpha (0.45f));
-        g.drawText (text, area.translated (0, 1), justification);
+        g.setFont (DeckLookAndFeel::hand (size));
         g.setColour (Palette::ink);
         g.drawText (text, area, justification);
     }
@@ -52,15 +50,19 @@ PluginEditor::PluginEditor (PluginProcessor& p)
       stopSpeedAttachment   (p.apvts, ParamIDs::stopSpeed, withChoices (stopSpeed, StopSpeeds::names)),
       catchUpAttachment     (p.apvts, ParamIDs::catchUp,   withChoices (catchUp, CatchUps::names))
 {
-    setLookAndFeel (&lookAndFeel);
-
-    for (auto* knob : { &speed, &drive, &tone, &filter, &output, &wow, &flutter, &wear, &noise, &mechanical })
+    // Each knob is a different sweet jar.
+    const std::pair<at::Knob*, juce::uint32> jars[] {
+        { &speed, 0xff5a7de0 }, { &drive, 0xffe8473f }, { &tone, 0xffff9a3c }, { &filter, 0xfff2d43c },
+        { &output, 0xff9a63d6 }, { &wow, 0xff5cc9a7 }, { &flutter, 0xffff7fae }, { &wear, 0xffc98a4b },
+        { &noise, 0xff9bd34a }, { &mechanical, 0xff5ab8e8 } };
+    for (auto [knob, colour] : jars)
     {
         knob->getLabel().setColour (juce::Label::textColourId, Palette::ink);
-        knob->getLabel().setFont (juce::FontOptions (12.0f, juce::Font::bold));
+        knob->getLabel().setFont (DeckLookAndFeel::hand (15.0f));
 
         // Set on the slider so the existing value box picks them up.
         auto& slider = knob->getSlider();
+        slider.setColour (juce::Slider::rotarySliderFillColourId, juce::Colour (colour));
         slider.setColour (juce::Slider::textBoxTextColourId, Palette::ink);
         slider.setColour (juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
         slider.setColour (juce::Slider::textBoxBackgroundColourId, juce::Colours::transparentBlack);
@@ -70,6 +72,9 @@ PluginEditor::PluginEditor (PluginProcessor& p)
                                                              &wow, &flutter, &wear, &noise, &mechanical, &boost, &toneEnable,
                                                              &stereoWidth, &tapeStop, &stopSpeed, &catchUp })
         addAndMakeVisible (c);
+
+    // After the children are in, so the knobs remake their value boxes in this style.
+    setLookAndFeel (&lookAndFeel);
 
     setSize (840, 744);
 }
@@ -81,59 +86,39 @@ PluginEditor::~PluginEditor()
 
 void PluginEditor::drawSection (juce::Graphics& g, juce::Rectangle<int> area, const juce::String& title) const
 {
-    // An engraved border: a dark cut with a lit lower edge.
-    const auto r = area.toFloat().reduced (1.0f);
-    g.setColour (juce::Colours::white.withAlpha (0.5f));
-    g.drawRoundedRectangle (r.translated (0.0f, 1.0f), 6.0f, 1.2f);
-    g.setColour (juce::Colours::black.withAlpha (0.35f));
-    g.drawRoundedRectangle (r, 6.0f, 1.2f);
-
-    engrave (g, title.toUpperCase(), area.reduced (12, 0).removeFromTop (sectionTitleHeight + 4), 12.0f,
-             juce::Justification::centredLeft);
+    DeckLookAndFeel::drawCard (g, area.toFloat().reduced (1.5f), title, area.getX() + area.getY());
 }
 
 void PluginEditor::paint (juce::Graphics& g)
 {
-    g.fillAll (Palette::chassis);
+    g.drawImageAt (cloth, 0, 0);
 
-    // The faceplate: matte silver, raised off the chassis, screwed down at the corners.
-    const auto plateBounds = faceplate.toFloat();
-    g.setColour (juce::Colours::black.withAlpha (0.6f));
-    g.fillRoundedRectangle (plateBounds.translated (0.0f, 3.0f), 10.0f);
-    {
-        juce::Graphics::ScopedSaveState state (g);
-        juce::Path clip;
-        clip.addRoundedRectangle (plateBounds, 10.0f);
-        g.reduceClipRegion (clip);
-        g.drawImageAt (plate, faceplate.getX(), faceplate.getY());
-    }
-    DeckLookAndFeel::drawBevel (g, plateBounds, 10.0f, true);
+    // The name painted in red on a parchment lid.
+    const auto box = header.withWidth (232).toFloat().reduced (0.0f, 3.0f);
 
-    const auto inset = 14.0f;
-    const float slots[] { 0.5f, 1.9f, 1.1f, 2.6f };
-    int corner = 0;
-    for (auto x : { plateBounds.getX() + inset, plateBounds.getRight() - inset })
-        for (auto y : { plateBounds.getY() + inset, plateBounds.getBottom() - inset })
-            DeckLookAndFeel::drawScrew (g, { x, y }, 6.0f, slots[corner++]);
+    g.setColour (Palette::ink.withAlpha (0.18f));
+    g.fillRoundedRectangle (box.translated (3.0f, 5.0f), 10.0f);
+    g.setColour (Palette::paper.darker (0.35f));
+    g.fillRoundedRectangle (box, 10.0f);
+    const auto lid = box.withTrimmedBottom (5.0f);
+    g.setColour (Palette::paper);
+    g.fillRoundedRectangle (lid, 10.0f);
+    g.setColour (Palette::ink);
+    g.drawRoundedRectangle (box, 10.0f, 2.5f);
+    g.drawRoundedRectangle (lid, 10.0f, 2.0f);
+    g.setColour (juce::Colours::white.withAlpha (0.6f));
+    g.drawLine (lid.getX() + 12.0f, lid.getY() + 5.0f, lid.getX() + 60.0f, lid.getY() + 5.0f, 2.5f);
+    g.setFont (DeckLookAndFeel::hand (27.0f));
+    g.setColour (Palette::ink);
+    g.drawText ("TAPEWORM", lid.translated (1.5f, 2.0f), juce::Justification::centred);
+    g.setColour (Palette::cherry);
+    g.drawText ("TAPEWORM", lid, juce::Justification::centred);
 
-    // Nameplate: a black anodised badge with the name picked out in amber.
-    const auto badge = header.withWidth (230).toFloat().reduced (0.0f, 4.0f);
-    g.setColour (juce::Colours::black.withAlpha (0.4f));
-    g.fillRoundedRectangle (badge.translated (0.0f, 2.0f), 5.0f);
-    g.setGradientFill (juce::ColourGradient::vertical (juce::Colour (0xff2c2e33), badge.getY(),
-                                                       juce::Colour (0xff121316), badge.getBottom()));
-    g.fillRoundedRectangle (badge, 5.0f);
-    DeckLookAndFeel::drawBevel (g, badge, 5.0f, true);
-    g.setColour (Palette::amber);
-    g.setFont (juce::FontOptions (24.0f, juce::Font::bold).withKerningFactor (0.18f));
-    g.drawText ("TAPEWORM", badge.withTrimmedLeft (14.0f), juce::Justification::centredLeft);
-
-    auto maker = getLocalBounds().withY (header.getY()).withHeight (header.getHeight()).withX (faceplate.getX() + 270);
-    maker.setWidth (200);
-    engrave (g, "ANIMAL TESTING", maker.removeFromTop (maker.getHeight() / 2).withTrimmedTop (6), 12.0f,
-             juce::Justification::bottomLeft);
-    engrave (g, "TAPE MACHINE  v" JucePlugin_VersionString, maker.withTrimmedBottom (6), 10.0f,
-             juce::Justification::topLeft);
+    auto maker = header.withX (header.getX() + 252).withWidth (200);
+    scribble (g, "Animal Testing", maker.removeFromTop (maker.getHeight() / 2).withTrimmedTop (2), 16.0f,
+              juce::Justification::bottomLeft);
+    scribble (g, "tape machine  v" JucePlugin_VersionString, maker.withTrimmedBottom (2), 13.0f,
+              juce::Justification::topLeft);
 
     drawSection (g, transportArea, "Transport");
     drawSection (g, driveArea, "Drive");
@@ -144,16 +129,15 @@ void PluginEditor::paint (juce::Graphics& g)
 
     // Labels over the two choice boxes.
     for (auto* box : { &stopSpeed, &catchUp })
-        engrave (g, box == &stopSpeed ? "STOP TIME" : "CATCH-UP",
-                 box->getBounds().withY (box->getY() - 17).withHeight (16), 10.0f, juce::Justification::centredLeft);
+        scribble (g, box == &stopSpeed ? "Stop time" : "Catch-up",
+                  box->getBounds().withY (box->getY() - 19).withHeight (18), 13.0f, juce::Justification::centredLeft);
 }
 
 void PluginEditor::resized()
 {
-    faceplate = getLocalBounds().reduced (8);
-    plate = DeckLookAndFeel::matteMetal (faceplate.getWidth(), faceplate.getHeight(), 11);
+    cloth = DeckLookAndFeel::gingham (getWidth(), getHeight());
 
-    auto area = faceplate.reduced (24, 20);
+    auto area = getLocalBounds().reduced (32, 28);
     header = area.removeFromTop (48);
     presetBar.setBounds (header.withTrimmedLeft (header.getWidth() - 340).withSizeKeepingCentre (340, 28));
     area.removeFromTop (14);

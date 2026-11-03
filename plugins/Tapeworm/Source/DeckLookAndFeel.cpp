@@ -1,262 +1,339 @@
 #include "DeckLookAndFeel.h"
 
-DeckLookAndFeel::DeckLookAndFeel()
+namespace
 {
-    setColour (juce::Slider::textBoxTextColourId,      Palette::ink);
-    setColour (juce::Slider::textBoxHighlightColourId, Palette::amber.withAlpha (0.4f));
-    setColour (juce::Slider::textBoxOutlineColourId,   juce::Colours::transparentBlack);
-    setColour (juce::Label::textColourId,              Palette::ink);
-    setColour (juce::TextEditor::backgroundColourId,   Palette::metalLight);
-    setColour (juce::TextEditor::textColourId,         Palette::ink);
-    setColour (juce::TextEditor::highlightColourId,    Palette::amber.withAlpha (0.4f));
-    setColour (juce::ComboBox::textColourId,           Palette::amber);
-    setColour (juce::ComboBox::arrowColourId,          Palette::amber);
-    setColour (juce::TextButton::textColourOffId,      Palette::metalLight);
-    setColour (juce::TextButton::textColourOnId,       Palette::amber);
-}
-
-juce::Image DeckLookAndFeel::matteMetal (int width, int height, juce::int64 seed)
-{
-    juce::Image image (juce::Image::RGB, juce::jmax (1, width), juce::jmax (1, height), false);
-    juce::Random random (seed);
-
+    /** Pseudo-random 0 to 1 for a pair of numbers, the same every time. */
+    float hash (int a, int b)
     {
-        // A gentle fall-off from the top light, nothing shiny.
-        juce::Graphics g (image);
-        juce::ColourGradient light (Palette::metalLight, 0.0f, 0.0f, Palette::metal.darker (0.06f),
-                                    0.0f, (float) image.getHeight(), false);
-        light.addColour (0.35, Palette::metal.brighter (0.08f));
-        g.setGradientFill (light);
-        g.fillAll();
+        const auto h = std::sin ((float) (a * 127 + b * 311) * 12.9898f) * 43758.5453f;
+        return h - std::floor (h);
     }
 
-    // Bead-blasted: a fine, even speckle in every pixel.
-    juce::Image::BitmapData pixels (image, juce::Image::BitmapData::readWrite);
-    for (int y = 0; y < image.getHeight(); ++y)
-        for (int x = 0; x < image.getWidth(); ++x)
-        {
-            const auto colour = pixels.getPixelColour (x, y);
-            const auto shift = (random.nextFloat() - 0.5f) * 0.045f;
-            pixels.setPixelColour (x, y, shift > 0.0f ? colour.brighter (shift) : colour.darker (-shift));
-        }
+    juce::PathStrokeType roundedStroke (float width)
+    {
+        return { width, juce::PathStrokeType::curved, juce::PathStrokeType::rounded };
+    }
+}
+
+DeckLookAndFeel::DeckLookAndFeel()
+{
+    setColour (juce::Slider::rotarySliderFillColourId,         Palette::cherry);
+    setColour (juce::Slider::textBoxTextColourId,              Palette::ink);
+    setColour (juce::Slider::textBoxHighlightColourId,         Palette::mustard.withAlpha (0.5f));
+    setColour (juce::Slider::textBoxOutlineColourId,           juce::Colours::transparentBlack);
+    setColour (juce::Label::textColourId,                      Palette::ink);
+    setColour (juce::TextEditor::backgroundColourId,           Palette::paper);
+    setColour (juce::TextEditor::textColourId,                 Palette::ink);
+    setColour (juce::TextEditor::highlightColourId,            Palette::mustard.withAlpha (0.5f));
+    setColour (juce::TextEditor::outlineColourId,              Palette::ink);
+    setColour (juce::TextEditor::focusedOutlineColourId,       Palette::ink);
+    setColour (juce::ComboBox::textColourId,                   Palette::ink);
+    setColour (juce::ComboBox::arrowColourId,                  Palette::ink);
+    setColour (juce::PopupMenu::backgroundColourId,            Palette::paper);
+    setColour (juce::PopupMenu::textColourId,                  Palette::ink);
+    setColour (juce::PopupMenu::highlightedBackgroundColourId, Palette::mustard);
+    setColour (juce::PopupMenu::highlightedTextColourId,       Palette::ink);
+    setColour (juce::TextButton::textColourOffId,              Palette::ink);
+    setColour (juce::TextButton::textColourOnId,               Palette::ink);
+}
+
+juce::Font DeckLookAndFeel::hand (float size)
+{
+    // Picked once: the first of these the system has.
+    static const auto choice = []
+    {
+        const auto installed = juce::Font::findAllTypefaceNames();
+        for (auto* name : { "Chalkboard SE", "Segoe Print", "Comic Sans MS" })
+            if (installed.contains (name))
+                return juce::String (name);
+        return juce::String();
+    }();
+
+    if (choice.isEmpty())
+        return juce::FontOptions (size, juce::Font::bold);
+    return juce::FontOptions (choice, size, juce::Font::bold);
+}
+
+juce::Image DeckLookAndFeel::gingham (int width, int height)
+{
+    juce::Image image (juce::Image::RGB, juce::jmax (1, width), juce::jmax (1, height), false);
+    juce::Graphics g (image);
+    g.fillAll (Palette::cloth);
+
+    // Stripes both ways; where they cross the check is twice as strong.
+    constexpr int band = 26, stripe = 13;
+    g.setColour (Palette::check.withAlpha (0.26f));
+    for (int x = 0; x < image.getWidth(); x += band)
+        g.fillRect (x, 0, stripe, image.getHeight());
+    for (int y = 0; y < image.getHeight(); y += band)
+        g.fillRect (0, y, image.getWidth(), stripe);
+
+    // The weave: faint threads along each stripe.
+    g.setColour (Palette::check.withAlpha (0.07f));
+    for (int x = 0; x < image.getWidth(); x += 3)
+        g.drawVerticalLine (x, 0.0f, (float) image.getHeight());
+    for (int y = 0; y < image.getHeight(); y += 3)
+        g.drawHorizontalLine (y, 0.0f, (float) image.getWidth());
 
     return image;
 }
 
-void DeckLookAndFeel::drawBevel (juce::Graphics& g, juce::Rectangle<float> r, float cornerSize, bool raised)
+void DeckLookAndFeel::drawCard (juce::Graphics& g, juce::Rectangle<float> r, const juce::String& title, int seed)
 {
-    const auto light = juce::Colours::white.withAlpha (0.75f);
-    const auto dark  = juce::Colours::black.withAlpha (0.5f);
-    g.setGradientFill (juce::ColourGradient (raised ? light : dark, r.getTopLeft(),
-                                             raised ? dark : light, r.getBottomRight(), false));
-    g.drawRoundedRectangle (r.reduced (0.75f), cornerSize, 1.5f);
+    constexpr auto corner = 10.0f;
+    g.setColour (Palette::ink.withAlpha (0.16f));
+    g.fillRoundedRectangle (r.translated (3.0f, 5.0f), corner);
+    g.setColour (Palette::paper);
+    g.fillRoundedRectangle (r, corner);
+    g.setColour (Palette::ink);
+    g.drawRoundedRectangle (r, corner, 2.5f);
+
+    g.setColour (Palette::rule);
+    g.drawLine (r.getX() + 10.0f, r.getY() + 29.0f, r.getRight() - 10.0f, r.getY() + 29.0f, 1.5f);
+
+    g.setColour (Palette::ink);
+    g.setFont (hand (17.0f));
+    g.drawText (title, r.reduced (14.0f, 0.0f).withHeight (30.0f), juce::Justification::centredLeft);
+
+    // A strip of tape over the top right corner, with torn ends.
+    const auto tapeW = 60.0f, tapeH = 20.0f;
+    juce::Path strip;
+    strip.startNewSubPath (-tapeW * 0.5f, -tapeH * 0.5f);
+    strip.lineTo (tapeW * 0.5f, -tapeH * 0.5f);
+    for (int i = 1; i <= 4; ++i)
+        strip.lineTo (tapeW * 0.5f + (i % 2 == 1 ? -2.5f : 0.0f), -tapeH * 0.5f + tapeH * (float) i / 4.0f);
+    strip.lineTo (-tapeW * 0.5f, tapeH * 0.5f);
+    for (int i = 1; i <= 4; ++i)
+        strip.lineTo (-tapeW * 0.5f + (i % 2 == 1 ? 2.5f : 0.0f), tapeH * 0.5f - tapeH * (float) i / 4.0f);
+    strip.closeSubPath();
+    const auto tilt = juce::degreesToRadians (32.0f + (hash (seed, 3) - 0.5f) * 18.0f);
+    strip.applyTransform (juce::AffineTransform::rotation (tilt).translated (r.getRight() - 14.0f, r.getY() + 6.0f));
+    g.setColour (Palette::tape);
+    g.fillPath (strip);
+    g.setColour (Palette::ink.withAlpha (0.25f));
+    g.strokePath (strip, juce::PathStrokeType (1.0f));
 }
 
-void DeckLookAndFeel::drawRecess (juce::Graphics& g, juce::Rectangle<float> r, juce::Colour fill)
+void DeckLookAndFeel::drawBoard (juce::Graphics& g, juce::Rectangle<float> r)
 {
-    constexpr auto corner = 6.0f;
-    g.setColour (fill);
-    g.fillRoundedRectangle (r, corner);
+    constexpr auto corner = 18.0f;
+    g.setColour (Palette::ink.withAlpha (0.2f));
+    g.fillRoundedRectangle (r.translated (3.0f, 5.0f), corner);
+
+    juce::Path board;
+    board.addRoundedRectangle (r, corner);
+    g.setGradientFill (juce::ColourGradient::vertical (Palette::wood.brighter (0.08f), r.getY(),
+                                                       Palette::wood.darker (0.06f), r.getBottom()));
+    g.fillPath (board);
 
     {
-        // The lip of the cut throws a shadow down and to the right.
+        // Grain: long wavy lines, and a knot or two the lines bend around.
         juce::Graphics::ScopedSaveState state (g);
-        juce::Path clip;
-        clip.addRoundedRectangle (r, corner);
-        g.reduceClipRegion (clip);
-        g.setGradientFill (juce::ColourGradient::vertical (juce::Colours::black.withAlpha (0.45f), r.getY(),
-                                                           juce::Colours::transparentBlack, r.getY() + 10.0f));
-        g.fillRect (r);
-        g.setGradientFill (juce::ColourGradient::horizontal (juce::Colours::black.withAlpha (0.25f), r.getX(),
-                                                             juce::Colours::transparentBlack, r.getX() + 7.0f));
-        g.fillRect (r);
+        g.reduceClipRegion (board);
+        const juce::Point<float> knots[] { { r.getX() + r.getWidth() * 0.13f, r.getY() + r.getHeight() * 0.78f },
+                                           { r.getX() + r.getWidth() * 0.86f, r.getY() + r.getHeight() * 0.2f } };
+        g.setColour (Palette::woodDark.withAlpha (0.35f));
+        int line = 0;
+        for (auto y = r.getY() + 6.0f; y < r.getBottom(); y += 11.0f + 6.0f * hash (line, 1), ++line)
+        {
+            juce::Path grain;
+            const auto phase = hash (line, 2) * 6.0f, wave = 60.0f + 50.0f * hash (line, 4);
+            for (auto x = r.getX(); x <= r.getRight(); x += 4.0f)
+            {
+                auto dy = 2.0f * std::sin (x / wave + phase);
+                for (auto knot : knots)
+                {
+                    const auto d = juce::Point<float> (x, y).getDistanceFrom (knot);
+                    dy += (y < knot.y ? -1.0f : 1.0f) * 14.0f * std::exp (-d * d / 900.0f);
+                }
+                x == r.getX() ? grain.startNewSubPath (x, y + dy) : grain.lineTo (x, y + dy);
+            }
+            g.strokePath (grain, juce::PathStrokeType (1.3f));
+        }
+        for (auto knot : knots)
+            for (auto k : { 4.0f, 8.0f })
+                g.drawEllipse (juce::Rectangle<float> (k * 2.2f, k * 1.4f).withCentre (knot), 1.3f);
     }
 
-    drawBevel (g, r.expanded (1.5f), corner + 1.5f, false);
-}
+    // The juice groove round the edge, cut in with a lit lower lip.
+    const auto groove = r.reduced (9.0f);
+    g.setColour (juce::Colours::white.withAlpha (0.25f));
+    g.drawRoundedRectangle (groove.translated (0.0f, 1.5f), corner - 8.0f, 2.0f);
+    g.setColour (Palette::woodDark.withAlpha (0.7f));
+    g.drawRoundedRectangle (groove, corner - 8.0f, 2.0f);
 
-void DeckLookAndFeel::drawScrew (juce::Graphics& g, juce::Point<float> centre, float radius, float slotAngle)
-{
-    const auto head = juce::Rectangle<float> (radius * 2.0f, radius * 2.0f).withCentre (centre);
-
-    g.setColour (juce::Colours::black.withAlpha (0.35f));
-    g.fillEllipse (head.translated (0.6f, 1.2f).expanded (0.8f));
-
-    g.setGradientFill (juce::ColourGradient (Palette::metalLight.brighter (0.3f), head.getTopLeft(),
-                                             Palette::metalDark.darker (0.3f), head.getBottomRight(), false));
-    g.fillEllipse (head);
-    g.setColour (juce::Colours::black.withAlpha (0.4f));
-    g.drawEllipse (head, 0.8f);
-
-    const auto a = centre.getPointOnCircumference (radius * 0.75f, slotAngle);
-    const auto b = centre.getPointOnCircumference (radius * 0.75f, slotAngle + juce::MathConstants<float>::pi);
-    const auto slotWidth = juce::jmax (1.2f, radius * 0.28f);
-    g.setColour (juce::Colours::white.withAlpha (0.35f));
-    g.drawLine ({ a.translated (0.0f, 0.8f), b.translated (0.0f, 0.8f) }, slotWidth);
-    g.setColour (Palette::ink.withAlpha (0.85f));
-    g.drawLine ({ a, b }, slotWidth);
+    g.setColour (Palette::ink);
+    g.strokePath (board, juce::PathStrokeType (3.0f));
 }
 
 void DeckLookAndFeel::drawRotarySlider (juce::Graphics& g, int x, int y, int width, int height,
-                                        float sliderPos, float startAngle, float endAngle, juce::Slider&)
+                                        float sliderPos, float startAngle, float endAngle, juce::Slider& slider)
 {
     const auto bounds = juce::Rectangle<int> (x, y, width, height).toFloat().reduced (2.0f);
     const auto radius = juce::jmin (bounds.getWidth(), bounds.getHeight()) * 0.5f;
     const auto centre = bounds.getCentre();
     const auto angle  = startAngle + sliderPos * (endAngle - startAngle);
+    const auto colour = slider.findColour (juce::Slider::rotarySliderFillColourId);
 
-    // Engraved scale: eleven ticks, longer at the ends and the middle.
-    g.setColour (Palette::ink.withAlpha (0.8f));
+    // The scale: eleven dots, filled in up to the value.
+    const auto dotR = juce::jmax (2.5f, radius * 0.055f);
     for (int i = 0; i <= 10; ++i)
     {
-        const auto a = startAngle + (float) i / 10.0f * (endAngle - startAngle);
-        const auto major = i == 0 || i == 5 || i == 10;
-        g.drawLine ({ centre.getPointOnCircumference (radius * (major ? 0.83f : 0.88f), a),
-                      centre.getPointOnCircumference (radius, a) }, major ? 2.0f : 1.2f);
+        const auto at = (float) i / 10.0f;
+        const auto dot = juce::Rectangle<float> (dotR * 2.0f, dotR * 2.0f)
+                             .withCentre (centre.getPointOnCircumference (radius - dotR - 1.0f,
+                                                                          startAngle + at * (endAngle - startAngle)));
+        g.setColour (at <= sliderPos + 0.001f ? colour : Palette::cream);
+        g.fillEllipse (dot);
+        g.setColour (Palette::ink);
+        g.drawEllipse (dot, 1.5f);
     }
 
-    const auto knobR = radius * 0.78f;
-    const auto knob = juce::Rectangle<float> (knobR * 2.0f, knobR * 2.0f).withCentre (centre);
-
-    // Shadow on the faceplate, a soft wide one under a tight dark one.
-    g.setColour (juce::Colours::black.withAlpha (0.18f));
-    g.fillEllipse (knob.translated (knobR * 0.06f, knobR * 0.16f).expanded (knobR * 0.06f));
-    g.setColour (juce::Colours::black.withAlpha (0.35f));
-    g.fillEllipse (knob.translated (0.0f, knobR * 0.07f));
-
-    // Knurled aluminium skirt: the ridges turn with the knob, the light stays put.
-    constexpr int ridges = 40;
-    juce::Path skirt;
-    for (int i = 0; i < ridges * 2; ++i)
+    // A jar lid: a ridged rim that turns with the knob, and a flat top.
+    const auto lidR = radius * 0.74f;
+    juce::Path rim;
+    constexpr int ridges = 26;
+    for (int i = 0; i <= 160; ++i)
     {
-        const auto a = angle + (float) i * juce::MathConstants<float>::pi / (float) ridges;
-        const auto p = centre.getPointOnCircumference (i % 2 == 0 ? knobR : knobR * 0.95f, a);
-        i == 0 ? skirt.startNewSubPath (p) : skirt.lineTo (p);
+        const auto a = (float) i / 160.0f * juce::MathConstants<float>::twoPi;
+        const auto r = lidR * (1.0f - 0.04f * (0.5f + 0.5f * std::cos ((float) ridges * (a - angle))));
+        const auto p = centre.getPointOnCircumference (r, a);
+        i == 0 ? rim.startNewSubPath (p) : rim.lineTo (p);
     }
-    skirt.closeSubPath();
-    g.setGradientFill (juce::ColourGradient (Palette::metalLight.brighter (0.2f), knob.getTopLeft(),
-                                             Palette::metalDark.darker (0.35f), knob.getBottomRight(), false));
-    g.fillPath (skirt);
-    g.setColour (juce::Colours::black.withAlpha (0.45f));
-    g.strokePath (skirt, juce::PathStrokeType (0.8f));
+    rim.closeSubPath();
 
-    // Black cap, slightly domed.
-    const auto capR = knobR * 0.74f;
-    const auto cap = juce::Rectangle<float> (capR * 2.0f, capR * 2.0f).withCentre (centre);
-    g.setColour (juce::Colours::black.withAlpha (0.6f));
-    g.fillEllipse (cap.expanded (1.5f));
-    g.setGradientFill (juce::ColourGradient (juce::Colour (0xff4a4d55), cap.getX() + capR * 0.5f, cap.getY() + capR * 0.3f,
-                                             Palette::cap, centre.x + capR * 0.3f, centre.y + capR * 0.6f, true));
-    g.fillEllipse (cap);
-    g.setGradientFill (juce::ColourGradient::vertical (juce::Colours::white.withAlpha (0.16f), cap.getY(),
-                                                       juce::Colours::transparentWhite, centre.y));
-    g.fillEllipse (cap.reduced (capR * 0.12f).withTrimmedBottom (capR * 0.9f));
+    g.setColour (Palette::ink.withAlpha (0.22f));
+    g.fillPath (rim, juce::AffineTransform::translation (2.0f, 4.0f));
+    g.setColour (colour.darker (0.25f));
+    g.fillPath (rim);
+    g.setColour (Palette::ink);
+    g.strokePath (rim, juce::PathStrokeType (2.5f));
 
-    // Orange pointer from near the middle out to the edge of the cap.
-    const auto tip  = centre.getPointOnCircumference (capR * 0.88f, angle);
-    const auto base = centre.getPointOnCircumference (capR * 0.3f, angle);
+    const auto topR = lidR * 0.78f;
+    const auto top = juce::Rectangle<float> (topR * 2.0f, topR * 2.0f).withCentre (centre);
+    g.setColour (colour);
+    g.fillEllipse (top);
+    g.setColour (Palette::ink);
+    g.drawEllipse (top, 2.0f);
+
+    // Cartoon shine, which stays put.
+    juce::Path shine;
+    shine.addCentredArc (centre.x, centre.y, topR * 0.75f, topR * 0.75f, 0.0f,
+                         juce::degreesToRadians (-70.0f), juce::degreesToRadians (-25.0f), true);
+    g.setColour (juce::Colours::white.withAlpha (0.65f));
+    g.strokePath (shine, roundedStroke (juce::jmax (2.5f, topR * 0.11f)));
+
     juce::Path pointer;
-    pointer.startNewSubPath (base);
-    pointer.lineTo (tip);
-    g.setColour (Palette::pointer);
-    g.strokePath (pointer, juce::PathStrokeType (juce::jmax (2.5f, capR * 0.13f), juce::PathStrokeType::curved,
-                                                 juce::PathStrokeType::rounded));
+    pointer.startNewSubPath (centre.getPointOnCircumference (topR * 0.15f, angle));
+    pointer.lineTo (centre.getPointOnCircumference (topR * 0.8f, angle));
+    g.setColour (Palette::ink);
+    g.strokePath (pointer, roundedStroke (juce::jmax (3.0f, topR * 0.15f)));
+}
+
+namespace
+{
+    constexpr auto buttonDepth = 4.0f;
+
+    /** The face of a chunky button: it sits up on its base, and drops onto it when pressed. */
+    juce::Rectangle<float> buttonFace (juce::Button& button, bool down)
+    {
+        const auto r = button.getLocalBounds().toFloat().reduced (1.5f);
+        const auto pressed = down || button.getToggleState();
+        return r.withTrimmedBottom (buttonDepth).translated (0.0f, pressed ? buttonDepth - 1.5f : 0.0f);
+    }
 }
 
 void DeckLookAndFeel::drawButtonBackground (juce::Graphics& g, juce::Button& button, const juce::Colour&,
                                             bool highlighted, bool down)
 {
-    auto r = button.getLocalBounds().toFloat().reduced (1.0f);
-
-    // Bezel cut into the plate, then a black cap that drops into it when pressed.
-    g.setColour (Palette::chassis);
-    g.fillRoundedRectangle (r, 5.0f);
-    drawBevel (g, r.expanded (1.0f), 6.0f, false);
-
-    auto cap = r.reduced (2.5f);
-    const auto pressed = down || button.getToggleState();
-    if (pressed)
-        cap = cap.translated (0.0f, 1.0f).withTrimmedBottom (1.0f);
-
-    g.setGradientFill (juce::ColourGradient::vertical (juce::Colour (pressed ? 0xff2b2d32 : 0xff464950), cap.getY(),
-                                                       juce::Colour (pressed ? 0xff18191c : 0xff222429), cap.getBottom()));
-    g.fillRoundedRectangle (cap, 3.5f);
-    if (! pressed)
-    {
-        g.setColour (juce::Colours::white.withAlpha (0.22f));
-        g.drawHorizontalLine ((int) cap.getY() + 1, cap.getX() + 3.0f, cap.getRight() - 3.0f);
-    }
+    const auto r = button.getLocalBounds().toFloat().reduced (1.5f);
+    const auto face = buttonFace (button, down);
+    const auto corner = juce::jmin (9.0f, face.getHeight() * 0.4f);
+    auto fill = button.getToggleState() ? Palette::mustard : Palette::cream;
     if (highlighted && ! down)
-    {
-        g.setColour (juce::Colours::white.withAlpha (0.05f));
-        g.fillRoundedRectangle (cap, 3.5f);
-    }
+        fill = fill.brighter (0.06f);
+    if (! button.isEnabled())
+        fill = fill.withMultipliedSaturation (0.3f);
 
-    // Switches get a lamp on the left.
+    g.setColour (fill.darker (0.45f));
+    g.fillRoundedRectangle (r, corner);
+    g.setColour (Palette::ink);
+    g.drawRoundedRectangle (r, corner, 2.0f);
+    g.setColour (fill);
+    g.fillRoundedRectangle (face, corner);
+    g.setColour (Palette::ink);
+    g.drawRoundedRectangle (face, corner, 2.0f);
+
+    g.setColour (juce::Colours::white.withAlpha (0.7f));
+    g.drawLine (face.getX() + corner, face.getY() + 4.0f, face.getX() + juce::jmax (corner + 4.0f, face.getWidth() * 0.3f),
+                face.getY() + 4.0f, 2.0f);
+
+    // Switches get a cherry on the left that lights up.
     if (button.getClickingTogglesState())
     {
-        const auto lamp = juce::Rectangle<float> (7.0f, 7.0f).withCentre ({ cap.getX() + 11.0f, cap.getCentreY() });
+        const auto lamp = juce::Rectangle<float> (10.0f, 10.0f).withCentre ({ face.getX() + 13.0f, face.getCentreY() });
+        g.setColour (button.getToggleState() ? Palette::cherry : Palette::cream.darker (0.2f));
+        g.fillEllipse (lamp);
         if (button.getToggleState())
         {
-            g.setGradientFill (juce::ColourGradient (Palette::amber.withAlpha (0.55f), lamp.getCentre(),
-                                                     Palette::amber.withAlpha (0.0f), lamp.getCentre().translated (9.0f, 0.0f), true));
-            g.fillEllipse (lamp.expanded (6.0f));
-            g.setColour (Palette::amber);
-            g.fillEllipse (lamp);
-            g.setColour (juce::Colours::white.withAlpha (0.7f));
-            g.fillEllipse (lamp.reduced (2.2f).translated (-0.6f, -0.6f));
+            g.setColour (juce::Colours::white.withAlpha (0.8f));
+            g.fillEllipse (juce::Rectangle<float> (3.0f, 3.0f).withCentre (lamp.getCentre().translated (-1.5f, -1.5f)));
         }
-        else
-        {
-            g.setColour (Palette::lampOff);
-            g.fillEllipse (lamp);
-        }
-        g.setColour (juce::Colours::black.withAlpha (0.6f));
-        g.drawEllipse (lamp, 0.8f);
+        g.setColour (Palette::ink);
+        g.drawEllipse (lamp, 1.5f);
     }
 }
 
 void DeckLookAndFeel::drawButtonText (juce::Graphics& g, juce::TextButton& button, bool, bool down)
 {
-    auto area = button.getLocalBounds().reduced (4, 2);
+    auto area = buttonFace (button, down).toNearestInt().reduced (4, 0);
     if (button.getClickingTogglesState())
-        area.removeFromLeft (14);
-    if (down || button.getToggleState())
-        area.translate (0, 1);
+        area.removeFromLeft (16);
 
     g.setColour (button.findColour (button.getToggleState() ? juce::TextButton::textColourOnId
                                                             : juce::TextButton::textColourOffId)
                      .withMultipliedAlpha (button.isEnabled() ? 1.0f : 0.5f));
-    g.setFont (juce::FontOptions (12.0f, juce::Font::bold));
+    g.setFont (hand (15.0f));
     g.drawFittedText (button.getButtonText().toUpperCase(), area, juce::Justification::centred, 1);
 }
 
 void DeckLookAndFeel::drawComboBox (juce::Graphics& g, int width, int height, bool,
                                     int, int, int, int, juce::ComboBox& box)
 {
-    // An amber readout behind glass.
-    const auto r = juce::Rectangle<int> (width, height).toFloat();
-    g.setColour (Palette::window);
-    g.fillRoundedRectangle (r, 4.0f);
-    g.setGradientFill (juce::ColourGradient::vertical (juce::Colours::white.withAlpha (0.08f), r.getY(),
-                                                       juce::Colours::transparentWhite, r.getCentreY()));
-    g.fillRoundedRectangle (r.reduced (2.0f), 3.0f);
-    drawBevel (g, r, 4.0f, false);
+    const auto r = juce::Rectangle<int> (width, height).toFloat().reduced (1.0f);
+    g.setColour (Palette::cream);
+    g.fillRoundedRectangle (r, 8.0f);
+    g.setColour (Palette::ink);
+    g.drawRoundedRectangle (r, 8.0f, 2.0f);
 
-    const auto arrow = juce::Rectangle<float> (8.0f, 5.0f).withCentre ({ r.getRight() - 12.0f, r.getCentreY() });
-    juce::Path triangle;
-    triangle.addTriangle (arrow.getTopLeft(), arrow.getTopRight(), arrow.getCentre().withY (arrow.getBottom()));
+    const auto arrow = juce::Rectangle<float> (9.0f, 5.0f).withCentre ({ r.getRight() - 13.0f, r.getCentreY() });
+    juce::Path chevron;
+    chevron.startNewSubPath (arrow.getTopLeft());
+    chevron.lineTo (arrow.getCentreX(), arrow.getBottom());
+    chevron.lineTo (arrow.getTopRight());
     g.setColour (box.findColour (juce::ComboBox::arrowColourId).withMultipliedAlpha (box.isEnabled() ? 1.0f : 0.4f));
-    g.fillPath (triangle);
+    g.strokePath (chevron, roundedStroke (2.0f));
 }
 
 void DeckLookAndFeel::positionComboBoxText (juce::ComboBox& box, juce::Label& label)
 {
-    label.setBounds (4, 1, box.getWidth() - 24, box.getHeight() - 2);
+    label.setBounds (6, 1, box.getWidth() - 26, box.getHeight() - 2);
     label.setFont (getComboBoxFont (box));
 }
 
 juce::Font DeckLookAndFeel::getComboBoxFont (juce::ComboBox&)
 {
-    return juce::FontOptions (13.0f, juce::Font::bold);
+    return hand (14.0f);
+}
+
+juce::Font DeckLookAndFeel::getPopupMenuFont()
+{
+    return hand (15.0f);
+}
+
+juce::Label* DeckLookAndFeel::createSliderTextBox (juce::Slider& slider)
+{
+    auto* label = at::LookAndFeel::createSliderTextBox (slider);
+    label->setFont (hand (15.0f));
+    return label;
 }

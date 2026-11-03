@@ -20,7 +20,7 @@ private:
     void drawSection (juce::Graphics&, juce::Rectangle<int>, const juce::String& title) const;
 
     DeckLookAndFeel lookAndFeel;
-    juce::Image plate;
+    juce::Image cloth;
 
     at::PresetBar presetBar;
     ReelDeck reels;
@@ -32,7 +32,7 @@ private:
     juce::ComboBox stopSpeed, catchUp;
     ComboBoxAttachment stopSpeedAttachment, catchUpAttachment;
 
-    juce::Rectangle<int> faceplate, header, transportArea, driveArea, toneArea, outputArea, motionArea, noiseArea;
+    juce::Rectangle<int> header, transportArea, driveArea, toneArea, outputArea, motionArea, noiseArea;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };
