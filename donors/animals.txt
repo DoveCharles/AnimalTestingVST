@@ -1,0 +1,1000 @@
+🐒	Rhesus Macaque
+🐒	Japanese Macaque
+🐒	Proboscis Monkey
+🐒	Howler Monkey
+🐒	Squirrel Monkey
+🐒	Mandrill
+🐒	Gelada
+🐒	Olive Baboon
+🐒	Vervet Monkey
+🐒	Golden Lion Tamarin
+🐒	Emperor Tamarin
+🐒	Common Marmoset
+🐒	Bald Uakari
+🐒	Douc Langur
+🐒	Patas Monkey
+🐒	Woolly Monkey
+🐒	Talapoin
+🐒	De Brazza's Monkey
+🐒	Muriqui
+🐒	Siamang
+🐒	Ring-tailed Lemur
+🐒	Indri
+🐒	Mouse Lemur
+🐒	Slender Loris
+🐒	Bushbaby
+🦍	Western Gorilla
+🦍	Mountain Gorilla
+🦧	Bornean Orangutan
+🦧	Tapanuli Orangutan
+🦧	Bonobo
+🐺	Arctic Wolf
+🐺	Maned Wolf
+🐺	Coyote
+🐺	Black-backed Jackal
+🐺	Dingo
+🐺	African Wild Dog
+🐺	Raccoon Dog
+🦊	Arctic Fox
+🦊	Kit Fox
+🦊	Grey Fox
+🦊	Pale Fox
+🦊	Island Fox
+🦊	Darwin's Fox
+🦊	Culpeo
+🐕	Corgi
+🐕	Bloodhound
+🐕	Greyhound
+🐕	Saluki
+🐕	Akita
+🐕	Siberian Husky
+🐕	Newfoundland
+🐕	Saint Bernard
+🐕	Great Dane
+🐕	Chihuahua
+🐕	Schnauzer
+🐕	Border Collie
+🐕	Blue Heeler
+🐕	Jack Russell Terrier
+🐕	Bulldog
+🐕	French Bulldog
+🐕	Chow Chow
+🐕	Basenji
+🐕	Puli
+🐕	Vizsla
+🐕	Golden Retriever
+🐕	Lurcher
+🐕	Bichon Frise
+🐕	Shih Tzu
+🐕	Pekingese
+🐕	Rottweiler
+🐕	Great Pyrenees
+🐕	Scottish Terrier
+🐕	Bull Terrier
+🐕	Cavalier King Charles Spaniel
+🐕	Springer Spaniel
+🐕	Irish Setter
+🐕	Old English Sheepdog
+🐕	Shetland Sheepdog
+🐈	Siamese Cat
+🐈	Maine Coon
+🐈	Bengal Cat
+🐈	Scottish Fold
+🐈	Abyssinian
+🐈	Norwegian Forest Cat
+🐈	Devon Rex
+🐈	Manx Cat
+🐈	Savannah Cat
+🐈	Birman
+🐈	Somali Cat
+🐈	Bombay Cat
+🐈	Ocicat
+🐈	LaPerm
+🐈	Munchkin Cat
+🐈	Korat
+🐈	Iberian Lynx
+🐈	Bobcat
+🐈	Serval
+🐈	Margay
+🐈	Jaguarundi
+🐈	Flat-headed Cat
+🐈	Sand Cat
+🐈	Black-footed Cat
+🐈	Marbled Cat
+🐈	Asian Golden Cat
+🐈	Leopard Cat
+🐈	Kodkod
+🐈	Andean Mountain Cat
+🐈	Scottish Wildcat
+🦁	Lion
+🦁	Asiatic Lion
+🐅	Bengal Tiger
+🐅	Sumatran Tiger
+🐅	Indochinese Tiger
+🐆	Snow Leopard
+🐆	Sunda Clouded Leopard
+🐆	Jaguar
+🐆	King Cheetah
+🐆	Cougar
+🐻	Grizzly Bear
+🐻	American Black Bear
+🐻	Sun Bear
+🐻	Spectacled Bear
+🐼	Giant Panda
+🦝	Raccoon
+🦝	Coati
+🦝	Olingo
+🦝	Ringtail
+🦡	European Badger
+🦡	American Badger
+🦡	Stink Badger
+🦦	Sea Otter
+🦦	Eurasian Otter
+🦦	Asian Small-clawed Otter
+🦦	Marine Otter
+🦦	Stoat
+🦦	Ferret
+🦦	Polecat
+🦦	Pine Marten
+🦦	Fisher
+🦦	Wolverine
+🦦	Grison
+🦨	Striped Skunk
+🦨	Spotted Skunk
+🦨	Hooded Skunk
+🐾	Banded Mongoose
+🐾	Yellow Mongoose
+🐾	Binturong
+🐾	African Civet
+🐾	Banded Linsang
+🐾	Spotted Hyena
+🐾	Brown Hyena
+🐾	Wombat
+🐾	Tasmanian Devil
+🐾	Numbat
+🐾	Bandicoot
+🐾	Greater Glider
+🐾	Ringtail Possum
+🐾	Cuscus
+🐾	Antechinus
+🐾	Marsupial Mole
+🐾	Monito del Monte
+🐾	Kowari
+🐾	Mulgara
+🐾	Aardvark
+🐾	Sunda Pangolin
+🐾	Giant Anteater
+🐾	Tamandua
+🐾	Nine-banded Armadillo
+🐾	Giant Armadillo
+🐾	Malayan Tapir
+🐾	Mountain Tapir
+🐾	Colugo
+🐾	Tree Hyrax
+🦭	Grey Seal
+🦭	Hooded Seal
+🦭	Bearded Seal
+🦭	Leopard Seal
+🦭	Crabeater Seal
+🦭	Northern Elephant Seal
+🦭	Hawaiian Monk Seal
+🦭	Baikal Seal
+🦭	Ribbon Seal
+🦭	Walrus
+🦭	Steller Sea Lion
+🦭	Australian Sea Lion
+🦭	Galápagos Sea Lion
+🦭	Northern Fur Seal
+🦭	Cape Fur Seal
+🦭	Amazonian Manatee
+🦭	Dugong
+🐋	Fin Whale
+🐋	Bryde's Whale
+🐋	Minke Whale
+🐋	Grey Whale
+🐋	North Atlantic Right Whale
+🐋	Sperm Whale
+🐋	Dwarf Sperm Whale
+🐋	Beluga
+🐋	False Killer Whale
+🐋	Melon-headed Whale
+🐋	Baird's Beaked Whale
+🐋	Northern Bottlenose Whale
+🐬	Orca
+🐬	Common Dolphin
+🐬	Striped Dolphin
+🐬	Dusky Dolphin
+🐬	Commerson's Dolphin
+🐬	Amazon River Dolphin
+🐬	Indus River Dolphin
+🐬	Baiji
+🐬	Rough-toothed Dolphin
+🐬	Atlantic Spotted Dolphin
+🐬	Fraser's Dolphin
+🐬	Vaquita
+🐬	Finless Porpoise
+🐘	African Bush Elephant
+🐘	Asian Elephant
+🐘	Sri Lankan Elephant
+🦏	White Rhino
+🦏	Indian Rhino
+🦏	Sumatran Rhino
+🦛	Pygmy Hippo
+🦒	Masai Giraffe
+🦒	Okapi
+🦓	Grévy's Zebra
+🐎	Przewalski's Horse
+🐎	Mustang
+🐎	Shetland Pony
+🐎	Dartmoor Pony
+🐎	Connemara Pony
+🐎	Shire Horse
+🐎	Friesian Horse
+🐎	Akhal-Teke
+🐎	Lipizzaner
+🐎	Icelandic Horse
+🐎	Haflinger
+🫏	Donkey
+🫏	Poitou Donkey
+🫏	Kiang
+🦌	Red Deer
+🦌	Roe Deer
+🦌	Muntjac
+🦌	Chinese Water Deer
+🦌	Mule Deer
+🦌	Reindeer
+🦌	Père David's Deer
+🦌	Sambar
+🦌	Pudú
+🦌	Marsh Deer
+🦌	Tufted Deer
+🦌	Musk Deer
+🦌	Impala
+🦌	Thomson's Gazelle
+🦌	Dorcas Gazelle
+🦌	Dik-dik
+🦌	Steenbok
+🦌	Bongo
+🦌	Nyala
+🦌	Lesser Kudu
+🦌	Sitatunga
+🦌	Giant Eland
+🦌	Scimitar Oryx
+🦌	Addax
+🦌	Roan Antelope
+🦌	Topi
+🦌	Blue Wildebeest
+🦌	Waterbuck
+🦌	Lechwe
+🦌	Kob
+🦌	Grey Rhebok
+🦌	Chiru
+🦌	Nilgai
+🦌	Pronghorn
+🦌	Serow
+🫎	Moose
+🐃	African Buffalo
+🐃	Anoa
+🐃	Gaur
+🐃	Kouprey
+🐃	Takin
+🦬	European Bison
+🐂	Yak
+🐂	Aurochs
+🐂	Ankole-Watusi
+🐄	Highland Cow
+🐄	Jersey Cow
+🐄	Hereford
+🐐	Mountain Goat
+🐐	Nubian Ibex
+🐐	West Caucasian Tur
+🐐	Pygmy Goat
+🐐	Cashmere Goat
+🐐	Boer Goat
+🐐	Valais Blackneck Goat
+🐏	Barbary Sheep
+🐏	Dall Sheep
+🐏	Mouflon
+🐏	Racka Sheep
+🐑	Herdwick Sheep
+🐑	Merino
+🐑	Swaledale Sheep
+🐑	Wensleydale Sheep
+🐑	Valais Blacknose Sheep
+🐗	Warthog
+🐗	Red River Hog
+🐗	Babirusa
+🐗	Bearded Pig
+🐗	Chacoan Peccary
+🐖	Gloucestershire Old Spot
+🐖	Tamworth Pig
+🐖	Mangalica
+🐖	Large Black Pig
+🐫	Bactrian Camel
+🦙	Llama
+🦙	Guanaco
+🦘	Red Kangaroo
+🦘	Western Grey Kangaroo
+🦘	Antilopine Kangaroo
+🦘	Red-necked Wallaby
+🦘	Quokka
+🦘	Pademelon
+🦘	Potoroo
+🐨	Koala
+🦔	African Pygmy Hedgehog
+🦔	Desert Hedgehog
+🦔	Tenrec
+🦔	Streaked Tenrec
+🦔	Long-beaked Echidna
+🦔	Crested Porcupine
+🦇	Fruit Bat
+🦇	Vampire Bat
+🦇	Noctule
+🦇	Greater Horseshoe Bat
+🦇	Daubenton's Bat
+🦇	Ghost Bat
+🦇	Hammer-headed Bat
+🦇	Honduran White Bat
+🦇	Little Brown Bat
+🦇	Barbastelle
+🦇	Fishing Bat
+🐀	Black Rat
+🐀	Kangaroo Rat
+🐀	Naked Mole-rat
+🐀	Muskrat
+🐀	Hutia
+🐁	Wood Mouse
+🐁	Spiny Mouse
+🐁	Grasshopper Mouse
+🐁	Spinifex Hopping Mouse
+🐁	Field Vole
+🐁	Norway Lemming
+🐁	Mongolian Gerbil
+🐁	Pocket Gopher
+🐁	Star-nosed Mole
+🐁	Pyrenean Desman
+🐁	Pygmy Shrew
+🐁	Elephant Shrew
+🐁	Solenodon
+🐭	Hazel Dormouse
+🐭	Edible Dormouse
+🐭	Degu
+🐹	Syrian Hamster
+🐹	Chinese Hamster
+🐹	Guinea Pig
+🐹	Viscacha
+🦫	Patagonian Mara
+🦫	Paca
+🦫	Pacarana
+🦫	American Beaver
+🐿️	Red Squirrel
+🐿️	Fox Squirrel
+🐿️	Giant Flying Squirrel
+🐿️	Eastern Chipmunk
+🐿️	Groundhog
+🐿️	Hoary Marmot
+🐿️	Thirteen-lined Ground Squirrel
+🐇	European Rabbit
+🐇	Brown Hare
+🐇	Arctic Hare
+🐇	Black-tailed Jackrabbit
+🐇	Amami Rabbit
+🐇	Pygmy Rabbit
+🐇	Sumatran Striped Rabbit
+🐇	Angora Rabbit
+🐇	Rex Rabbit
+🐇	Flemish Giant Rabbit
+🦥	Two-toed Sloth
+🦥	Pygmy Three-toed Sloth
+🦣	Woolly Mammoth
+🦣	Mastodon
+🦖	Velociraptor
+🦖	Allosaurus
+🦖	Carnotaurus
+🦖	Deinonychus
+🦕	Diplodocus
+🦕	Stegosaurus
+🦕	Parasaurolophus
+🦕	Iguanodon
+🦕	Ichthyosaurus
+🦕	Pteranodon
+🦤	Dodo
+🦤	Moa
+🦅	Bald Eagle
+🦅	Harpy Eagle
+🦅	Steller's Sea Eagle
+🦅	Martial Eagle
+🦅	Bateleur
+🦅	Wedge-tailed Eagle
+🦅	Red Kite
+🦅	Black Kite
+🦅	Honey Buzzard
+🦅	Ferruginous Hawk
+🦅	Sparrowhawk
+🦅	Hen Harrier
+🦅	Peregrine Falcon
+🦅	Kestrel
+🦅	Hobby
+🦅	Lanner Falcon
+🦅	Secretary Bird
+🦅	California Condor
+🦅	King Vulture
+🦅	Egyptian Vulture
+🦅	Lappet-faced Vulture
+🦉	Barn Owl
+🦉	Snowy Owl
+🦉	Eurasian Eagle-Owl
+🦉	Little Owl
+🦉	Long-eared Owl
+🦉	Great Grey Owl
+🦉	Elf Owl
+🦉	Eastern Screech Owl
+🦉	Blakiston's Fish Owl
+🦉	Northern Saw-whet Owl
+🦉	Pygmy Owl
+🦉	Tawny Frogmouth
+🦉	Nightjar
+🦆	Mallard
+🦆	Wood Duck
+🦆	Wigeon
+🦆	Shoveler
+🦆	Eider
+🦆	Harlequin Duck
+🦆	Long-tailed Duck
+🦆	Bufflehead
+🦆	Hooded Merganser
+🦆	Pochard
+🦆	Canvasback
+🦆	Muscovy Duck
+🦆	Steamer Duck
+🦆	Magpie Duck
+🪿	Greylag Goose
+🪿	Barnacle Goose
+🪿	Pink-footed Goose
+🪿	Bar-headed Goose
+🪿	Egyptian Goose
+🪿	Magpie Goose
+🦢	Mute Swan
+🦢	Bewick's Swan
+🦢	Black Swan
+🦢	Black-necked Swan
+🦩	Lesser Flamingo
+🦩	Andean Flamingo
+🦩	American Flamingo
+🦩	Roseate Spoonbill
+🦩	Sacred Ibis
+🦩	Northern Bald Ibis
+🐦	Hamerkop
+🐦	Grey Heron
+🐦	Purple Heron
+🐦	Bittern
+🐦	Great Egret
+🐦	Marabou Stork
+🐦	Black Stork
+🐦	Saddle-billed Stork
+🐦	Red-crowned Crane
+🐦	Whooping Crane
+🐦	Sarus Crane
+🐦	Common Crane
+🐦	American Robin
+🐦	Blue Tit
+🐦	Long-tailed Tit
+🐦	Chickadee
+🐦	Treecreeper
+🐦	Chaffinch
+🐦	Greenfinch
+🐦	Hawfinch
+🐦	Linnet
+🐦	Crossbill
+🐦	Tree Sparrow
+🐦	Skylark
+🐦	Swallow
+🐦	Sand Martin
+🐦	Common Swift
+🐦	Bee Hummingbird
+🐦	Sword-billed Hummingbird
+🐦	Common Kingfisher
+🐦	Bee-eater
+🐦	Lilac-breasted Roller
+🐦	Great Hornbill
+🐦	Ground Hornbill
+🐦	Keel-billed Toucan
+🐦	Aracari
+🐦	Great Spotted Woodpecker
+🐦	Pileated Woodpecker
+🐦	Wryneck
+🐦	Sapsucker
+🐦	Roadrunner
+🐦	Turaco
+🐦	Trogon
+🐦	Superb Lyrebird
+🐦	Wilson's Bird-of-paradise
+🐦	Cassowary
+🐦	Ostrich
+🐦	Great Spotted Kiwi
+🐦	Wandering Albatross
+🐦	Storm Petrel
+🐦	Fulmar
+🐦	Gannet
+🐦	Cormorant
+🐦	Anhinga
+🐦	Brown Pelican
+🐦	Frigatebird
+🐦	Atlantic Puffin
+🐦	Guillemot
+🐦	Little Auk
+🐦	Herring Gull
+🐦	Black-headed Gull
+🐦	Arctic Tern
+🐦	Inca Tern
+🐦	Oystercatcher
+🐦	Black-winged Stilt
+🐦	Golden Plover
+🐦	Dotterel
+🐦	Whimbrel
+🐦	Godwit
+🐦	Woodcock
+🐦	Dunlin
+🐦	Turnstone
+🐦	Phalarope
+🐦	Coot
+🐦	Water Rail
+🐦	Takahē
+🐦	Pukeko
+🐦	Little Grebe
+🐦	Dipper
+🐦	Meadow Pipit
+🐦	Stonechat
+🐦	Redstart
+🐦	Bluethroat
+🐦	Chiffchaff
+🐦	Reed Warbler
+🐦	Goldcrest
+🐦	Waxwing
+🐦	Golden Oriole
+🐦	Reed Bunting
+🐦	Northern Cardinal
+🐦	Indigo Bunting
+🐦	Eastern Bluebird
+🐦	Catbird
+🐦	Song Thrush
+🐦	Fieldfare
+🐦	Ring Ouzel
+🐦	Quelea
+🐦	Zebra Finch
+🐦	Java Sparrow
+🐦	Bulbul
+🐦	Fantail
+🐦	Superb Fairywren
+🐦	Tui
+🐦	Kokako
+🐦	Hoatzin
+🐦	Kagu
+🐦	Great Bustard
+🐦	Sandgrouse
+🐦	Hill Myna
+🐦	Red-legged Partridge
+🐦	Quail
+🐦	Red Grouse
+🐦	Capercaillie
+🐦	Sage Grouse
+🐦	Vulturine Guineafowl
+🐦	Golden Pheasant
+🐦	Reeves's Pheasant
+🐦	Ring-necked Pheasant
+🐦	Satyr Tragopan
+🐦‍⬛	Raven
+🐦‍⬛	Hooded Crow
+🐦‍⬛	Jackdaw
+🐦‍⬛	Eurasian Jay
+🐦‍⬛	Steller's Jay
+🐦‍⬛	Nutcracker
+🐦‍⬛	Blackbird
+🐧	Emperor Penguin
+🐧	Adélie Penguin
+🐧	Chinstrap Penguin
+🐧	Rockhopper Penguin
+🐧	Snares Penguin
+🐧	Yellow-eyed Penguin
+🐧	African Penguin
+🐧	Magellanic Penguin
+🐧	Erect-crested Penguin
+🦜	Scarlet Macaw
+🦜	Hyacinth Macaw
+🦜	Military Macaw
+🦜	Kākāpō
+🦜	Kākā
+🦜	Budgerigar
+🦜	Sulphur-crested Cockatoo
+🦜	Palm Cockatoo
+🦜	Gang-gang Cockatoo
+🦜	Rainbow Lorikeet
+🦜	Amazon Parrot
+🦜	Rose-ringed Parakeet
+🦜	Sun Conure
+🦜	Hawk-headed Parrot
+🦜	Pesquet's Parrot
+🦚	Green Peafowl
+🦚	Congo Peafowl
+🐓	Silkie
+🐓	Orpington
+🐓	Brahma Chicken
+🐓	Polish Chicken
+🐓	Sussex Chicken
+🦃	Ocellated Turkey
+🕊️	Rock Dove
+🕊️	Turtle Dove
+🕊️	Collared Dove
+🕊️	Victoria Crowned Pigeon
+🕊️	Pink Pigeon
+🕊️	Fruit Dove
+🐊	Nile Crocodile
+🐊	American Crocodile
+🐊	Gharial
+🐊	American Alligator
+🐊	Chinese Alligator
+🐊	Black Caiman
+🐊	Orinoco Crocodile
+🐊	Dwarf Crocodile
+🐢	Green Sea Turtle
+🐢	Hawksbill Turtle
+🐢	Kemp's Ridley
+🐢	Galápagos Giant Tortoise
+🐢	Aldabra Giant Tortoise
+🐢	Spur-thighed Tortoise
+🐢	Desert Tortoise
+🐢	Sulcata Tortoise
+🐢	Pancake Tortoise
+🐢	Snapping Turtle
+🐢	Mata Mata
+🐢	Pig-nosed Turtle
+🐢	Painted Turtle
+🐢	Musk Turtle
+🐢	Wood Turtle
+🐢	Mary River Turtle
+🦎	Nile Monitor
+🦎	Perentie
+🦎	Savannah Monitor
+🦎	Marine Iguana
+🦎	Desert Iguana
+🦎	Chuckwalla
+🦎	Mexican Beaded Lizard
+🦎	Frilled Lizard
+🦎	Water Dragon
+🦎	Basilisk
+🦎	Veiled Chameleon
+🦎	Leaf Chameleon
+🦎	Tokay Gecko
+🦎	Crested Gecko
+🦎	House Gecko
+🦎	Blue-tongued Skink
+🦎	Fire Skink
+🦎	Slow Worm
+🦎	Sand Lizard
+🦎	Wall Lizard
+🦎	Brown Anole
+🦎	Collared Lizard
+🦎	Fence Lizard
+🦎	Caiman Lizard
+🦎	Sungazer
+🦎	Worm Lizard
+🦎	Fire Salamander
+🦎	Spotted Salamander
+🦎	Japanese Giant Salamander
+🦎	Mudpuppy
+🦎	Olm
+🦎	Smooth Newt
+🦎	Eastern Newt
+🦎	Alpine Newt
+🦎	Amphiuma
+🐍	King Cobra
+🐍	Spitting Cobra
+🐍	Green Mamba
+🐍	Coastal Taipan
+🐍	Eastern Brown Snake
+🐍	Death Adder
+🐍	Sea Krait
+🐍	Timber Rattlesnake
+🐍	Sidewinder
+🐍	Cottonmouth
+🐍	Fer-de-lance
+🐍	Rhinoceros Viper
+🐍	Puff Adder
+🐍	Horned Viper
+🐍	Saw-scaled Viper
+🐍	Green Tree Python
+🐍	Burmese Python
+🐍	Carpet Python
+🐍	Boa Constrictor
+🐍	Rainbow Boa
+🐍	Green Anaconda
+🐍	Rubber Boa
+🐍	Corn Snake
+🐍	King Snake
+🐍	Grass Snake
+🐍	Garter Snake
+🐍	Boomslang
+🐍	Paradise Flying Snake
+🐍	Blind Snake
+🐸	Common Frog
+🐸	Natterjack Toad
+🐸	American Bullfrog
+🐸	Golden Poison Frog
+🐸	Blue Poison Dart Frog
+🐸	Glass Frog
+🐸	Tomato Frog
+🐸	African Clawed Frog
+🐸	Surinam Toad
+🐸	Purple Frog
+🐸	Desert Rain Frog
+🐸	Wood Frog
+🐸	Green Tree Frog
+🐸	Midwife Toad
+🐸	Spadefoot Toad
+🐸	Turtle Frog
+🐸	Titicaca Water Frog
+🦈	Tiger Shark
+🦈	Great Hammerhead
+🦈	Basking Shark
+🦈	Blue Shark
+🦈	Greenland Shark
+🦈	Megamouth Shark
+🦈	Nurse Shark
+🦈	Lemon Shark
+🦈	Whitetip Reef Shark
+🦈	Zebra Shark
+🦈	Epaulette Shark
+🦈	Angel Shark
+🦈	Spiny Dogfish
+🦈	Megalodon
+🐟	Stingray
+🐟	Electric Ray
+🐟	Sawfish
+🐟	Skate
+🐟	Coelacanth
+🐟	Bichir
+🐟	Beluga Sturgeon
+🐟	Alligator Gar
+🐟	Arapaima
+🐟	Elephantnose Fish
+🐟	Electric Eel
+🐟	European Eel
+🐟	Gulper Eel
+🐟	Atlantic Salmon
+🐟	Chinook Salmon
+🐟	Rainbow Trout
+🐟	Grayling
+🐟	Muskellunge
+🐟	Perch
+🐟	Largemouth Bass
+🐟	Giant Grouper
+🐟	Haddock
+🐟	Hake
+🐟	Sardine
+🐟	Mackerel
+🐟	Yellowfin Tuna
+🐟	Blue Marlin
+🐟	Sailfish
+🐟	Mahi-mahi
+🐟	Flying Fish
+🐟	Halibut
+🐟	Sole
+🐟	Flounder
+🐟	Koi
+🐟	Tench
+🐟	Bream
+🐟	Barbel
+🐟	Wels Catfish
+🐟	Mekong Giant Catfish
+🐟	Pleco
+🐟	Glass Catfish
+🐟	Pacu
+🐟	Cardinal Tetra
+🐟	Hatchetfish
+🐟	Molly
+🐟	Betta
+🐟	Discus
+🐟	Tilapia
+🐟	Anglerfish
+🐟	Batfish
+🐟	Lamprey
+🐟	Opah
+🐟	Barreleye
+🐟	Viperfish
+🐟	Fangtooth
+🐟	Stargazer
+🐟	Four-eyed Fish
+🐟	Red Snapper
+🐟	Gurnard
+🐟	Wolffish
+🐟	Lumpsucker
+🐟	Monkfish
+🐟	Killifish
+🐟	Zebrafish
+🐟	Mudskipper
+🐠	Blue Tang
+🐠	Mandarinfish
+🐠	Stonefish
+🐠	Picasso Triggerfish
+🐠	Cleaner Wrasse
+🐠	Butterflyfish
+🐠	Damselfish
+🐠	Emperor Angelfish
+🐠	Weedy Seadragon
+🐠	Pipefish
+🐠	Blenny
+🐡	Porcupinefish
+🐡	Boxfish
+🐡	Filefish
+🐙	Giant Pacific Octopus
+🐙	Mimic Octopus
+🐙	Coconut Octopus
+🐙	Vampire Squid
+🦑	Giant Squid
+🦑	Humboldt Squid
+🦑	Firefly Squid
+🦑	Common Cuttlefish
+🦀	Edible Crab
+🦀	King Crab
+🦀	Coconut Crab
+🦀	Hermit Crab
+🦀	Japanese Spider Crab
+🦀	Pea Crab
+🦀	Christmas Island Red Crab
+🦀	Yeti Crab
+🦀	Sally Lightfoot Crab
+🦞	European Lobster
+🦞	Spiny Lobster
+🦞	Squat Lobster
+🦞	Crayfish
+🦞	Yabby
+🦐	Pistol Shrimp
+🦐	Cleaner Shrimp
+🦐	Krill
+🦐	Harlequin Shrimp
+🦐	Amphipod
+🦐	Pill Bug
+🦐	Barnacle
+🦐	Water Flea
+🦐	Fairy Shrimp
+🪼	Moon Jellyfish
+🪼	Lion's Mane Jellyfish
+🪼	Immortal Jellyfish
+🪼	Comb Jelly
+🪼	Hydra
+🪸	Brain Coral
+🪸	Sea Fan
+🪸	Glass Sponge
+🪸	Barrel Sponge
+🐚	Queen Conch
+🐚	Cowrie
+🐚	Limpet
+🐚	Whelk
+🐚	Chiton
+🐌	Roman Snail
+🐌	Leopard Slug
+🐌	Nudibranch
+🐌	Blue Dragon
+🦪	Oyster
+🦪	Scallop
+🦪	Cockle
+🦪	Geoduck
+⭐	Starfish
+⭐	Brittle Star
+⭐	Sea Urchin
+⭐	Sand Dollar
+⭐	Feather Star
+🪱	Earthworm
+🪱	Ragworm
+🪱	Fireworm
+🪱	Feather Duster Worm
+🪱	Velvet Worm
+🪱	Ribbon Worm
+🪱	Arrow Worm
+🪱	Giant Tube Worm
+🦠	Tardigrade
+🦠	Amoeba
+🐝	Buff-tailed Bumblebee
+🐝	Leafcutter Bee
+🐝	Mining Bee
+🐝	Stingless Bee
+🐝	Asian Giant Hornet
+🐝	Yellowjacket
+🐝	Potter Wasp
+🐝	Fig Wasp
+🐝	Cuckoo Wasp
+🐜	Leafcutter Ant
+🐜	Bullet Ant
+🐜	Wood Ant
+🐜	Honeypot Ant
+🐜	Trap-jaw Ant
+🐜	Carpenter Ant
+🐜	Termite
+🪲	Rhinoceros Beetle
+🪲	Goliath Beetle
+🪲	Dung Beetle
+🪲	Bombardier Beetle
+🪲	Whirligig Beetle
+🪲	Tiger Beetle
+🪲	Click Beetle
+🪲	Glow-worm
+🪲	Longhorn Beetle
+🪲	Giraffe Weevil
+🪲	Jewel Beetle
+🪲	Rose Chafer
+🪲	Burying Beetle
+🪲	Colorado Potato Beetle
+🪲	Tortoise Beetle
+🪲	Ironclad Beetle
+🐞	Seven-spot Ladybird
+🐞	Twenty-two-spot Ladybird
+🦋	Monarch
+🦋	Queen Alexandra's Birdwing
+🦋	Painted Lady
+🦋	Small Tortoiseshell
+🦋	Comma
+🦋	Orange-tip
+🦋	Blue Morpho
+🦋	Owl Butterfly
+🦋	Clouded Yellow
+🦋	Large Blue
+🦋	Silver-washed Fritillary
+🦋	Luna Moth
+🦋	Hummingbird Hawk-moth
+🦋	Elephant Hawk-moth
+🦋	Comet Moth
+🦋	Garden Tiger Moth
+🦋	Silkmoth
+🦋	Polyphemus Moth
+🦋	Six-spot Burnet
+🐛	Woolly Bear Caterpillar
+🐛	Centipede
+🐛	Giant Centipede
+🐛	Millipede
+🐛	Pill Millipede
+🐛	Springtail
+🦗	Grasshopper
+🦗	Katydid
+🦗	Mole Cricket
+🦗	Giant Weta
+🦗	Praying Mantis
+🦗	Ghost Mantis
+🦗	Stick Insect
+🦗	Cicada
+🦗	Treehopper
+🦗	Lantern Bug
+🦗	Assassin Bug
+🦗	Emperor Dragonfly
+🦗	Southern Hawker
+🦗	Banded Demoiselle
+🦗	Azure Damselfly
+🦗	Stonefly
+🦗	Green Lacewing
+🦗	Owlfly
+🦗	Water Boatman
+🦗	Water Scorpion
+🪳	American Cockroach
+🪳	Death's Head Cockroach
+🪰	Bee-fly
+🪰	Robber Fly
+🪰	Fruit Fly
+🪰	Bluebottle
+🪰	Crane Fly
+🦟	Midge
+🕷️	Goliath Birdeater
+🕷️	Mexican Red-knee Tarantula
+🕷️	Redback Spider
+🕷️	Brown Recluse
+🕷️	Jumping Spider
+🕷️	Garden Orb-weaver
+🕷️	Bird-dropping Spider
+🕷️	Huntsman Spider
+🕷️	Fishing Spider
+🕷️	Raft Spider
+🕷️	Ogre-faced Spider
+🕷️	Daddy Long-legs Spider
+🕷️	Camel Spider
+🕷️	Tailless Whip Scorpion
+🕷️	Velvet Mite
+🦂	Emperor Scorpion
+🦂	Arizona Bark Scorpion

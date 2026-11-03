@@ -279,3 +279,36 @@ td code, .cmd code { font-family: var(--mono); font-size: 0.8125rem; word-break:
 .plug-panel { background: var(--night-card); border: 1px solid var(--night-line); border-radius: 4px; padding: clamp(16px, 3vw, 32px); }
 .specimen:hover { border-color: #5f7486; }
 
+
+/* Hero formats: one panel per platform, formats as chips */
+.platforms { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-self: end; }
+.platform { border: 1px solid var(--line); border-radius: 4px; padding: 16px; }
+.platform h2 { font-family: var(--display); font-size: var(--step-1); font-weight: 800; font-stretch: 110%; line-height: 1.1; }
+.platform p { margin: 12px 0 0; color: var(--muted); font-size: var(--step--1); line-height: 1.4; }
+.fmts { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.fmts li { font-family: var(--mono); font-size: var(--step--1); padding: 3px 8px; border-radius: 3px; background: var(--ink); color: var(--paper); font-weight: 500; }
+@media (max-width: 380px) { .platforms { grid-template-columns: 1fr; } }
+
+.top nav a[aria-current="page"] { color: var(--ink); }
+
+/* Support page */
+.support-hero { grid-template-columns: 1fr; }
+.support-hero .lede { color: var(--ink); max-width: 36em; }
+.name-note { margin: 16px 0 0; max-width: 36em; color: var(--muted); }
+.anon { font-family: var(--mono); }
+.support-list { padding-block: 48px 64px; }
+.donors { list-style: none; margin: 0; padding: 0; counter-reset: rank; }
+.donors li {
+  counter-increment: rank; display: grid; grid-template-columns: 3ch 2em 1fr auto; align-items: center;
+  gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line);
+}
+.donors li:last-child { border-bottom: 0; }
+.donors li::before { content: counter(rank); font-family: var(--mono); color: var(--muted); font-size: var(--step--1); text-align: right; }
+.donors .emoji { font-size: 1.5rem; line-height: 1; text-align: center; }
+.donors .who { font-weight: 600; overflow-wrap: anywhere; }
+.donors .animal { color: var(--muted); text-align: right; }
+.donors-empty { margin: 0; color: var(--muted); }
+@media (max-width: 520px) {
+  .donors li { grid-template-columns: 3ch 2em 1fr; }
+  .donors .animal { grid-column: 3; text-align: left; margin-top: -8px; font-size: var(--step--1); }
+}
