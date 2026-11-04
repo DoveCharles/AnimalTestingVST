@@ -21,6 +21,7 @@ A monorepo of audio plugins by **Animal Testing**. Each plugin builds as VST3 (W
 | [AT Mouth Box](plugins/MouthBox) | `Mbox` | 0.1.0 | [macOS](https://github.com/DoveCharles/AnimalTestingVST/releases/latest/download/AnimalTesting-MouthBox-macOS.zip) · [Windows](https://github.com/DoveCharles/AnimalTestingVST/releases/latest/download/AnimalTesting-MouthBox-Windows.zip) | Beatbox to MIDI drums: finds each hit in a mic signal and sends a drum note (GM numbers, so Addictive Drums 2 and most drum samplers play it). Five pads (Kick, Snare, Hi-Hat, Open Hat, Tom) with their own notes; untrained it sorts hits by brightness, or train each pad on eight of your own sounds (saved with the set). Threshold, Listen (window, about the note latency), Gap, Dynamics and Monitor. MIDI goes to the host and, on macOS, to a virtual port "AT Mouth Box" |
 | [AT Magpie](plugins/Magpie) | `Mgpi` | 0.1.0 | [macOS](https://github.com/DoveCharles/AnimalTestingVST/releases/latest/download/AnimalTesting-Magpie-macOS.zip) · [Windows](https://github.com/DoveCharles/AnimalTestingVST/releases/latest/download/AnimalTesting-Magpie-Windows.zip) | SoundFont (.sf2) player: load a font with the button or by dropping it on the window, then pick any preset by bank and program (or send MIDI Program Change and CC0). Plays the font's own envelopes, filter, LFOs, loops and exclusive classes over 96 voices, follows mod wheel, pitch bend, sustain, CC7/10/11, and adds Volume, Transpose, Tune, Bend range, Velocity, a Release scale and Reverb. The font is loaded from its path, not stored in the set, so keep it where it is |
 | [AT Notes](plugins/Notes) | `Nots` | 0.1.0 | [macOS](https://github.com/DoveCharles/AnimalTestingVST/releases/latest/download/AnimalTesting-Notes-macOS.zip) · [Windows](https://github.com/DoveCharles/AnimalTestingVST/releases/latest/download/AnimalTesting-Notes-Windows.zip) | A notepad that lives in the set: lyrics, notes, anything, saved with the project. Pass-through audio, so it goes on any track. Copy and Paste buttons (and the right-click menu) for hosts that keep Cmd+C/V, A-/A+ text size, resizable window. Every edit marks the set as changed, and a backup copy is written to `~/Library/Application Support/Animal Testing/AT Notes/Backups` a moment after you stop typing |
+| [AT Parrot](plugins/Parrot) | `Prrt` | 0.1.0 | [macOS](https://github.com/DoveCharles/AnimalTestingVST/releases/latest/download/AnimalTesting-Parrot-macOS.zip) · [Windows](https://github.com/DoveCharles/AnimalTestingVST/releases/latest/download/AnimalTesting-Parrot-Windows.zip) | Singing synth: type lyrics, and each MIDI note sings the next syllable with a formant voice (no samples). English spelling rules or Romaji; a hyphen splits syllables by hand and `+` holds a vowel over another note. "On the beat" timing starts consonants early so vowels land on the note (150 ms latency, compensated by the host); "Live" plays straight away. Monophonic with legato glides. Size, Tone, Breath, Diction, Vibrato and Rate, Glide, Release, Lo-Fi, Volume |
 
 ## Layout
 
@@ -167,6 +168,15 @@ If Live ignores the AU after a rebuild, run `killall -9 AudioComponentRegistrar`
 4. Notes are GM (Kick C1 36, Snare D1 38, Hat F#1 42, Open Hat A#1 46, Tom A1 45); change a pad's note if your AD2 kit maps a piece elsewhere.
 
 Each note comes out one Listen window (16 ms by default) after the hit starts, so quantize recorded MIDI if it needs to be tight. `MouthBoxRender test` scores the detector on a synthetic beatbox pattern, and `MouthBoxRender render take.wav hits.mid` turns a recording into MIDI.
+
+## Singing with Parrot
+
+1. Put **AT Parrot** on a MIDI track and type the words in the lyrics box. The chips under it show how they will be sung, one per note; hover a chip to see its sounds, click one to sing from there.
+2. Play or draw notes. Each note-on takes the next syllable, overlapping notes glide legato, and the lyrics go back to the first syllable whenever the transport starts. `|<`, `<` and `>` (or CC50 and CC51) move the cursor by hand.
+3. Words split into syllables by themselves; when one comes out wrong, split it with hyphens (`par-rot`) or spell it the way it sounds (`lay-zee`). `+` on its own sings the last vowel on another note, for melismas.
+4. Leave Timing on *On the beat* for programmed parts: consonants start up to 150 ms early so the vowel lands on the note. Use *Live* when playing a keyboard.
+
+`ParrotRender parse "some words"` prints how lyrics are read, and `ParrotRender render out.wav --lyrics="..." --melody=60:1,62:1,r:1 --bpm=100` sings a melody without a DAW.
 
 ## Website
 

@@ -1,0 +1,11 @@
+# Bump this per release of this plugin; it is independent of the other plugins.
+project(Parrot VERSION 0.1.0)
+
+at_add_plugin(${PROJECT_NAME}
+    PRODUCT_NAME "AT Parrot"
+    IS_SYNTH
+    SOURCES
+        Source/Lyrics.cpp
+        Source/FormantVoice.cpp
+        Source/PluginProcessor.cpp
+        Source/PluginEditor.cpp)

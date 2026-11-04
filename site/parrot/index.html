@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Parrot · Animal Testing</title>
+<meta name="description" content="AT Parrot: a singing synth. Type the words, play the notes, and it sings them back. VST3 · AU · Standalone for macOS and Windows.">
+<meta name="theme-color" content="#0072bc">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="wrap top">
+  <a class="wordmark" href="../">
+    <span class="mark" aria-hidden="true"></span>
+    Animal Testing
+  </a>
+  <nav aria-label="Site">
+    <a href="../#plugins">Plugins</a>
+    <a href="../#install">Install</a>
+    <a href="../support/">Support</a>
+  </nav>
+</div>
+
+<div class="wrap crumbs">
+  <a href="../#plugins">← All plugins</a>
+  <span class="label">09 / 09</span>
+</div>
+
+<main>
+<header class="wrap plug-hero">
+  <div class="plug-shot"><img src="../img/parrot.jpg" alt="AT Parrot editor with lyrics and syllables"></div>
+  <div class="plug-intro">
+    <span class="label">Instrument · Singing synth</span>
+    <div class="title-row"><h1>Parrot</h1></div>
+    <p class="desc">Type the words, play the notes, and it sings them back.</p>
+    <p class="lede">Each MIDI note sings <strong>the next syllable</strong> of the lyrics, with a formant voice built from scratch: no samples, no recordings.</p>
+    <div class="actions">
+      <a class="btn primary" href="https://github.com/DoveCharles/AnimalTestingVST/releases/latest/download/AnimalTesting-Parrot-macOS.zip">Download for macOS</a>
+      <a class="btn primary" href="https://github.com/DoveCharles/AnimalTestingVST/releases/latest/download/AnimalTesting-Parrot-Windows.zip">Download for Windows</a>
+      <a class="btn ghost" href="../#install">How to install</a>
+    </div>
+    <dl class="ledger" aria-label="At a glance">
+      <dt>Version</dt><dd>0.1.0</dd>
+      <dt>Voices</dt><dd>One, with legato glides</dd>
+      <dt>Lyrics</dt><dd>English · Romaji</dd>
+      <dt>Formats</dt><dd>VST3 · AU · Standalone</dd>
+    </dl>
+  </div>
+</header>
+
+<section class="wrap plug-section" aria-labelledby="how-title">
+  <div class="inside plug-panel">
+    <div>
+      <div class="section-head"><h2 id="how-title">How it works</h2></div>
+      <p>Words split into syllables by themselves, shown as chips under the lyrics. When one comes out wrong, split it with hyphens (<code>par-rot</code>) or spell it the way it sounds (<code>lay-zee</code>). A <code>+</code> on its own holds the last vowel over another note.</p>
+      <p>In <em>On the beat</em> timing, consonants start up to 150 ms early so the vowel lands on the note, as a singer's would; the host compensates for the delay. <em>Live</em> plays straight away, for playing a keyboard.</p>
+      <p>The lyrics start over whenever the transport starts. Click a chip, or use the arrow buttons or CC50 and CC51, to move by hand.</p>
+    </div>
+    <div>
+      <div class="section-head"><h2>Controls</h2></div>
+      <ol class="chain">
+        <li><b>Size</b><span>From a small voice to a big one.</span></li>
+        <li><b>Tone</b><span>Soft and breathy to bright and pressed.</span></li>
+        <li><b>Breath and Diction</b><span>Air in the voice, and how hard the consonants hit.</span></li>
+        <li><b>Vibrato, Rate and Glide</b><span>Vibrato comes in after the note starts; the mod wheel adds more.</span></li>
+        <li><b>Release, Lo-Fi and Volume</b><span>Lo-Fi crushes it toward an old speech chip.</span></li>
+      </ol>
+    </div>
+  </div>
+</section>
+</main>
+
+<nav class="wrap pager" aria-label="More plugins">
+  <a class="prev" href="../notes/"><span class="label">← Previous</span><strong>Notes</strong></a>
+</nav>
+
+<footer class="wrap page-foot">
+  <span>Animal Testing · built with JUCE</span>
+  <span>No animals were harmed. Some were compressed tho</span>
+  <span>Product names are trademarks of their owners, used only to describe the sound.</span>
+</footer>
+</body>
+</html>
