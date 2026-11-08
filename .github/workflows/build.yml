@@ -87,6 +87,16 @@ jobs:
         run: |
           version="${GITHUB_REF_NAME//\//-}"
           cmake --install build --prefix dist --component plugins
+          # Until there's a Developer ID: ad-hoc sign each bundle as a whole. The build leaves the
+          # AU/app only linker-signed and the VST3's seal broken (moduleinfo.json lands after
+          # signing), and Apple Silicon refuses to load either.
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            for bundle in dist/*/*.vst3 dist/*/*.component dist/*/*.app; do
+              [ -e "$bundle" ] || continue
+              codesign --force --deep --sign - "$bundle"
+              codesign --verify --deep --strict "$bundle"
+            done
+          fi
           mkdir -p release
           (cd dist && cmake -E tar cf "../release/AnimalTesting-${version}-${{ matrix.name }}.zip" --format=zip .)
           for vst in dist/VST3/*.vst3; do
